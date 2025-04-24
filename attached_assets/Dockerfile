@@ -1,18 +1,24 @@
-FROM php:8.3-fpm
-
-RUN apt-get update && apt-get install -y \
-    libpq-dev zip unzip git \
-  && docker-php-ext-install pdo_pgsql \
-  && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Сначала копируем весь код Symfony, чтобы bin/console был на месте
-COPY api /app
+# Копируем файлы package.json и package-lock.json
+COPY package*.json ./
 
-# Теперь устанавливаем зависимости и выполняем авто-скрипты
-RUN composer install --no-interaction --prefer-dist
+# Устанавливаем зависимости
+RUN npm ci
 
-EXPOSE 9000
+# Копируем остальные файлы проекта
+COPY . .
 
-CMD ["php-fpm"]
+# Собираем проект
+RUN npm run build
+
+# Открываем порт
+EXPOSE 5000
+
+RUN ls -la dist && ls -la dist/client
+RUN npm run build || (echo "Build failed" && exit 1)
+
+# Запускаем сервер
+CMD ["npm", "start"]
