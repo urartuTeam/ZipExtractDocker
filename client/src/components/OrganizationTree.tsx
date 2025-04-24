@@ -344,12 +344,23 @@ const OrganizationTree: React.FC = () => {
     return acc;
   }, {});
 
-  // Группируем должности по отделам
-  const positionsByDept = positions.reduce((acc: any, pos: any) => {
-    if (!acc[pos.department_id]) {
-      acc[pos.department_id] = [];
+  // Группируем должности по отделам через сотрудников
+  const positionsByDept = employees.reduce((acc: any, emp: any) => {
+    const dept_id = emp.department_id;
+    const position_id = emp.position_id;
+    const position = positions.find(pos => pos.position_id === position_id);
+    
+    if (position && dept_id) {
+      if (!acc[dept_id]) {
+        acc[dept_id] = [];
+      }
+      
+      // Проверяем, нет ли уже такой должности в массиве
+      if (!acc[dept_id].some((pos: any) => pos.position_id === position_id)) {
+        acc[dept_id].push(position);
+      }
     }
-    acc[pos.department_id].push(pos);
+    
     return acc;
   }, {});
 
@@ -523,7 +534,7 @@ const OrganizationTree: React.FC = () => {
                       <div className="org-employees-list">
                         {posEmployees.map((emp: any) => (
                           <div key={emp.employee_id} className="org-employee">
-                            {emp.last_name} {emp.first_name?.charAt(0)}.{emp.middle_name ? ` ${emp.middle_name.charAt(0)}.` : ''}
+                            {emp.full_name}
                           </div>
                         ))}
                       </div>
