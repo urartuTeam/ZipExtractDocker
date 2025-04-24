@@ -53,43 +53,21 @@ const DepartmentCard = ({ name, positions, employees }: {
   positions: Position[], 
   employees: Employee[] 
 }) => {
-  const [expanded, setExpanded] = React.useState(false);
-  
   return (
     <div className="department-card">
       <div className="department-title">{name}</div>
       
       <div className="position-list">
-        {positions.map((position) => (
-          <div key={position.position_id} className="position-item">
-            <div 
-              onClick={() => setExpanded(!expanded)} 
-              className="position-header"
-              style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between' }}
-            >
-              <span>{position.name}</span>
-              <span>
-                {expanded ? 
-                  <ChevronDown className="h-4 w-4" /> : 
-                  <ChevronRight className="h-4 w-4" />
-                }
-              </span>
+        {positions.map((position) => {
+          const positionEmployees = employees.filter(emp => emp.position_id === position.position_id);
+          return positionEmployees.map(employee => (
+            <div key={`${position.position_id}-${employee.employee_id}`} className="position-employee-card">
+              <div className="position-title-small">{position.name}</div>
+              <div className="position-divider-small"></div>
+              <div className="position-name-small">{employee.full_name}</div>
             </div>
-            
-            {expanded && (
-              <div className="employee-list">
-                {employees
-                  .filter(emp => emp.position_id === position.position_id)
-                  .map(employee => (
-                    <div key={employee.employee_id} className="employee-item">
-                      {employee.full_name}
-                    </div>
-                  ))
-                }
-              </div>
-            )}
-          </div>
-        ))}
+          ));
+        })}
       </div>
     </div>
   );
@@ -113,16 +91,16 @@ const ChildDepartment = ({
         <div className="department-title">{name}</div>
         
         <div className="position-list">
-          {positions.slice(0, 2).map((position) => (
-            <div key={position.position_id} className="position-item small">
-              {position.name}
-            </div>
-          ))}
-          {positions.length > 2 && (
-            <div className="position-item small">
-              +еще {positions.length - 2} {positions.length - 2 === 1 ? 'должность' : 'должностей'}
-            </div>
-          )}
+          {positions.map((position) => {
+            const positionEmployees = employees.filter(emp => emp.position_id === position.position_id);
+            return positionEmployees.map(employee => (
+              <div key={`${position.position_id}-${employee.employee_id}`} className="position-employee-card">
+                <div className="position-title-small">{position.name}</div>
+                <div className="position-divider-small"></div>
+                <div className="position-name-small">{employee.full_name}</div>
+              </div>
+            ));
+          })}
         </div>
         
         {childDepartments && childDepartments.length > 0 && (

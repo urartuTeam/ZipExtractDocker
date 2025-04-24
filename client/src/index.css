@@ -338,6 +338,34 @@
   border-radius: 3px;
   margin-bottom: 2px;
 }
+
+.position-employee-card {
+  padding: 8px;
+  background-color: white;
+  border: 1px solid #a40000;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.position-title-small {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #a40000;
+  margin-bottom: 5px;
+}
+
+.position-divider-small {
+  width: 50%;
+  height: 1px;
+  background-color: #a40000;
+  margin: 5px auto;
+}
+
+.position-name-small {
+  font-size: 0.85rem;
+  font-weight: 500;
+}
 .org-chart {
   width: 100%;
   margin-top: 0.5rem;
