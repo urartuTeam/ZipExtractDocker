@@ -2,7 +2,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
 import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { scrypt, randomBytes, timingSafeEqual, createHash } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
@@ -33,8 +33,7 @@ async function comparePasswords(supplied: string, stored: string) {
     return timingSafeEqual(hashedBuf, suppliedBuf);
   } else {
     // Простой хеш SHA-256 (для совместимости с существующими пользователями)
-    const crypto = require('crypto');
-    const hashedPassword = crypto.createHash('sha256').update(supplied).digest('hex');
+    const hashedPassword = createHash('sha256').update(supplied).digest('hex');
     return hashedPassword === stored;
   }
 }
