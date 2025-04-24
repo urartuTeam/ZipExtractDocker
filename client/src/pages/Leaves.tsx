@@ -16,6 +16,16 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -73,9 +83,12 @@ type LeaveFormValues = z.infer<typeof leaveFormSchema>;
 export default function Leaves() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedLeave, setSelectedLeave] = useState<Leave | null>(null);
   const queryClient = useQueryClient();
 
-  // Form
+  // Form для создания
   const form = useForm<LeaveFormValues>({
     resolver: zodResolver(leaveFormSchema),
     defaultValues: {
@@ -86,15 +99,31 @@ export default function Leaves() {
     },
   });
 
+  // Form для редактирования
+  const editForm = useForm<LeaveFormValues>({
+    resolver: zodResolver(leaveFormSchema),
+    defaultValues: {
+      employee_id: "",
+      type: "",
+      start_date: undefined,
+      end_date: null,
+    },
+  });
+
+  // Форматирование данных для API
+  const formatValuesForApi = (values: LeaveFormValues) => {
+    return {
+      ...values,
+      start_date: format(values.start_date, 'yyyy-MM-dd'),
+      end_date: values.end_date ? format(values.end_date, 'yyyy-MM-dd') : null,
+    };
+  };
+
   // Mutation для создания нового отпуска
   const createLeave = useMutation({
     mutationFn: async (values: LeaveFormValues) => {
       // Форматирование дат для API
-      const formattedValues = {
-        ...values,
-        start_date: format(values.start_date, 'yyyy-MM-dd'),
-        end_date: values.end_date ? format(values.end_date, 'yyyy-MM-dd') : null,
-      };
+      const formattedValues = formatValuesForApi(values);
 
       const res = await apiRequest("POST", "/api/leaves", formattedValues);
       if (!res.ok) {
@@ -115,6 +144,66 @@ export default function Leaves() {
     onError: (error: Error) => {
       toast({
         title: "Ошибка при добавлении отпуска",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation для обновления отпуска
+  const updateLeave = useMutation({
+    mutationFn: async ({ id, values }: { id: number, values: LeaveFormValues }) => {
+      // Форматирование дат для API
+      const formattedValues = formatValuesForApi(values);
+
+      const res = await apiRequest("PUT", `/api/leaves/${id}`, formattedValues);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при обновлении отпуска");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Отпуск обновлен успешно",
+        description: "Информация об отпуске была обновлена",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/leaves'] });
+      setIsEditDialogOpen(false);
+      editForm.reset();
+      setSelectedLeave(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при обновлении отпуска",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation для удаления отпуска
+  const deleteLeave = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("DELETE", `/api/leaves/${id}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при удалении отпуска");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Отпуск удален успешно",
+        description: "Отпуск был удален из системы",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/leaves'] });
+      setIsDeleteDialogOpen(false);
+      setSelectedLeave(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при удалении отпуска",
         description: error.message,
         variant: "destructive",
       });
@@ -177,6 +266,37 @@ export default function Leaves() {
 
   const onSubmit = (values: LeaveFormValues) => {
     createLeave.mutate(values);
+  };
+
+  const onEditSubmit = (values: LeaveFormValues) => {
+    if (selectedLeave) {
+      updateLeave.mutate({ id: selectedLeave.leave_id, values });
+    }
+  };
+
+  const handleEdit = (leave: Leave) => {
+    setSelectedLeave(leave);
+    
+    // Преобразование строковых дат в объекты Date для формы
+    editForm.reset({
+      employee_id: leave.employee_id.toString(),
+      type: leave.type,
+      start_date: new Date(leave.start_date),
+      end_date: leave.end_date ? new Date(leave.end_date) : null,
+    });
+    
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (leave: Leave) => {
+    setSelectedLeave(leave);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedLeave) {
+      deleteLeave.mutate(selectedLeave.leave_id);
+    }
   };
 
   return (
@@ -248,10 +368,19 @@ export default function Leaves() {
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button variant="outline" size="sm">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEdit(leave)}
+                              >
                                 Изменить
                               </Button>
-                              <Button variant="outline" size="sm" className="text-red-500">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-red-500"
+                                onClick={() => handleDelete(leave)}
+                              >
                                 Удалить
                               </Button>
                             </div>
@@ -428,6 +557,193 @@ export default function Leaves() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Диалог редактирования отпуска */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Редактировать отпуск</DialogTitle>
+            <DialogDescription>
+              Измените информацию об отпуске
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="employee_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Сотрудник</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value.toString()}
+                      value={field.value.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите сотрудника" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {employeesData?.data.map((employee) => (
+                          <SelectItem 
+                            key={employee.employee_id} 
+                            value={employee.employee_id.toString()}
+                          >
+                            {employee.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editForm.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Тип отпуска</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите тип отпуска" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Ежегодный">Ежегодный</SelectItem>
+                        <SelectItem value="По болезни">По болезни</SelectItem>
+                        <SelectItem value="По уходу за ребенком">По уходу за ребенком</SelectItem>
+                        <SelectItem value="Без сохранения оплаты">Без сохранения оплаты</SelectItem>
+                        <SelectItem value="Учебный">Учебный</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="start_date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Дата начала</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                            >
+                              {field.value ? (
+                                format(field.value, "dd MMMM yyyy", { locale: ru })
+                              ) : (
+                                <span>Выберите дату</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editForm.control}
+                  name="end_date"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Дата окончания</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                            >
+                              {field.value ? (
+                                format(field.value, "dd MMMM yyyy", { locale: ru })
+                              ) : (
+                                <span>Оставить пустым для бессрочного</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value || undefined}
+                            onSelect={field.onChange}
+                            initialFocus
+                            disabled={(date) => {
+                              const startDate = editForm.getValues("start_date");
+                              return startDate ? date < startDate : false;
+                            }}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  type="submit" 
+                  disabled={updateLeave.isPending}
+                >
+                  {updateLeave.isPending ? "Сохранение..." : "Сохранить изменения"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Диалог подтверждения удаления */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы собираетесь удалить отпуск сотрудника "{selectedLeave ? getEmployeeName(selectedLeave.employee_id) : ''}". 
+              Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600"
+              disabled={deleteLeave.isPending}
+            >
+              {deleteLeave.isPending ? "Удаление..." : "Удалить"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

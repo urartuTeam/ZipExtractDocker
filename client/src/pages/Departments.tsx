@@ -13,6 +13,16 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -52,10 +62,22 @@ type DepartmentFormValues = z.infer<typeof departmentFormSchema>;
 export default function Departments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
   const queryClient = useQueryClient();
 
-  // Form
+  // Form для создания
   const form = useForm<DepartmentFormValues>({
+    resolver: zodResolver(departmentFormSchema),
+    defaultValues: {
+      name: "",
+      parent_department_id: null,
+    },
+  });
+
+  // Form для редактирования
+  const editForm = useForm<DepartmentFormValues>({
     resolver: zodResolver(departmentFormSchema),
     defaultValues: {
       name: "",
@@ -91,9 +113,71 @@ export default function Departments() {
     },
   });
 
+  // Mutation для обновления отдела
+  const updateDepartment = useMutation({
+    mutationFn: async ({ id, values }: { id: number, values: DepartmentFormValues }) => {
+      const res = await apiRequest("PUT", `/api/departments/${id}`, values);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при обновлении отдела");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Отдел обновлен успешно",
+        description: "Информация об отделе была обновлена",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/departments'] });
+      setIsEditDialogOpen(false);
+      editForm.reset();
+      setSelectedDepartment(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при обновлении отдела",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation для удаления отдела
+  const deleteDepartment = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("DELETE", `/api/departments/${id}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при удалении отдела");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Отдел удален успешно",
+        description: "Отдел был удален из системы",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/departments'] });
+      setIsDeleteDialogOpen(false);
+      setSelectedDepartment(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при удалении отдела",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Запрос на получение отделов
   const { data: departmentsData, isLoading, error } = useQuery<{ status: string, data: Department[] }>({
     queryKey: ['/api/departments'],
+  });
+
+  // Запрос на получение сотрудников, привязанных к отделам
+  const { data: employeesData } = useQuery<{ status: string, data: any[] }>({
+    queryKey: ['/api/employees'],
   });
 
   // Фильтрация отделов на основе поискового запроса
@@ -103,6 +187,52 @@ export default function Departments() {
 
   const onSubmit = (values: DepartmentFormValues) => {
     createDepartment.mutate(values);
+  };
+
+  const onEditSubmit = (values: DepartmentFormValues) => {
+    if (selectedDepartment) {
+      updateDepartment.mutate({ id: selectedDepartment.department_id, values });
+    }
+  };
+
+  const handleEdit = (department: Department) => {
+    setSelectedDepartment(department);
+    editForm.reset({
+      name: department.name,
+      parent_department_id: department.parent_department_id ? 
+        department.parent_department_id.toString() : 
+        "null",
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (department: Department) => {
+    setSelectedDepartment(department);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedDepartment) {
+      deleteDepartment.mutate(selectedDepartment.department_id);
+    }
+  };
+
+  // Проверка, есть ли зависимые сотрудники у отдела
+  const hasDependentEmployees = (departmentId: number) => {
+    if (!employeesData?.data) return false;
+    
+    return employeesData.data.some(
+      (employee) => employee.department_id === departmentId
+    );
+  };
+
+  // Проверка, есть ли зависимые отделы (дочерние)
+  const hasDependentDepartments = (departmentId: number) => {
+    if (!departmentsData?.data) return false;
+    
+    return departmentsData.data.some(
+      (dept) => dept.parent_department_id === departmentId
+    );
   };
 
   return (
@@ -162,6 +292,10 @@ export default function Departments() {
                         ? departmentsData?.data.find(d => d.department_id === department.parent_department_id)
                         : null;
 
+                      // Проверка зависимостей для предупреждения
+                      const hasEmployees = hasDependentEmployees(department.department_id);
+                      const hasChildDepartments = hasDependentDepartments(department.department_id);
+
                       return (
                         <TableRow key={department.department_id}>
                           <TableCell>{department.department_id}</TableCell>
@@ -171,10 +305,29 @@ export default function Departments() {
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button variant="outline" size="sm">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleEdit(department)}
+                              >
                                 Изменить
                               </Button>
-                              <Button variant="outline" size="sm" className="text-red-500">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-red-500"
+                                onClick={() => handleDelete(department)}
+                                disabled={hasEmployees || hasChildDepartments}
+                                title={
+                                  hasEmployees && hasChildDepartments 
+                                    ? "Невозможно удалить: имеются сотрудники и дочерние отделы" 
+                                    : hasEmployees 
+                                    ? "Невозможно удалить: имеются сотрудники в этом отделе" 
+                                    : hasChildDepartments 
+                                    ? "Невозможно удалить: имеются дочерние отделы" 
+                                    : ""
+                                }
+                              >
                                 Удалить
                               </Button>
                             </div>
@@ -260,6 +413,103 @@ export default function Departments() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Диалог редактирования отдела */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Редактировать отдел</DialogTitle>
+            <DialogDescription>
+              Измените информацию об отделе
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Название отдела</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Введите название отдела" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editForm.control}
+                name="parent_department_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Родительский отдел</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value?.toString() || "null"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите родительский отдел" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="null">Нет (корневой отдел)</SelectItem>
+                        {departmentsData?.data
+                          .filter(dept => dept.department_id !== selectedDepartment?.department_id) // Исключаем текущий отдел
+                          .map((dept) => (
+                            <SelectItem 
+                              key={dept.department_id} 
+                              value={dept.department_id.toString()}
+                            >
+                              {dept.name}
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button 
+                  type="submit" 
+                  disabled={updateDepartment.isPending}
+                >
+                  {updateDepartment.isPending ? "Сохранение..." : "Сохранить изменения"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Диалог подтверждения удаления */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы собираетесь удалить отдел "{selectedDepartment?.name}". 
+              Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600"
+              disabled={deleteDepartment.isPending}
+            >
+              {deleteDepartment.isPending ? "Удаление..." : "Удалить"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

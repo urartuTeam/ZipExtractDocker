@@ -13,6 +13,16 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -46,11 +56,18 @@ interface Employee {
 interface Position {
   position_id: number;
   name: string;
+  department_id?: number | null;
 }
 
 interface Department {
   department_id: number;
   name: string;
+}
+
+interface PositionDepartment {
+  position_department_id: number;
+  position_id: number;
+  department_id: number;
 }
 
 // Схема валидации для формы
@@ -78,10 +95,27 @@ type EmployeeFormValues = z.infer<typeof employeeFormSchema>;
 export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
-  // Form
+  // Form для создания
   const form = useForm<EmployeeFormValues>({
+    resolver: zodResolver(employeeFormSchema),
+    defaultValues: {
+      full_name: "",
+      position_id: null,
+      department_id: null,
+      manager_id: null,
+      email: "",
+      phone: "",
+    },
+  });
+
+  // Form для редактирования
+  const editForm = useForm<EmployeeFormValues>({
     resolver: zodResolver(employeeFormSchema),
     defaultValues: {
       full_name: "",
@@ -121,6 +155,64 @@ export default function Employees() {
     },
   });
 
+  // Mutation для обновления сотрудника
+  const updateEmployee = useMutation({
+    mutationFn: async ({ id, values }: { id: number, values: EmployeeFormValues }) => {
+      const res = await apiRequest("PUT", `/api/employees/${id}`, values);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при обновлении сотрудника");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Сотрудник обновлен успешно",
+        description: "Информация о сотруднике была обновлена",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+      setIsEditDialogOpen(false);
+      editForm.reset();
+      setSelectedEmployee(null);
+      setSelectedDepartment(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при обновлении сотрудника",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation для удаления сотрудника
+  const deleteEmployee = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("DELETE", `/api/employees/${id}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при удалении сотрудника");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Сотрудник удален успешно",
+        description: "Сотрудник был удален из системы",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+      setIsDeleteDialogOpen(false);
+      setSelectedEmployee(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при удалении сотрудника",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Запрос на получение сотрудников
   const { data: employeesData, isLoading: isLoadingEmployees, error: employeesError } = useQuery<{ status: string, data: Employee[] }>({
     queryKey: ['/api/employees'],
@@ -134,6 +226,11 @@ export default function Employees() {
   // Запрос на получение отделов
   const { data: departmentsData } = useQuery<{ status: string, data: Department[] }>({
     queryKey: ['/api/departments'],
+  });
+
+  // Запрос на получение связей между должностями и отделами
+  const { data: positionDepartmentsData } = useQuery<{ status: string, data: PositionDepartment[] }>({
+    queryKey: ['/api/positiondepartments'],
   });
 
   // Фильтрация сотрудников на основе поискового запроса
@@ -165,9 +262,80 @@ export default function Employees() {
     return manager ? manager.full_name : '—';
   };
 
+  // Получение списка должностей для выбранного отдела
+  const getPositionsForDepartment = (departmentId: string | null) => {
+    if (!departmentId || departmentId === "null" || !positionDepartmentsData?.data) {
+      return positionsData?.data || [];
+    }
+
+    // Получаем ID должностей, связанных с выбранным отделом
+    const positionIds = positionDepartmentsData.data
+      .filter(pd => pd.department_id === Number(departmentId))
+      .map(pd => pd.position_id);
+
+    // Фильтруем и возвращаем должности
+    return positionsData?.data.filter(pos => positionIds.includes(pos.position_id)) || [];
+  };
+
+  // Обработчик изменения отдела
+  const handleDepartmentChange = (departmentId: string) => {
+    setSelectedDepartment(departmentId);
+    if (isEditDialogOpen) {
+      // Сбрасываем выбранную должность, если отдел изменился
+      editForm.setValue('position_id', null);
+    } else {
+      // Сбрасываем выбранную должность, если отдел изменился
+      form.setValue('position_id', null);
+    }
+  };
+
   const onSubmit = (values: EmployeeFormValues) => {
     createEmployee.mutate(values);
   };
+
+  const onEditSubmit = (values: EmployeeFormValues) => {
+    if (selectedEmployee) {
+      updateEmployee.mutate({ id: selectedEmployee.employee_id, values });
+    }
+  };
+
+  const handleEdit = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setSelectedDepartment(employee.department_id ? employee.department_id.toString() : "null");
+    
+    editForm.reset({
+      full_name: employee.full_name,
+      position_id: employee.position_id ? employee.position_id.toString() : "null",
+      department_id: employee.department_id ? employee.department_id.toString() : "null",
+      manager_id: employee.manager_id ? employee.manager_id.toString() : "null",
+      email: employee.email || "",
+      phone: employee.phone || "",
+    });
+    
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (employee: Employee) => {
+    setSelectedEmployee(employee);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedEmployee) {
+      deleteEmployee.mutate(selectedEmployee.employee_id);
+    }
+  };
+
+  // Проверка, может ли сотрудник быть удален
+  const canBeDeleted = (employeeId: number) => {
+    // Проверка, есть ли другие сотрудники, которые имеют этого сотрудника как руководителя
+    const hasSubordinates = employeesData?.data.some(emp => emp.manager_id === employeeId);
+    
+    return !hasSubordinates;
+  };
+
+  // Отфильтрованные должности на основе выбранного отдела
+  const filteredPositions = getPositionsForDepartment(selectedDepartment);
 
   return (
     <div className="space-y-6">
@@ -212,7 +380,7 @@ export default function Employees() {
                     <TableHead>Отдел</TableHead>
                     <TableHead>Руководитель</TableHead>
                     <TableHead>Контакты</TableHead>
-                    <TableHead className="w-[100px]">Действия</TableHead>
+                    <TableHead className="w-[160px]">Действия</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -223,27 +391,45 @@ export default function Employees() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredEmployees.map((employee) => (
-                      <TableRow key={employee.employee_id}>
-                        <TableCell>{employee.employee_id}</TableCell>
-                        <TableCell className="font-medium">{employee.full_name}</TableCell>
-                        <TableCell>{getPositionName(employee.position_id)}</TableCell>
-                        <TableCell>{getDepartmentName(employee.department_id)}</TableCell>
-                        <TableCell>{getManagerName(employee.manager_id)}</TableCell>
-                        <TableCell>
-                          {employee.email && <div>{employee.email}</div>}
-                          {employee.phone && <div>{employee.phone}</div>}
-                          {!employee.email && !employee.phone && '—'}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-1">
-                            <Button variant="outline" size="sm">
-                              Изменить
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                    filteredEmployees.map((employee) => {
+                      const canDelete = canBeDeleted(employee.employee_id);
+                      
+                      return (
+                        <TableRow key={employee.employee_id}>
+                          <TableCell>{employee.employee_id}</TableCell>
+                          <TableCell className="font-medium">{employee.full_name}</TableCell>
+                          <TableCell>{getPositionName(employee.position_id)}</TableCell>
+                          <TableCell>{getDepartmentName(employee.department_id)}</TableCell>
+                          <TableCell>{getManagerName(employee.manager_id)}</TableCell>
+                          <TableCell>
+                            {employee.email && <div>{employee.email}</div>}
+                            {employee.phone && <div>{employee.phone}</div>}
+                            {!employee.email && !employee.phone && '—'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEdit(employee)}
+                              >
+                                Изменить
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                className="text-red-500"
+                                onClick={() => handleDelete(employee)}
+                                disabled={!canDelete}
+                                title={!canDelete ? "Невозможно удалить: сотрудник является руководителем" : ""}
+                              >
+                                Удалить
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -281,44 +467,15 @@ export default function Employees() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="position_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Должность</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value?.toString() || "null"}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Выберите должность" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="null">Не указана</SelectItem>
-                          {positionsData?.data.map((position) => (
-                            <SelectItem 
-                              key={position.position_id} 
-                              value={position.position_id.toString()}
-                            >
-                              {position.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
                   name="department_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Отдел</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          handleDepartmentChange(value);
+                        }}
                         defaultValue={field.value?.toString() || "null"}
                       >
                         <FormControl>
@@ -334,6 +491,38 @@ export default function Employees() {
                               value={department.department_id.toString()}
                             >
                               {department.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="position_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Должность</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value?.toString() || "null"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Выберите должность" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="null">Не указана</SelectItem>
+                          {filteredPositions.map((position) => (
+                            <SelectItem 
+                              key={position.position_id} 
+                              value={position.position_id.toString()}
+                            >
+                              {position.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -418,6 +607,205 @@ export default function Employees() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Диалог редактирования сотрудника */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Редактировать сотрудника</DialogTitle>
+            <DialogDescription>
+              Измените информацию о сотруднике
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="full_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ФИО</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Введите ФИО сотрудника" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="department_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Отдел</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          handleDepartmentChange(value);
+                        }}
+                        defaultValue={field.value?.toString() || "null"}
+                        value={field.value?.toString() || "null"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Выберите отдел" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="null">Не указан</SelectItem>
+                          {departmentsData?.data.map((department) => (
+                            <SelectItem 
+                              key={department.department_id} 
+                              value={department.department_id.toString()}
+                            >
+                              {department.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editForm.control}
+                  name="position_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Должность</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value?.toString() || "null"}
+                        value={field.value?.toString() || "null"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Выберите должность" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="null">Не указана</SelectItem>
+                          {filteredPositions.map((position) => (
+                            <SelectItem 
+                              key={position.position_id} 
+                              value={position.position_id.toString()}
+                            >
+                              {position.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={editForm.control}
+                name="manager_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Руководитель</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value?.toString() || "null"}
+                      value={field.value?.toString() || "null"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите руководителя" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="null">Нет руководителя</SelectItem>
+                        {employeesData?.data
+                          .filter(emp => emp.employee_id !== selectedEmployee?.employee_id) // Исключаем текущего сотрудника
+                          .map((employee) => (
+                            <SelectItem 
+                              key={employee.employee_id} 
+                              value={employee.employee_id.toString()}
+                            >
+                              {employee.full_name}
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Введите email" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editForm.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Телефон</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Введите телефон" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  type="submit" 
+                  disabled={updateEmployee.isPending}
+                >
+                  {updateEmployee.isPending ? "Сохранение..." : "Сохранить изменения"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Диалог подтверждения удаления */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы собираетесь удалить сотрудника "{selectedEmployee?.full_name}". 
+              Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600"
+              disabled={deleteEmployee.isPending}
+            >
+              {deleteEmployee.isPending ? "Удаление..." : "Удалить"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

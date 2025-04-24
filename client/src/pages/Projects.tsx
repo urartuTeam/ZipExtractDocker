@@ -14,6 +14,16 @@ import {
   DialogDescription
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -67,10 +77,22 @@ type ProjectFormValues = z.infer<typeof projectFormSchema>;
 export default function Projects() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const queryClient = useQueryClient();
 
-  // Form
+  // Form для создания
   const form = useForm<ProjectFormValues>({
+    resolver: zodResolver(projectFormSchema),
+    defaultValues: {
+      name: "",
+      department_id: "",
+    },
+  });
+
+  // Form для редактирования
+  const editForm = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
       name: "",
@@ -100,6 +122,63 @@ export default function Projects() {
     onError: (error: Error) => {
       toast({
         title: "Ошибка при создании проекта",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation для обновления проекта
+  const updateProject = useMutation({
+    mutationFn: async ({ id, values }: { id: number, values: ProjectFormValues }) => {
+      const res = await apiRequest("PUT", `/api/projects/${id}`, values);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при обновлении проекта");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Проект обновлен успешно",
+        description: "Информация о проекте была обновлена",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      setIsEditDialogOpen(false);
+      editForm.reset();
+      setSelectedProject(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при обновлении проекта",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation для удаления проекта
+  const deleteProject = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("DELETE", `/api/projects/${id}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при удалении проекта");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Проект удален успешно",
+        description: "Проект был удален из системы",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      setIsDeleteDialogOpen(false);
+      setSelectedProject(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при удалении проекта",
         description: error.message,
         variant: "destructive",
       });
@@ -140,7 +219,7 @@ export default function Projects() {
 
   // Получение сотрудников на проекте
   const getProjectEmployees = (projectId: number) => {
-    if (!employeeProjectsData) return [];
+    if (!employeeProjectsData?.data) return [];
     
     return employeeProjectsData.data
       .filter(ep => ep.project_id === projectId)
@@ -156,6 +235,39 @@ export default function Projects() {
 
   const onSubmit = (values: ProjectFormValues) => {
     createProject.mutate(values);
+  };
+
+  const onEditSubmit = (values: ProjectFormValues) => {
+    if (selectedProject) {
+      updateProject.mutate({ id: selectedProject.project_id, values });
+    }
+  };
+
+  const handleEdit = (project: Project) => {
+    setSelectedProject(project);
+    editForm.reset({
+      name: project.name,
+      department_id: project.department_id.toString(),
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDelete = (project: Project) => {
+    setSelectedProject(project);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedProject) {
+      deleteProject.mutate(selectedProject.project_id);
+    }
+  };
+
+  // Проверка, есть ли сотрудники, привязанные к проекту
+  const hasAssociatedEmployees = (projectId: number) => {
+    if (!employeeProjectsData?.data) return false;
+    
+    return employeeProjectsData.data.some(ep => ep.project_id === projectId);
   };
 
   return (
@@ -212,6 +324,7 @@ export default function Projects() {
                   ) : (
                     filteredProjects.map((project) => {
                       const projectEmployees = getProjectEmployees(project.project_id);
+                      const hasEmployees = hasAssociatedEmployees(project.project_id);
                       
                       return (
                         <TableRow key={project.project_id}>
@@ -238,10 +351,21 @@ export default function Projects() {
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
-                              <Button variant="outline" size="sm">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEdit(project)}
+                              >
                                 Изменить
                               </Button>
-                              <Button variant="outline" size="sm" className="text-red-500">
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="text-red-500"
+                                onClick={() => handleDelete(project)}
+                                disabled={hasEmployees}
+                                title={hasEmployees ? "Невозможно удалить: к проекту привязаны сотрудники" : ""}
+                              >
                                 Удалить
                               </Button>
                             </div>
@@ -326,6 +450,100 @@ export default function Projects() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Диалог редактирования проекта */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Редактировать проект</DialogTitle>
+            <DialogDescription>
+              Измените информацию о проекте
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Название проекта</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Введите название проекта" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editForm.control}
+                name="department_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Отдел</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value.toString()}
+                      value={field.value.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите отдел" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {departmentsData?.data.map((dept) => (
+                          <SelectItem 
+                            key={dept.department_id} 
+                            value={dept.department_id.toString()}
+                          >
+                            {dept.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button 
+                  type="submit" 
+                  disabled={updateProject.isPending}
+                >
+                  {updateProject.isPending ? "Сохранение..." : "Сохранить изменения"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Диалог подтверждения удаления */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы собираетесь удалить проект "{selectedProject?.name}". 
+              Это действие нельзя отменить.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDelete}
+              className="bg-red-500 hover:bg-red-600"
+              disabled={deleteProject.isPending}
+            >
+              {deleteProject.isPending ? "Удаление..." : "Удалить"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
