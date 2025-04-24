@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from 'wouter';
 
 interface User {
   id: number;
@@ -38,6 +39,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const {
     data: user,
     error,
@@ -63,6 +65,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Успешный вход",
         description: `Добро пожаловать, ${user.username}!`,
       });
+      // После входа перенаправляем на страницу административной панели
+      navigate('/departments');
     },
     onError: (error: Error) => {
       toast({
@@ -89,6 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Успешная регистрация",
         description: "Ваш аккаунт был успешно создан",
       });
+      // После регистрации перенаправляем на страницу административной панели
+      navigate('/departments');
     },
     onError: (error: Error) => {
       toast({
@@ -109,6 +115,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Выход из системы",
         description: "Вы успешно вышли из системы",
       });
+      // После выхода перенаправляем на главную страницу
+      navigate('/');
     },
     onError: (error: Error) => {
       toast({
