@@ -219,6 +219,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ status: 'error', message: 'Failed to fetch positions' });
     }
   });
+  
+  // Связи должностей и отделов (Position Department) endpoints
+  app.get('/api/positiondepartments', async (req: Request, res: Response) => {
+    try {
+      const positionDepartments = await storage.getAllPositionDepartments();
+      res.json({ status: 'success', data: positionDepartments });
+    } catch (error) {
+      console.error('Error fetching position departments:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch position departments' });
+    }
+  });
 
   app.get('/api/positions/:id', async (req: Request, res: Response) => {
     try {

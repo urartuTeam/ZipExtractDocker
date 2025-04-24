@@ -7,13 +7,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
-import Home from "@/pages/Home";
-import Departments from "@/pages/Departments";
-import Positions from "@/pages/Positions";
-import Employees from "@/pages/Employees";
-import Projects from "@/pages/Projects";
-import Leaves from "@/pages/Leaves";
-import AuthPage from "@/pages/AuthPage";
+import Home from "./pages/Home";
+import Departments from "./pages/Departments";
+import Positions from "./pages/Positions";
+import Employees from "./pages/Employees";
+import Projects from "./pages/Projects";
+import Leaves from "./pages/Leaves";
+import AuthPage from "./pages/AuthPage";
+import OrganizationStructure from "./pages/OrganizationStructure";
 import { useLocation } from 'wouter';
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
@@ -29,6 +30,7 @@ function Router() {
       <ProtectedRoute path="/employees" component={Employees} />
       <ProtectedRoute path="/projects" component={Projects} />
       <ProtectedRoute path="/leaves" component={Leaves} />
+      <ProtectedRoute path="/organization" component={OrganizationStructure} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
