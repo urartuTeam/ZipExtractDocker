@@ -1,7 +1,16 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertPostSchema } from "@shared/schema";
+import { 
+  insertUserSchema, 
+  insertDepartmentSchema, 
+  insertPositionSchema, 
+  insertPositionDepartmentSchema,
+  insertEmployeeSchema,
+  insertProjectSchema,
+  insertEmployeeProjectSchema,
+  insertLeaveSchema
+} from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
@@ -102,98 +111,347 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Posts endpoints
-  app.get('/api/posts', async (req: Request, res: Response) => {
+  // Отделы (Departments) endpoints
+  app.get('/api/departments', async (req: Request, res: Response) => {
     try {
-      const posts = await storage.getAllPosts();
-      res.json({ status: 'success', data: posts });
+      const departments = await storage.getAllDepartments();
+      res.json({ status: 'success', data: departments });
     } catch (error) {
-      console.error('Error fetching posts:', error);
-      res.status(500).json({ status: 'error', message: 'Failed to fetch posts' });
+      console.error('Error fetching departments:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch departments' });
     }
   });
 
-  app.get('/api/posts/:id', async (req: Request, res: Response) => {
+  app.get('/api/departments/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ status: 'error', message: 'Invalid post ID' });
+        return res.status(400).json({ status: 'error', message: 'Invalid department ID' });
       }
 
-      const post = await storage.getPost(id);
-      if (!post) {
-        return res.status(404).json({ status: 'error', message: 'Post not found' });
+      const department = await storage.getDepartment(id);
+      if (!department) {
+        return res.status(404).json({ status: 'error', message: 'Department not found' });
       }
 
-      res.json({ status: 'success', data: post });
+      res.json({ status: 'success', data: department });
     } catch (error) {
-      console.error('Error fetching post:', error);
-      res.status(500).json({ status: 'error', message: 'Failed to fetch post' });
+      console.error('Error fetching department:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch department' });
     }
   });
 
-  app.post('/api/posts', async (req: Request, res: Response) => {
+  app.post('/api/departments', async (req: Request, res: Response) => {
     try {
-      const postData = insertPostSchema.parse(req.body);
-      
-      // Verify user exists
-      if (postData.user_id) {
-        const user = await storage.getUser(postData.user_id);
-        if (!user) {
-          return res.status(404).json({ status: 'error', message: 'User not found' });
-        }
-      }
-
-      const post = await storage.createPost(postData);
-      res.status(201).json({ status: 'success', data: post });
+      const departmentData = insertDepartmentSchema.parse(req.body);
+      const department = await storage.createDepartment(departmentData);
+      res.status(201).json({ status: 'success', data: department });
     } catch (error) {
       if (error instanceof ZodError) {
         const validationError = fromZodError(error);
         return res.status(400).json({ status: 'error', message: validationError.message });
       }
       
-      console.error('Error creating post:', error);
-      res.status(500).json({ status: 'error', message: 'Failed to create post' });
+      console.error('Error creating department:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to create department' });
     }
   });
 
-  app.put('/api/posts/:id', async (req: Request, res: Response) => {
+  app.put('/api/departments/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ status: 'error', message: 'Invalid post ID' });
+        return res.status(400).json({ status: 'error', message: 'Invalid department ID' });
       }
 
-      const postData = req.body;
-      const updatedPost = await storage.updatePost(id, postData);
+      const departmentData = req.body;
+      const updatedDepartment = await storage.updateDepartment(id, departmentData);
       
-      if (!updatedPost) {
-        return res.status(404).json({ status: 'error', message: 'Post not found' });
+      if (!updatedDepartment) {
+        return res.status(404).json({ status: 'error', message: 'Department not found' });
       }
 
-      res.json({ status: 'success', data: updatedPost });
+      res.json({ status: 'success', data: updatedDepartment });
     } catch (error) {
-      console.error('Error updating post:', error);
-      res.status(500).json({ status: 'error', message: 'Failed to update post' });
+      console.error('Error updating department:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to update department' });
     }
   });
 
-  app.delete('/api/posts/:id', async (req: Request, res: Response) => {
+  app.delete('/api/departments/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ status: 'error', message: 'Invalid post ID' });
+        return res.status(400).json({ status: 'error', message: 'Invalid department ID' });
       }
 
-      const deleted = await storage.deletePost(id);
+      const deleted = await storage.deleteDepartment(id);
       if (!deleted) {
-        return res.status(404).json({ status: 'error', message: 'Post not found' });
+        return res.status(404).json({ status: 'error', message: 'Department not found' });
       }
 
-      res.json({ status: 'success', message: 'Post deleted successfully' });
+      res.json({ status: 'success', message: 'Department deleted successfully' });
     } catch (error) {
-      console.error('Error deleting post:', error);
-      res.status(500).json({ status: 'error', message: 'Failed to delete post' });
+      console.error('Error deleting department:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to delete department' });
+    }
+  });
+
+  // Должности (Positions) endpoints
+  app.get('/api/positions', async (req: Request, res: Response) => {
+    try {
+      const positions = await storage.getAllPositions();
+      res.json({ status: 'success', data: positions });
+    } catch (error) {
+      console.error('Error fetching positions:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch positions' });
+    }
+  });
+
+  app.get('/api/positions/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid position ID' });
+      }
+
+      const position = await storage.getPosition(id);
+      if (!position) {
+        return res.status(404).json({ status: 'error', message: 'Position not found' });
+      }
+
+      res.json({ status: 'success', data: position });
+    } catch (error) {
+      console.error('Error fetching position:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch position' });
+    }
+  });
+
+  app.post('/api/positions', async (req: Request, res: Response) => {
+    try {
+      const positionData = insertPositionSchema.parse(req.body);
+      const position = await storage.createPosition(positionData);
+      res.status(201).json({ status: 'success', data: position });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ status: 'error', message: validationError.message });
+      }
+      
+      console.error('Error creating position:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to create position' });
+    }
+  });
+
+  app.put('/api/positions/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid position ID' });
+      }
+
+      const positionData = req.body;
+      const updatedPosition = await storage.updatePosition(id, positionData);
+      
+      if (!updatedPosition) {
+        return res.status(404).json({ status: 'error', message: 'Position not found' });
+      }
+
+      res.json({ status: 'success', data: updatedPosition });
+    } catch (error) {
+      console.error('Error updating position:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to update position' });
+    }
+  });
+
+  app.delete('/api/positions/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid position ID' });
+      }
+
+      const deleted = await storage.deletePosition(id);
+      if (!deleted) {
+        return res.status(404).json({ status: 'error', message: 'Position not found' });
+      }
+
+      res.json({ status: 'success', message: 'Position deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting position:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to delete position' });
+    }
+  });
+
+  // Сотрудники (Employees) endpoints
+  app.get('/api/employees', async (req: Request, res: Response) => {
+    try {
+      const employees = await storage.getAllEmployees();
+      res.json({ status: 'success', data: employees });
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch employees' });
+    }
+  });
+
+  app.get('/api/employees/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid employee ID' });
+      }
+
+      const employee = await storage.getEmployee(id);
+      if (!employee) {
+        return res.status(404).json({ status: 'error', message: 'Employee not found' });
+      }
+
+      res.json({ status: 'success', data: employee });
+    } catch (error) {
+      console.error('Error fetching employee:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch employee' });
+    }
+  });
+
+  app.post('/api/employees', async (req: Request, res: Response) => {
+    try {
+      const employeeData = insertEmployeeSchema.parse(req.body);
+      const employee = await storage.createEmployee(employeeData);
+      res.status(201).json({ status: 'success', data: employee });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ status: 'error', message: validationError.message });
+      }
+      
+      console.error('Error creating employee:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to create employee' });
+    }
+  });
+
+  app.put('/api/employees/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid employee ID' });
+      }
+
+      const employeeData = req.body;
+      const updatedEmployee = await storage.updateEmployee(id, employeeData);
+      
+      if (!updatedEmployee) {
+        return res.status(404).json({ status: 'error', message: 'Employee not found' });
+      }
+
+      res.json({ status: 'success', data: updatedEmployee });
+    } catch (error) {
+      console.error('Error updating employee:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to update employee' });
+    }
+  });
+
+  app.delete('/api/employees/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid employee ID' });
+      }
+
+      const deleted = await storage.deleteEmployee(id);
+      if (!deleted) {
+        return res.status(404).json({ status: 'error', message: 'Employee not found' });
+      }
+
+      res.json({ status: 'success', message: 'Employee deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to delete employee' });
+    }
+  });
+
+  // Проекты (Projects) endpoints
+  app.get('/api/projects', async (req: Request, res: Response) => {
+    try {
+      const projects = await storage.getAllProjects();
+      res.json({ status: 'success', data: projects });
+    } catch (error) {
+      console.error('Error fetching projects:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch projects' });
+    }
+  });
+
+  app.get('/api/projects/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid project ID' });
+      }
+
+      const project = await storage.getProject(id);
+      if (!project) {
+        return res.status(404).json({ status: 'error', message: 'Project not found' });
+      }
+
+      res.json({ status: 'success', data: project });
+    } catch (error) {
+      console.error('Error fetching project:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch project' });
+    }
+  });
+
+  app.post('/api/projects', async (req: Request, res: Response) => {
+    try {
+      const projectData = insertProjectSchema.parse(req.body);
+      const project = await storage.createProject(projectData);
+      res.status(201).json({ status: 'success', data: project });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ status: 'error', message: validationError.message });
+      }
+      
+      console.error('Error creating project:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to create project' });
+    }
+  });
+
+  app.put('/api/projects/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid project ID' });
+      }
+
+      const projectData = req.body;
+      const updatedProject = await storage.updateProject(id, projectData);
+      
+      if (!updatedProject) {
+        return res.status(404).json({ status: 'error', message: 'Project not found' });
+      }
+
+      res.json({ status: 'success', data: updatedProject });
+    } catch (error) {
+      console.error('Error updating project:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to update project' });
+    }
+  });
+
+  app.delete('/api/projects/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid project ID' });
+      }
+
+      const deleted = await storage.deleteProject(id);
+      if (!deleted) {
+        return res.status(404).json({ status: 'error', message: 'Project not found' });
+      }
+
+      res.json({ status: 'success', message: 'Project deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to delete project' });
     }
   });
 

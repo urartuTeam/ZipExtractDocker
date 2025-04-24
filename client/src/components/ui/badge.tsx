@@ -38,8 +38,15 @@ export interface BadgeProps
 function Badge(
   { className, variant, method, ...props }: BadgeProps
 ) {
+  let methodVariant = variant;
+  if (method) {
+    const methodLower = method.toLowerCase();
+    if (['get', 'post', 'put', 'delete', 'patch'].includes(methodLower)) {
+      methodVariant = methodLower as any;
+    }
+  }
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <div className={cn(badgeVariants({ variant: methodVariant }), className)} {...props} />
   );
 }
 
