@@ -1,5 +1,5 @@
-import React from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { useQuery } from "@tanstack/react-query";
 
 type Department = {
   department_id: number;
@@ -119,157 +119,161 @@ const ChildDepartment = ({
   );
 };
 
-// Данные для тестового отображения
-const organizationData = {
-  topPosition: {
-    title: "ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА",
-    name: "Иванов Иван Иванович"
-  },
-  level1: [
-    {
-      title: "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР",
-      name: "Василий Иванович Васильев",
-      width: "80%"
-    },
-    {
-      title: "ИСПОЛНИТЕЛЬНЫЙ ДИРЕКТОР",
-      name: "Петров Петр Петрович",
-      width: "20%"
-    }
-  ],
-  level2: {
-    left: [
-      {
-        name: "Отдел продаж",
-        positions: [
-          { position_id: 8, name: "Руководитель отдела продаж" },
-          { position_id: 15, name: "Менеджер по продажам" }
-        ],
-        employees: [
-          { employee_id: 8, full_name: "Морозов Виталий Андреевич", position_id: 8, department_id: 8 },
-          { employee_id: 20, full_name: "Егоров Евгений Олегович", position_id: 15, department_id: 8 }
-        ],
-        children: [
-          {
-            name: "Отдел работы с ключевыми клиентами",
-            positions: [
-              { position_id: 15, name: "Менеджер по продажам" }
-            ],
-            employees: [
-              { employee_id: 21, full_name: "Захаров Павел Андреевич", position_id: 15, department_id: 20 }
-            ],
-            children: [
-              { department_id: 22, name: "Группа сопровождения государственных клиентов", parent_department_id: 17 },
-              { department_id: 23, name: "Группа сопровождения корпоративных клиентов", parent_department_id: 17 }
-            ]
-          },
-          {
-            name: "Отдел по работе с регионами",
-            positions: [
-              { position_id: 15, name: "Менеджер по продажам" }
-            ],
-            employees: [
-              { employee_id: 22, full_name: "Тимофеев Денис Игоревич", position_id: 15, department_id: 21 }
-            ]
-          }
-        ]
-      },
-      {
-        name: "Отдел маркетинга",
-        positions: [
-          { position_id: 9, name: "Руководитель отдела маркетинга" },
-          { position_id: 16, name: "Маркетолог" }
-        ],
-        employees: [
-          { employee_id: 9, full_name: "Волков Дмитрий Сергеевич", position_id: 9, department_id: 9 },
-          { employee_id: 23, full_name: "Кузнецова Мария Сергеевна", position_id: 16, department_id: 9 }
-        ]
-      }
-    ],
-    right: [
-      {
-        name: "Дирекция по продуктам",
-        positions: [
-          { position_id: 4, name: "Директор по продуктам" }
-        ],
-        employees: [
-          { employee_id: 4, full_name: "Сидоров Сидор Сидорович", position_id: 4, department_id: 4 }
-        ],
-        children: [
-          {
-            name: "Отдел аналитики",
-            positions: [
-              { position_id: 10, name: "Руководитель отдела аналитики" },
-              { position_id: 11, name: "Аналитик" }
-            ],
-            employees: [
-              { employee_id: 10, full_name: "Лебедев Алексей Викторович", position_id: 10, department_id: 10 },
-              { employee_id: 11, full_name: "Козлов Игорь Владимирович", position_id: 11, department_id: 10 }
-            ]
-          },
-          {
-            name: "Отдел управления продуктами",
-            positions: [
-              { position_id: 12, name: "Специалист по продуктам" }
-            ],
-            employees: [
-              { employee_id: 13, full_name: "Морозова Екатерина Александровна", position_id: 12, department_id: 13 }
-            ]
-          }
-        ]
-      },
-      {
-        name: "Дирекция по развитию",
-        positions: [
-          { position_id: 5, name: "Директор по развитию" }
-        ],
-        employees: [
-          { employee_id: 5, full_name: "Кузнецов Александр Николаевич", position_id: 5, department_id: 5 }
-        ],
-        children: [
-          {
-            name: "Отдел инноваций",
-            positions: [
-              { position_id: 13, name: "Директор по инновациям" }
-            ],
-            employees: [
-              { employee_id: 15, full_name: "Соколова Ольга Викторовна", position_id: 13, department_id: 15 }
-            ]
-          },
-          {
-            name: "Отдел международного сотрудничества",
-            positions: [
-              { position_id: 14, name: "Специалист по развитию" }
-            ],
-            employees: [
-              { employee_id: 16, full_name: "Федоров Максим Андреевич", position_id: 14, department_id: 16 }
-            ]
-          }
-        ]
-      },
-      {
-        name: "Управление производства",
-        positions: [
-          { position_id: 6, name: "Руководитель управления производства" }
-        ],
-        employees: [
-          { employee_id: 6, full_name: "Смирнов Василий Игоревич", position_id: 6, department_id: 6 }
-        ]
-      },
-      {
-        name: "Управление контроля качества",
-        positions: [
-          { position_id: 7, name: "Руководитель управления контроля качества" }
-        ],
-        employees: [
-          { employee_id: 7, full_name: "Соколов Андрей Петрович", position_id: 7, department_id: 7 }
-        ]
-      }
-    ]
-  }
-};
-
 const OrganizationTree: React.FC = () => {
+  // Загрузка отделов из БД
+  const { data: departmentsResponse } = useQuery<{status: string, data: Department[]}>({
+    queryKey: ['/api/departments'],
+  });
+  const departments = departmentsResponse?.data || [];
+
+  // Загрузка должностей из БД
+  const { data: positionsResponse } = useQuery<{status: string, data: Position[]}>({
+    queryKey: ['/api/positions'],
+  });
+  const positions = positionsResponse?.data || [];
+
+  // Загрузка сотрудников из БД
+  const { data: employeesResponse } = useQuery<{status: string, data: Employee[]}>({
+    queryKey: ['/api/employees'],
+  });
+  const employees = employeesResponse?.data || [];
+
+  // Находим топовых сотрудников (без родительских отделов - высший менеджмент)
+  const topDepartments = departments.filter(dept => dept.parent_department_id === null);
+  
+  // Строим структуру организации
+  const buildOrgStructure = () => {
+    // Находим топовых руководителей (директора и т.д.)
+    const topManagers = employees.filter(emp => {
+      const empPosition = positions.find(pos => pos.position_id === emp.position_id);
+      return empPosition && (
+        empPosition.name.toLowerCase().includes('директор') || 
+        empPosition.name.toLowerCase().includes('руководител')
+      );
+    });
+
+    // Для демонстрации - используем первые два руководителя для верхнего уровня
+    const topLevel = topManagers.slice(0, 2);
+    const genDirector = topLevel[0];
+    const execDirector = topLevel[1];
+
+    // Получаем позиции руководителей
+    const genDirectorPosition = positions.find(pos => pos.position_id === genDirector?.position_id);
+    const execDirectorPosition = positions.find(pos => pos.position_id === execDirector?.position_id);
+
+    // Находим отделы второго уровня
+    const secondLevelDepartments = departments.filter(dept => topDepartments.some(top => top.department_id === dept.parent_department_id));
+    
+    // Получаем левую и правую ветви (20% и 80%)
+    const leftSideDepartments = secondLevelDepartments.slice(0, Math.ceil(secondLevelDepartments.length * 0.2));
+    const rightSideDepartments = secondLevelDepartments.slice(Math.ceil(secondLevelDepartments.length * 0.2));
+
+    // Формируем дочерние отделы для каждого отдела второго уровня
+    const getChildDepartments = (parentId: number) => {
+      return departments.filter(dept => dept.parent_department_id === parentId);
+    };
+
+    // Получаем должности для отдела
+    const getDepartmentPositions = (deptId: number) => {
+      const deptEmployees = employees.filter(emp => emp.department_id === deptId);
+      const positionIds = [...new Set(deptEmployees.map(emp => emp.position_id))];
+      return positions.filter(pos => positionIds.includes(pos.position_id));
+    };
+
+    // Получаем сотрудников для отдела
+    const getDepartmentEmployees = (deptId: number) => {
+      return employees.filter(emp => emp.department_id === deptId);
+    };
+
+    // Формируем левую сторону структуры
+    const leftSide = leftSideDepartments.map(dept => {
+      const deptPositions = getDepartmentPositions(dept.department_id);
+      const deptEmployees = getDepartmentEmployees(dept.department_id);
+      const children = getChildDepartments(dept.department_id).map(childDept => {
+        const childPositions = getDepartmentPositions(childDept.department_id);
+        const childEmployees = getDepartmentEmployees(childDept.department_id);
+        const deepChildren = getChildDepartments(childDept.department_id);
+        
+        return {
+          ...childDept,
+          positions: childPositions,
+          employees: childEmployees,
+          children: deepChildren
+        };
+      });
+
+      return {
+        ...dept,
+        positions: deptPositions,
+        employees: deptEmployees,
+        children
+      };
+    });
+
+    // Формируем правую сторону структуры
+    const rightSide = rightSideDepartments.map(dept => {
+      const deptPositions = getDepartmentPositions(dept.department_id);
+      const deptEmployees = getDepartmentEmployees(dept.department_id);
+      const children = getChildDepartments(dept.department_id).map(childDept => {
+        const childPositions = getDepartmentPositions(childDept.department_id);
+        const childEmployees = getDepartmentEmployees(childDept.department_id);
+        
+        return {
+          ...childDept,
+          positions: childPositions,
+          employees: childEmployees
+        };
+      });
+
+      return {
+        ...dept,
+        positions: deptPositions,
+        employees: deptEmployees,
+        children
+      };
+    });
+
+    return {
+      topPosition: {
+        title: topManagers[2]?.position_id 
+          ? (positions.find(p => p.position_id === topManagers[2].position_id)?.name || "ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА")
+          : "ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА",
+        name: topManagers[2]?.full_name || "Иванов Иван Иванович"
+      },
+      level1: [
+        {
+          title: genDirectorPosition?.name || "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР",
+          name: genDirector?.full_name || "Василий Иванович Васильев",
+          width: "80%"
+        },
+        {
+          title: execDirectorPosition?.name || "ИСПОЛНИТЕЛЬНЫЙ ДИРЕКТОР",
+          name: execDirector?.full_name || "Петров Петр Петрович",
+          width: "20%"
+        }
+      ],
+      level2: {
+        left: leftSide,
+        right: rightSide
+      }
+    };
+  };
+
+  // Построение организационной структуры на основе данных из БД
+  const [organizationData, setOrganizationData] = useState<any>(null);
+
+  useEffect(() => {
+    if (departments.length > 0 && positions.length > 0 && employees.length > 0) {
+      const orgData = buildOrgStructure();
+      setOrganizationData(orgData);
+    }
+  }, [departments, positions, employees]);
+
+  // Если данные еще не загружены, показываем сообщение о загрузке
+  if (!organizationData) {
+    return <div className="loading-message">Загрузка структуры организации...</div>;
+  }
+
   return (
     <div className="org-tree-container">
       {/* Верхний уровень: ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА */}
@@ -309,7 +313,7 @@ const OrganizationTree: React.FC = () => {
       <div className="org-level-2">
         {/* Левая ветвь от ИСПОЛНИТЕЛЬНОГО ДИРЕКТОРА */}
         <div className="branch-group" style={{ width: "20%" }}>
-          {organizationData.level2.left.map((dept, index) => (
+          {organizationData.level2.left.map((dept: any, index: number) => (
             <div key={`left-${index}`} className="branch" style={{ width: `${100/organizationData.level2.left.length}%` }}>
               <DepartmentCard 
                 name={dept.name}
@@ -320,7 +324,7 @@ const OrganizationTree: React.FC = () => {
               {dept.children && dept.children.length > 0 && (
                 <div className="department-children">
                   <div className="child-departments">
-                    {dept.children.map((childDept, childIndex) => (
+                    {dept.children.map((childDept: any, childIndex: number) => (
                       <ChildDepartment 
                         key={`left-child-${index}-${childIndex}`}
                         name={childDept.name}
@@ -338,7 +342,7 @@ const OrganizationTree: React.FC = () => {
         
         {/* Правая ветвь от ГЕНЕРАЛЬНОГО ДИРЕКТОРА */}
         <div className="branch-group" style={{ width: "80%" }}>
-          {organizationData.level2.right.map((dept, index) => (
+          {organizationData.level2.right.map((dept: any, index: number) => (
             <div 
               key={`right-${index}`} 
               className="branch" 
@@ -353,7 +357,7 @@ const OrganizationTree: React.FC = () => {
               {dept.children && dept.children.length > 0 && (
                 <div className="department-children">
                   <div className="child-departments">
-                    {dept.children.map((childDept, childIndex) => (
+                    {dept.children.map((childDept: any, childIndex: number) => (
                       <ChildDepartment 
                         key={`right-child-${index}-${childIndex}`}
                         name={childDept.name}
