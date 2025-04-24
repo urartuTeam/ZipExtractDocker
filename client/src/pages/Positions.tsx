@@ -72,7 +72,9 @@ export default function Positions() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAddDepartmentDialogOpen, setIsAddDepartmentDialogOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
   const queryClient = useQueryClient();
 
   // Form для создания
@@ -164,12 +166,71 @@ export default function Positions() {
         description: "Должность была удалена из системы",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/positions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
       setIsDeleteDialogOpen(false);
       setSelectedPosition(null);
     },
     onError: (error: Error) => {
       toast({
         title: "Ошибка при удалении должности",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Mutation для создания связи должности с отделом
+  const createPositionDepartment = useMutation({
+    mutationFn: async ({ position_id, department_id }: { position_id: number, department_id: number }) => {
+      const res = await apiRequest("POST", "/api/positiondepartments", { 
+        position_id, 
+        department_id,
+        sort: 0  // Значение по умолчанию
+      });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при привязке должности к отделу");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Должность привязана к отделу",
+        description: "Связь успешно создана",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
+      setIsAddDepartmentDialogOpen(false);
+      setSelectedDepartmentId(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при привязке должности к отделу",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Mutation для удаления связи должности с отделом
+  const deletePositionDepartment = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await apiRequest("DELETE", `/api/positiondepartments/${id}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при удалении связи должности с отделом");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Связь удалена",
+        description: "Должность отвязана от отдела",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при удалении связи",
         description: error.message,
         variant: "destructive",
       });
@@ -224,6 +285,27 @@ export default function Positions() {
       deletePosition.mutate(selectedPosition.position_id);
     }
   };
+  
+  // Обработчик удаления связи должности с отделом
+  const handleDeleteLink = (linkId: number) => {
+    deletePositionDepartment.mutate(linkId);
+  };
+  
+  // Обработчик добавления связи должности с отделом
+  const handleOpenAddDepartment = (position: Position) => {
+    setSelectedPosition(position);
+    setIsAddDepartmentDialogOpen(true);
+  };
+  
+  // Обработчик подтверждения добавления связи
+  const handleAddDepartment = () => {
+    if (selectedPosition && selectedDepartmentId) {
+      createPositionDepartment.mutate({
+        position_id: selectedPosition.position_id,
+        department_id: selectedDepartmentId
+      });
+    }
+  };
 
   // Проверка, используется ли должность сотрудниками
   const isPositionUsed = (positionId: number) => {
@@ -273,13 +355,14 @@ export default function Positions() {
                   <TableRow>
                     <TableHead className="w-[80px]">ID</TableHead>
                     <TableHead>Название</TableHead>
+                    <TableHead>Отдел</TableHead>
                     <TableHead className="w-[150px]">Действия</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredPositions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center h-24">
+                      <TableCell colSpan={4} className="text-center h-24">
                         Должности не найдены
                       </TableCell>
                     </TableRow>
@@ -292,7 +375,40 @@ export default function Positions() {
                           <TableCell>{position.position_id}</TableCell>
                           <TableCell className="font-medium">{position.name}</TableCell>
                           <TableCell>
+                            {position.departments && position.departments.length > 0 ? (
+                              <div className="flex flex-col gap-1">
+                                {position.departments.map(dept => (
+                                  <div key={dept.position_link_id} className="flex items-center gap-2">
+                                    <span className="text-sm">{dept.department_name}</span>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-6 w-6" 
+                                      onClick={() => handleDeleteLink(dept.position_link_id)}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                                        <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
+                                      </svg>
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-gray-500">Нет привязанных отделов</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
                             <div className="flex space-x-2">
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => handleOpenAddDepartment(position)}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
+                                  <path d="M5 12h14"></path><path d="M12 5v14"></path>
+                                </svg>
+                                Отдел
+                              </Button>
                               <Button 
                                 variant="outline" 
                                 size="sm"
@@ -422,6 +538,47 @@ export default function Positions() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Диалог добавления отдела к должности */}
+      <Dialog open={isAddDepartmentDialogOpen} onOpenChange={setIsAddDepartmentDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Привязать должность к отделу</DialogTitle>
+            <DialogDescription>
+              Выберите отдел, к которому нужно привязать должность "{selectedPosition?.name}"
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Отдел
+              </label>
+              <select 
+                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                value={selectedDepartmentId || ""}
+                onChange={(e) => setSelectedDepartmentId(Number(e.target.value))}
+              >
+                <option value="" disabled>Выберите отдел</option>
+                {departmentsData?.data.map(dept => (
+                  <option key={dept.department_id} value={dept.department_id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <DialogFooter>
+              <Button 
+                onClick={handleAddDepartment}
+                disabled={!selectedDepartmentId || createPositionDepartment.isPending}
+              >
+                {createPositionDepartment.isPending ? "Добавление..." : "Добавить связь"}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
