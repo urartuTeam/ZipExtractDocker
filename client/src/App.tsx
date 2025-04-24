@@ -13,25 +13,29 @@ import Positions from "@/pages/Positions";
 import Employees from "@/pages/Employees";
 import Projects from "@/pages/Projects";
 import Leaves from "@/pages/Leaves";
+import AuthPage from "@/pages/AuthPage";
 import { useLocation } from 'wouter';
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 function Router() {
   const [location] = useLocation();
 
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/departments" component={Departments} />
-      <Route path="/positions" component={Positions} />
-      <Route path="/employees" component={Employees} />
-      <Route path="/projects" component={Projects} />
-      <Route path="/leaves" component={Leaves} />
+      <ProtectedRoute path="/" component={Home} />
+      <ProtectedRoute path="/departments" component={Departments} />
+      <ProtectedRoute path="/positions" component={Positions} />
+      <ProtectedRoute path="/employees" component={Employees} />
+      <ProtectedRoute path="/projects" component={Projects} />
+      <ProtectedRoute path="/leaves" component={Leaves} />
+      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-function App() {
+function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [location] = useLocation();
 
@@ -39,22 +43,37 @@ function App() {
     setSidebarOpen(!sidebarOpen);
   };
 
+  // Не показываем Sidebar и Header на странице авторизации
+  if (location === '/auth') {
+    return <>{children}</>;
+  }
+
+  return (
+    <div className="h-screen flex overflow-hidden">
+      <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
+      
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header toggleSidebar={toggleSidebar} activeTab={location} />
+        
+        <main className="flex-1 overflow-y-auto bg-neutral-100 p-6">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <div className="h-screen flex overflow-hidden">
-          <Sidebar isOpen={sidebarOpen} onToggle={toggleSidebar} />
-          
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <Header toggleSidebar={toggleSidebar} activeTab={location} />
-            
-            <main className="flex-1 overflow-y-auto bg-neutral-100 p-6">
-              <Router />
-            </main>
-          </div>
-        </div>
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <AppLayout>
+            <Router />
+          </AppLayout>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
