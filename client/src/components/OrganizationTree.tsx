@@ -152,21 +152,32 @@ const OrganizationTree: React.FC = () => {
       );
     });
 
-    // Для демонстрации - используем первые два руководителя для верхнего уровня
-    const topLevel = topManagers.slice(0, 2);
-    const genDirector = topLevel[0];
-    const execDirector = topLevel[1];
-
-    // Получаем позиции руководителей
-    const genDirectorPosition = positions.find(pos => pos.position_id === genDirector?.position_id);
-    const execDirectorPosition = positions.find(pos => pos.position_id === execDirector?.position_id);
-
-    // Находим отделы второго уровня
-    const secondLevelDepartments = departments.filter(dept => topDepartments.some(top => top.department_id === dept.parent_department_id));
+    // Используем реальные данные из БД для верхнего уровня
+    // Ищем замруководителя департамента
+    const topDeptEmployees = employees.filter(emp => emp.department_id === topDepartments[0]?.department_id);
     
-    // Получаем левую и правую ветви (20% и 80%)
-    const leftSideDepartments = secondLevelDepartments.slice(0, Math.ceil(secondLevelDepartments.length * 0.2));
-    const rightSideDepartments = secondLevelDepartments.slice(Math.ceil(secondLevelDepartments.length * 0.2));
+    // Главный руководитель (в данном случае - Степанова Дарья Владимировна)
+    const topManager = topDeptEmployees[0];
+    const topManagerPosition = positions.find(pos => pos.position_id === topManager?.position_id);
+    
+    // Если нет данных для двух директоров под замруководителя, создадим пустые позиции
+    const genDirector = { full_name: "", position_id: 0, employee_id: 0, department_id: 0 };
+    const execDirector = { full_name: "", position_id: 0, employee_id: 0, department_id: 0 };
+    
+    // Получаем позиции руководителей
+    const genDirectorPosition = { position_id: 0, name: "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР" };
+    const execDirectorPosition = { position_id: 0, name: "ИСПОЛНИТЕЛЬНЫЙ ДИРЕКТОР" };
+    
+    // Находим отделы второго уровня (если они есть)
+    const secondLevelDepartments = departments.filter(dept => 
+        topDepartments.some(top => top.department_id === dept.parent_department_id));
+    
+    // Если есть отделы второго уровня, разделяем их на левую и правую ветви (20% и 80%)
+    // Если их нет, создаем пустые массивы
+    const leftSideDepartments = secondLevelDepartments.length > 0 ? 
+        secondLevelDepartments.slice(0, Math.ceil(secondLevelDepartments.length * 0.2)) : [];
+    const rightSideDepartments = secondLevelDepartments.length > 0 ?
+        secondLevelDepartments.slice(Math.ceil(secondLevelDepartments.length * 0.2)) : [];
 
     // Формируем дочерние отделы для каждого отдела второго уровня
     const getChildDepartments = (parentId: number) => {
@@ -176,7 +187,13 @@ const OrganizationTree: React.FC = () => {
     // Получаем должности для отдела
     const getDepartmentPositions = (deptId: number) => {
       const deptEmployees = employees.filter(emp => emp.department_id === deptId);
-      const positionIds = [...new Set(deptEmployees.map(emp => emp.position_id))];
+      // Используем другой подход к уникальным значениям
+      const positionIds: number[] = [];
+      deptEmployees.forEach(emp => {
+        if (!positionIds.includes(emp.position_id)) {
+          positionIds.push(emp.position_id);
+        }
+      });
       return positions.filter(pos => positionIds.includes(pos.position_id));
     };
 
@@ -235,20 +252,18 @@ const OrganizationTree: React.FC = () => {
 
     return {
       topPosition: {
-        title: topManagers[2]?.position_id 
-          ? (positions.find(p => p.position_id === topManagers[2].position_id)?.name || "ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА")
-          : "ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА",
-        name: topManagers[2]?.full_name || "Иванов Иван Иванович"
+        title: topManagerPosition?.name || "ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА",
+        name: topManager?.full_name || "Степанова Дарья Владимировна"
       },
       level1: [
         {
-          title: genDirectorPosition?.name || "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР",
-          name: genDirector?.full_name || "Василий Иванович Васильев",
+          title: "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР", 
+          name: "", // пустое имя, т.к. нет данных в БД
           width: "80%"
         },
         {
-          title: execDirectorPosition?.name || "ИСПОЛНИТЕЛЬНЫЙ ДИРЕКТОР",
-          name: execDirector?.full_name || "Петров Петр Петрович",
+          title: "ИСПОЛНИТЕЛЬНЫЙ ДИРЕКТОР",
+          name: "", // пустое имя, т.к. нет данных в БД
           width: "20%"
         }
       ],
