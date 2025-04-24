@@ -404,16 +404,17 @@ const OrganizationTree: React.FC = () => {
     
     return (
       <div className="org-chart">
-        {/* Уровень корневых департаментов - здесь только один верхний департамент */}
-        {sortedDepartments.length > 0 && (
-          <div className="tree-container">
-            {/* Отображаем только первый (главный) департамент в корне */}
-            {renderTopDepartment(sortedDepartments[0])}
-            
-            {/* Нижние уровни организуем в виде горизонтального дерева */}
-            {renderChildrenTree(sortedDepartments[0])}
+        <div className="tree-container">
+          {/* Отображаем все корневые департаменты в первом уровне */}
+          <div className="root-departments">
+            {sortedDepartments.map(dept => (
+              <div key={dept.department_id} className="root-department-item">
+                {renderTopDepartment(dept)}
+                {renderChildrenTree(dept)}
+              </div>
+            ))}
           </div>
-        )}
+        </div>
       </div>
     );
   };
@@ -452,7 +453,7 @@ const OrganizationTree: React.FC = () => {
                       <div className="org-employees-list">
                         {posEmployees.map((emp: any) => (
                           <div key={emp.employee_id} className="org-employee">
-                            {emp.last_name} {emp.first_name?.charAt(0)}.{emp.middle_name ? ` ${emp.middle_name.charAt(0)}.` : ''}
+                            {emp.full_name}
                           </div>
                         ))}
                       </div>
