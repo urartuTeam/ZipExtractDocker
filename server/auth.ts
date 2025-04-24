@@ -24,10 +24,19 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+  // Проверяем, содержит ли хеш точку (разделитель соли)
+  if (stored.includes('.')) {
+    // Формат хеша с солью (хеш.соль)
+    const [hashed, salt] = stored.split(".");
+    const hashedBuf = Buffer.from(hashed, "hex");
+    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+    return timingSafeEqual(hashedBuf, suppliedBuf);
+  } else {
+    // Простой хеш SHA-256 (для совместимости с существующими пользователями)
+    const crypto = require('crypto');
+    const hashedPassword = crypto.createHash('sha256').update(supplied).digest('hex');
+    return hashedPassword === stored;
+  }
 }
 
 export function setupAuth(app: Express) {
