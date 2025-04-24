@@ -455,6 +455,208 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // EmployeeProjects endpoints
+  app.get('/api/employeeprojects', async (req: Request, res: Response) => {
+    try {
+      const employeeProjects = await storage.getAllEmployeeProjects();
+      res.json({ status: 'success', data: employeeProjects });
+    } catch (error) {
+      console.error('Error fetching employee projects:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch employee projects' });
+    }
+  });
+
+  app.get('/api/employeeprojects/employee/:employeeId', async (req: Request, res: Response) => {
+    try {
+      const employeeId = parseInt(req.params.employeeId);
+      if (isNaN(employeeId)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid employee ID' });
+      }
+
+      const employeeProjects = await storage.getEmployeeProjectsByEmployee(employeeId);
+      res.json({ status: 'success', data: employeeProjects });
+    } catch (error) {
+      console.error('Error fetching employee projects:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch employee projects' });
+    }
+  });
+
+  app.get('/api/employeeprojects/project/:projectId', async (req: Request, res: Response) => {
+    try {
+      const projectId = parseInt(req.params.projectId);
+      if (isNaN(projectId)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid project ID' });
+      }
+
+      const employeeProjects = await storage.getEmployeeProjectsByProject(projectId);
+      res.json({ status: 'success', data: employeeProjects });
+    } catch (error) {
+      console.error('Error fetching employee projects:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch employee projects' });
+    }
+  });
+
+  app.post('/api/employeeprojects', async (req: Request, res: Response) => {
+    try {
+      const employeeProjectData = insertEmployeeProjectSchema.parse(req.body);
+      const employeeProject = await storage.createEmployeeProject(employeeProjectData);
+      res.status(201).json({ status: 'success', data: employeeProject });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ status: 'error', message: validationError.message });
+      }
+      
+      console.error('Error creating employee project:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to create employee project' });
+    }
+  });
+
+  app.put('/api/employeeprojects/:employeeId/:projectId', async (req: Request, res: Response) => {
+    try {
+      const employeeId = parseInt(req.params.employeeId);
+      const projectId = parseInt(req.params.projectId);
+      
+      if (isNaN(employeeId) || isNaN(projectId)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid employee or project ID' });
+      }
+
+      const employeeProjectData = req.body;
+      const updatedEmployeeProject = await storage.updateEmployeeProject(employeeId, projectId, employeeProjectData);
+      
+      if (!updatedEmployeeProject) {
+        return res.status(404).json({ status: 'error', message: 'Employee project not found' });
+      }
+
+      res.json({ status: 'success', data: updatedEmployeeProject });
+    } catch (error) {
+      console.error('Error updating employee project:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to update employee project' });
+    }
+  });
+
+  app.delete('/api/employeeprojects/:employeeId/:projectId', async (req: Request, res: Response) => {
+    try {
+      const employeeId = parseInt(req.params.employeeId);
+      const projectId = parseInt(req.params.projectId);
+      
+      if (isNaN(employeeId) || isNaN(projectId)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid employee or project ID' });
+      }
+
+      const deleted = await storage.deleteEmployeeProject(employeeId, projectId);
+      if (!deleted) {
+        return res.status(404).json({ status: 'error', message: 'Employee project not found' });
+      }
+
+      res.json({ status: 'success', message: 'Employee project deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting employee project:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to delete employee project' });
+    }
+  });
+
+  // Leaves endpoints
+  app.get('/api/leaves', async (req: Request, res: Response) => {
+    try {
+      const leaves = await storage.getAllLeaves();
+      res.json({ status: 'success', data: leaves });
+    } catch (error) {
+      console.error('Error fetching leaves:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch leaves' });
+    }
+  });
+
+  app.get('/api/leaves/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid leave ID' });
+      }
+
+      const leave = await storage.getLeave(id);
+      if (!leave) {
+        return res.status(404).json({ status: 'error', message: 'Leave not found' });
+      }
+
+      res.json({ status: 'success', data: leave });
+    } catch (error) {
+      console.error('Error fetching leave:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch leave' });
+    }
+  });
+
+  app.get('/api/leaves/employee/:employeeId', async (req: Request, res: Response) => {
+    try {
+      const employeeId = parseInt(req.params.employeeId);
+      if (isNaN(employeeId)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid employee ID' });
+      }
+
+      const leaves = await storage.getLeavesByEmployee(employeeId);
+      res.json({ status: 'success', data: leaves });
+    } catch (error) {
+      console.error('Error fetching leaves:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch leaves' });
+    }
+  });
+
+  app.post('/api/leaves', async (req: Request, res: Response) => {
+    try {
+      const leaveData = insertLeaveSchema.parse(req.body);
+      const leave = await storage.createLeave(leaveData);
+      res.status(201).json({ status: 'success', data: leave });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ status: 'error', message: validationError.message });
+      }
+      
+      console.error('Error creating leave:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to create leave' });
+    }
+  });
+
+  app.put('/api/leaves/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid leave ID' });
+      }
+
+      const leaveData = req.body;
+      const updatedLeave = await storage.updateLeave(id, leaveData);
+      
+      if (!updatedLeave) {
+        return res.status(404).json({ status: 'error', message: 'Leave not found' });
+      }
+
+      res.json({ status: 'success', data: updatedLeave });
+    } catch (error) {
+      console.error('Error updating leave:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to update leave' });
+    }
+  });
+
+  app.delete('/api/leaves/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid leave ID' });
+      }
+
+      const deleted = await storage.deleteLeave(id);
+      if (!deleted) {
+        return res.status(404).json({ status: 'error', message: 'Leave not found' });
+      }
+
+      res.json({ status: 'success', message: 'Leave deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting leave:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to delete leave' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
