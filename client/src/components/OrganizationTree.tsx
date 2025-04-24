@@ -152,21 +152,24 @@ const OrganizationTree: React.FC = () => {
       );
     });
 
-    // Используем реальные данные из БД для верхнего уровня
-    // Ищем замруководителя департамента
+    // Получаем данные из БД для организационной структуры
+    // Ищем сотрудников высшего уровня
     const topDeptEmployees = employees.filter(emp => emp.department_id === topDepartments[0]?.department_id);
     
-    // Главный руководитель (в данном случае - Степанова Дарья Владимировна)
+    // Получаем данные о верхнем руководителе из БД
     const topManager = topDeptEmployees[0];
     const topManagerPosition = positions.find(pos => pos.position_id === topManager?.position_id);
     
-    // Если нет данных для двух директоров под замруководителя, создадим пустые позиции
-    const genDirector = { full_name: "", position_id: 0, employee_id: 0, department_id: 0 };
-    const execDirector = { full_name: "", position_id: 0, employee_id: 0, department_id: 0 };
+    // Получаем данные для следующего уровня руководителей - если их нет, будут пустые объекты
+    const subordinates = employees.slice(1, 3); // Берем следующих сотрудников, если они есть
+    const genDirector = subordinates[0] || { full_name: "", position_id: 0, employee_id: 0, department_id: 0 };
+    const execDirector = subordinates[1] || { full_name: "", position_id: 0, employee_id: 0, department_id: 0 };
     
-    // Получаем позиции руководителей
-    const genDirectorPosition = { position_id: 0, name: "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР" };
-    const execDirectorPosition = { position_id: 0, name: "ИСПОЛНИТЕЛЬНЫЙ ДИРЕКТОР" };
+    // Получаем позиции руководителей из БД
+    const genDirectorPosition = positions.find(pos => pos.position_id === genDirector?.position_id) 
+        || { position_id: 0, name: "" };
+    const execDirectorPosition = positions.find(pos => pos.position_id === execDirector?.position_id)
+        || { position_id: 0, name: "" };
     
     // Находим отделы второго уровня (если они есть)
     const secondLevelDepartments = departments.filter(dept => 
@@ -252,18 +255,18 @@ const OrganizationTree: React.FC = () => {
 
     return {
       topPosition: {
-        title: topManagerPosition?.name || "ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА",
-        name: topManager?.full_name || "Степанова Дарья Владимировна"
+        title: topManagerPosition?.name || "",
+        name: topManager?.full_name || ""
       },
       level1: [
         {
-          title: "ГЕНЕРАЛЬНЫЙ ДИРЕКТОР", 
-          name: "", // пустое имя, т.к. нет данных в БД
+          title: genDirectorPosition?.name || "",
+          name: genDirector?.full_name || "",
           width: "80%"
         },
         {
-          title: "ИСПОЛНИТЕЛЬНЫЙ ДИРЕКТОР",
-          name: "", // пустое имя, т.к. нет данных в БД
+          title: execDirectorPosition?.name || "",
+          name: execDirector?.full_name || "",
           width: "20%"
         }
       ],
