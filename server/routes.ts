@@ -266,6 +266,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Получение позиций для конкретного отдела
+  app.get('/api/departments/:id/positions', async (req: Request, res: Response) => {
+    try {
+      const departmentId = parseInt(req.params.id);
+      
+      if (isNaN(departmentId)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid department ID' });
+      }
+      
+      // Получаем все связи позиция-отдел для этого отдела
+      const positionDepartments = await storage.getAllPositionDepartments();
+      const departmentPositionLinks = positionDepartments.filter(
+        link => link.department_id === departmentId
+      );
+      
+      // Если связей нет, возвращаем пустой массив
+      if (departmentPositionLinks.length === 0) {
+        return res.json({ status: 'success', data: [] });
+      }
+      
+      // Получаем все позиции
+      const allPositions = await storage.getAllPositions();
+      
+      // Фильтруем позиции, которые связаны с этим отделом
+      const linkedPositionIds = departmentPositionLinks.map(link => link.position_id);
+      const departmentPositions = allPositions.filter(
+        position => linkedPositionIds.includes(position.position_id)
+      );
+      
+      res.json({ status: 'success', data: departmentPositions });
+    } catch (error) {
+      console.error('Error fetching department positions:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Failed to fetch department positions' 
+      });
+    }
+  });
+  
   // Создание связи должности с отделом
   app.post('/api/positiondepartments', async (req: Request, res: Response) => {
     try {

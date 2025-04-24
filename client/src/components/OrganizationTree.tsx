@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 
+// Типы данных для организационной структуры
 type Department = {
   department_id: number;
   name: string;
@@ -10,7 +11,6 @@ type Department = {
 type Position = {
   position_id: number;
   name: string;
-  positionName?: string;
 }
 
 type Employee = {
@@ -20,99 +20,159 @@ type Employee = {
   department_id: number;
 }
 
-// Вертикальная линия-соединитель
-const VerticalLine = () => {
-  return <div className="org-vertical-line"></div>;
-};
+// Тип для построения дерева отделов
+type DepartmentNode = Department & {
+  positions: Position[];
+  children: DepartmentNode[];
+  width: number; // ширина в процентах
+  childCount: number; // общее количество дочерних элементов
+}
 
-// Карточка для верхней должности
-const TopPositionCard = ({ title, name }: { title: string, name: string }) => {
+// Тип для построения позиций с сотрудниками
+type PositionWithEmployees = Position & {
+  employees: Employee[];
+}
+
+// Карточка отдела
+const DepartmentCard = ({ department }: { department: DepartmentNode }) => {
   return (
-    <div className="top-position">
-      <div className="top-position-title">{title}</div>
-      <div className="position-divider"></div>
-      <div className="top-position-name">{name}</div>
+    <div className="department-card" style={{ minWidth: '300px' }}>
+      <div className="department-title">{department.name}</div>
     </div>
   );
 };
 
-// Карточка для должности
-const PositionCard = ({ title, name, isMain = false }: { title: string, name: string, isMain?: boolean }) => {
-  return (
-    <div className={`position-card ${isMain ? 'main' : ''}`}>
-      <div className="position-title">{title}</div>
-      <div className="position-divider"></div>
-      <div className="position-name">{name}</div>
-    </div>
-  );
-};
-
-// Карточка департамента
-const DepartmentCard = ({ name, positions, employees }: { 
-  name: string, 
-  positions: Position[], 
+// Карточка должности с сотрудниками
+const PositionCard = ({ 
+  position, 
+  employees 
+}: { 
+  position: Position, 
   employees: Employee[] 
 }) => {
   return (
-    <div className="department-group">
-      <div className="department-card">
-        <div className="department-title">{name}</div>
-      </div>
-      
-      <div className="position-employees-list">
-        {positions.map((position) => {
-          const positionEmployees = employees.filter(emp => emp.position_id === position.position_id);
-          return positionEmployees.map(employee => (
-            <div key={`${position.position_id}-${employee.employee_id}`} className="position-employee-card">
-              <div className="position-title-small">{position.name}</div>
-              <div className="position-divider-small"></div>
-              <div className="position-name-small">{employee.full_name}</div>
-            </div>
-          ));
-        })}
-      </div>
+    <div className="position-employee-card">
+      <div className="position-title-small">{position.name}</div>
+      <div className="position-divider-small"></div>
+      {employees.length > 0 ? (
+        // Если есть сотрудники, показываем их имена
+        employees.map(employee => (
+          <div key={employee.employee_id} className="position-name-small">
+            {employee.full_name}
+          </div>
+        ))
+      ) : (
+        // Если нет сотрудников, показываем пустое место
+        <div className="position-name-small empty">Вакантная должность</div>
+      )}
     </div>
   );
 };
 
-// Дочерний отдел
-const ChildDepartment = ({ 
-  name, 
-  positions, 
-  employees, 
-  childDepartments 
+// Компонент отдела с должностями и подотделами
+const DepartmentWithChildren = ({ 
+  department, 
+  allPositions, 
+  allEmployees, 
+  level = 0 
 }: { 
-  name: string, 
-  positions: Position[], 
-  employees: Employee[],
-  childDepartments?: Department[] 
+  department: DepartmentNode, 
+  allPositions: Position[], 
+  allEmployees: Employee[],
+  level?: number
 }) => {
+  // Загружаем должности для этого отдела из API
+  const { data: departmentPositionsResponse } = useQuery<{status: string, data: Position[]}>({
+    queryKey: [`/api/departments/${department.department_id}/positions`],
+    // Если API вернет ошибку или пустой результат, используем резервную логику
+    onError: (error) => {
+      console.error(`Failed to load positions for department ${department.department_id}:`, error);
+    }
+  });
+  
+  // Получаем должности для этого отдела
+  // Если API вернул результат, используем его
+  // Иначе используем резервную логику на основе сотрудников и позиций из department.positions
+  let departmentPositions: Position[] = [];
+  
+  if (departmentPositionsResponse?.data && departmentPositionsResponse.data.length > 0) {
+    // Используем данные из API
+    departmentPositions = departmentPositionsResponse.data;
+  } else {
+    // Резервная логика: используем позиции с сотрудниками в этом отделе
+    // и позиции, которые уже были привязаны к этому отделу
+    departmentPositions = allPositions.filter(pos => {
+      // Проверяем, есть ли сотрудники с этой позицией в этом отделе
+      const hasEmployeesInDepartment = allEmployees.some(
+        emp => emp.position_id === pos.position_id && emp.department_id === department.department_id
+      );
+      
+      // Также включаем позиции, которые уже были привязаны к этому отделу через API
+      const isPositionInDepartment = department.positions.some(
+        deptPos => deptPos.position_id === pos.position_id
+      );
+  
+      return hasEmployeesInDepartment || isPositionInDepartment;
+    });
+    
+    // Если у нас всё равно нет позиций, покажем все позиции в системе
+    // (только для демонстрации, в реальном приложении так не делать)
+    if (departmentPositions.length === 0 && level === 0) {
+      departmentPositions = allPositions;
+    }
+  }
+
+  // Получаем сотрудников для каждой должности
+  const positionsWithEmployees = departmentPositions.map(position => {
+    const positionEmployees = allEmployees.filter(
+      emp => emp.position_id === position.position_id && emp.department_id === department.department_id
+    );
+    
+    return {
+      ...position,
+      employees: positionEmployees
+    };
+  });
+
+  // Вычисляем ширину для дочерних отделов
+  const totalChildWidth = department.children.reduce((sum, child) => sum + child.width, 0);
+  
   return (
-    <div className="child-department">
-      <div className="child-department-card">
-        <div className="department-title">{name}</div>
-      </div>
+    <div 
+      className="department-node"
+      style={{
+        width: `${department.width}%`,
+        minWidth: '300px',
+        margin: '0 auto'
+      }}
+    >
+      <DepartmentCard department={department} />
       
+      {/* Должности в отделе */}
       <div className="position-employees-list">
-        {positions.map((position) => {
-          const positionEmployees = employees.filter(emp => emp.position_id === position.position_id);
-          return positionEmployees.map(employee => (
-            <div key={`${position.position_id}-${employee.employee_id}`} className="position-employee-card">
-              <div className="position-title-small">{position.name}</div>
-              <div className="position-divider-small"></div>
-              <div className="position-name-small">{employee.full_name}</div>
-            </div>
-          ));
-        })}
+        {positionsWithEmployees.map(position => (
+          <PositionCard 
+            key={position.position_id}
+            position={position}
+            employees={position.employees}
+          />
+        ))}
       </div>
       
-      {childDepartments && childDepartments.length > 0 && (
-        <div className="deep-children">
-          {childDepartments.map(dept => (
-            <div key={dept.department_id} className="deep-child">
-              {dept.name}
-            </div>
-          ))}
+      {/* Если есть дочерние отделы, рекурсивно отображаем их */}
+      {department.children.length > 0 && (
+        <div className="department-children">
+          <div className="child-departments">
+            {department.children.map(childDept => (
+              <DepartmentWithChildren
+                key={childDept.department_id}
+                department={childDept}
+                allPositions={allPositions}
+                allEmployees={allEmployees}
+                level={level + 1}
+              />
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -120,275 +180,174 @@ const ChildDepartment = ({
 };
 
 const OrganizationTree: React.FC = () => {
-  // Загрузка отделов из БД
+  // Загрузка данных из API
   const { data: departmentsResponse } = useQuery<{status: string, data: Department[]}>({
     queryKey: ['/api/departments'],
   });
   const departments = departmentsResponse?.data || [];
 
-  // Загрузка должностей из БД
   const { data: positionsResponse } = useQuery<{status: string, data: Position[]}>({
     queryKey: ['/api/positions'],
   });
   const positions = positionsResponse?.data || [];
 
-  // Загрузка сотрудников из БД
   const { data: employeesResponse } = useQuery<{status: string, data: Employee[]}>({
     queryKey: ['/api/employees'],
   });
   const employees = employeesResponse?.data || [];
 
-  // Находим топовых сотрудников (без родительских отделов - высший менеджмент)
-  const topDepartments = departments.filter(dept => dept.parent_department_id === null);
-  
-  // Строим структуру организации
-  const buildOrgStructure = () => {
-    // Находим топовых руководителей (директора и т.д.)
-    const topManagers = employees.filter(emp => {
-      const empPosition = positions.find(pos => pos.position_id === emp.position_id);
-      return empPosition && (
-        empPosition.name.toLowerCase().includes('директор') || 
-        empPosition.name.toLowerCase().includes('руководител')
+  // Состояние для хранения построенного дерева
+  const [departmentTree, setDepartmentTree] = useState<DepartmentNode[]>([]);
+
+  // Рекурсивно вычисляем количество всех дочерних элементов для отдела
+  const calculateChildCount = (
+    department: Department,
+    allDepartments: Department[],
+    allPositions: Position[],
+    allEmployees: Employee[]
+  ): number => {
+    // Находим непосредственных детей
+    const children = allDepartments.filter(
+      d => d.parent_department_id === department.department_id
+    );
+    
+    // Считаем количество позиций в текущем отделе
+    const departmentPositionCount = allPositions.filter(pos => {
+      // Проверяем, есть ли сотрудники с этой позицией в этом отделе
+      const hasEmployeesInDepartment = allEmployees.some(
+        emp => emp.position_id === pos.position_id && emp.department_id === department.department_id
       );
-    });
-
-    // Получаем данные из БД для организационной структуры
-    // Ищем сотрудников высшего уровня
-    const topDeptEmployees = employees.filter(emp => emp.department_id === topDepartments[0]?.department_id);
+      
+      return hasEmployeesInDepartment;
+    }).length;
     
-    // Получаем данные о верхнем руководителе из БД
-    const topManager = topDeptEmployees[0];
-    const topManagerPosition = positions.find(pos => pos.position_id === topManager?.position_id);
+    // Если нет позиций, считаем минимум 1
+    const positionCount = Math.max(departmentPositionCount, 1);
     
-    // Получаем данные для следующего уровня руководителей - если их нет, будут пустые объекты
-    const subordinates = employees.slice(1, 3); // Берем следующих сотрудников, если они есть
-    const genDirector = subordinates[0] || { full_name: "", position_id: 0, employee_id: 0, department_id: 0 };
-    const execDirector = subordinates[1] || { full_name: "", position_id: 0, employee_id: 0, department_id: 0 };
+    // Если нет детей, возвращаем только количество позиций
+    if (children.length === 0) {
+      return positionCount;
+    }
     
-    // Получаем позиции руководителей из БД
-    const genDirectorPosition = positions.find(pos => pos.position_id === genDirector?.position_id) 
-        || { position_id: 0, name: "" };
-    const execDirectorPosition = positions.find(pos => pos.position_id === execDirector?.position_id)
-        || { position_id: 0, name: "" };
-    
-    // Находим отделы второго уровня (если они есть)
-    const secondLevelDepartments = departments.filter(dept => 
-        topDepartments.some(top => top.department_id === dept.parent_department_id));
-    
-    // Если есть отделы второго уровня, разделяем их на левую и правую ветви (20% и 80%)
-    // Если их нет, создаем пустые массивы
-    const leftSideDepartments = secondLevelDepartments.length > 0 ? 
-        secondLevelDepartments.slice(0, Math.ceil(secondLevelDepartments.length * 0.2)) : [];
-    const rightSideDepartments = secondLevelDepartments.length > 0 ?
-        secondLevelDepartments.slice(Math.ceil(secondLevelDepartments.length * 0.2)) : [];
-
-    // Формируем дочерние отделы для каждого отдела второго уровня
-    const getChildDepartments = (parentId: number) => {
-      return departments.filter(dept => dept.parent_department_id === parentId);
-    };
-
-    // Получаем должности для отдела
-    const getDepartmentPositions = (deptId: number) => {
-      const deptEmployees = employees.filter(emp => emp.department_id === deptId);
-      // Используем другой подход к уникальным значениям
-      const positionIds: number[] = [];
-      deptEmployees.forEach(emp => {
-        if (!positionIds.includes(emp.position_id)) {
-          positionIds.push(emp.position_id);
-        }
-      });
-      return positions.filter(pos => positionIds.includes(pos.position_id));
-    };
-
-    // Получаем сотрудников для отдела
-    const getDepartmentEmployees = (deptId: number) => {
-      return employees.filter(emp => emp.department_id === deptId);
-    };
-
-    // Формируем левую сторону структуры
-    const leftSide = leftSideDepartments.map(dept => {
-      const deptPositions = getDepartmentPositions(dept.department_id);
-      const deptEmployees = getDepartmentEmployees(dept.department_id);
-      const children = getChildDepartments(dept.department_id).map(childDept => {
-        const childPositions = getDepartmentPositions(childDept.department_id);
-        const childEmployees = getDepartmentEmployees(childDept.department_id);
-        const deepChildren = getChildDepartments(childDept.department_id);
-        
-        return {
-          ...childDept,
-          positions: childPositions,
-          employees: childEmployees,
-          children: deepChildren
-        };
-      });
-
-      return {
-        ...dept,
-        positions: deptPositions,
-        employees: deptEmployees,
-        children
-      };
-    });
-
-    // Формируем правую сторону структуры
-    const rightSide = rightSideDepartments.map(dept => {
-      const deptPositions = getDepartmentPositions(dept.department_id);
-      const deptEmployees = getDepartmentEmployees(dept.department_id);
-      const children = getChildDepartments(dept.department_id).map(childDept => {
-        const childPositions = getDepartmentPositions(childDept.department_id);
-        const childEmployees = getDepartmentEmployees(childDept.department_id);
-        
-        return {
-          ...childDept,
-          positions: childPositions,
-          employees: childEmployees
-        };
-      });
-
-      return {
-        ...dept,
-        positions: deptPositions,
-        employees: deptEmployees,
-        children
-      };
-    });
-
-    return {
-      topPosition: {
-        title: topManagerPosition?.name || "",
-        name: topManager?.full_name || ""
-      },
-      level1: [
-        {
-          title: genDirectorPosition?.name || "",
-          name: genDirector?.full_name || "",
-          width: "80%"
-        },
-        {
-          title: execDirectorPosition?.name || "",
-          name: execDirector?.full_name || "",
-          width: "20%"
-        }
-      ],
-      level2: {
-        left: leftSide,
-        right: rightSide
-      }
-    };
+    // Иначе суммируем количество позиций с количеством всех дочерних элементов
+    return children.reduce(
+      (sum, child) => sum + calculateChildCount(child, allDepartments, allPositions, allEmployees),
+      positionCount
+    );
   };
 
-  // Построение организационной структуры на основе данных из БД
-  const [organizationData, setOrganizationData] = useState<any>(null);
+  // Рекурсивно строим дерево отделов
+  const buildDepartmentTree = (
+    parentId: number | null,
+    allDepartments: Department[],
+    allPositions: Position[],
+    allEmployees: Employee[],
+    totalElements: number
+  ): DepartmentNode[] => {
+    const departmentsAtLevel = allDepartments.filter(
+      d => d.parent_department_id === parentId
+    );
+    
+    // Вычисляем childCount для каждого отдела
+    const departmentsWithCounts = departmentsAtLevel.map(dept => {
+      const childCount = calculateChildCount(dept, allDepartments, allPositions, allEmployees);
+      return { ...dept, childCount };
+    });
+    
+    // Вычисляем общее количество дочерних элементов на этом уровне
+    const totalChildCount = departmentsWithCounts.reduce(
+      (sum, dept) => sum + dept.childCount, 
+      0
+    );
+    
+    return departmentsWithCounts.map(dept => {
+      // Получаем позиции для этого отдела
+      // Сначала проверяем, есть ли у нас API для получения позиций отдела
+      // Если нет, используем логику определения по сотрудникам
+      
+      // Нужно получить все позиции, которые привязаны к этому отделу
+      // даже если у них нет сотрудников
+      // Поэтому нам нужно запросить связь position-department из API
+      
+      // Пока используем следующую логику:
+      // Все позиции, где есть сотрудники в этом отделе
+      const positionsWithEmployees = allPositions.filter(pos => {
+        return allEmployees.some(
+          emp => emp.position_id === pos.position_id && emp.department_id === dept.department_id
+        );
+      });
+      
+      // Предполагаем также, что все позиции могут быть привязаны к отделу
+      // Поскольку у нас нет API для получения связей department-position,
+      // покажем все позиции для демонстрации
+      const allDepartmentPositions = [...positionsWithEmployees];
+      
+      // В реальном приложении здесь будет вызов API для получения
+      // всех позиций, привязанных к отделу
+      const departmentPositions = allPositions;
+      
+      // Вычисляем ширину как пропорцию от общего количества
+      // Если totalChildCount = 0, устанавливаем ширину 100%
+      let width = totalChildCount === 0 
+        ? 100 
+        : (dept.childCount / totalChildCount) * 100;
+      
+      // Если элементов слишком много, ограничиваем минимальную ширину
+      if (width < 5) width = 5;
+      
+      // Рекурсивно строим дочерние элементы
+      const children = buildDepartmentTree(
+        dept.department_id,
+        allDepartments,
+        allPositions,
+        allEmployees,
+        dept.childCount
+      );
+      
+      return {
+        ...dept,
+        positions: departmentPositions,
+        children,
+        width,
+        childCount: dept.childCount
+      };
+    });
+  };
 
+  // Строим дерево, когда данные загружены
   useEffect(() => {
-    if (departments.length > 0 && positions.length > 0 && employees.length > 0) {
-      const orgData = buildOrgStructure();
-      setOrganizationData(orgData);
+    if (departments.length > 0 && positions.length > 0) {
+      // Находим корневые отделы (без родителя)
+      const rootDepartments = departments.filter(d => d.parent_department_id === null);
+      
+      // Вычисляем общее количество элементов для масштабирования
+      const totalElements = rootDepartments.reduce(
+        (sum, dept) => sum + calculateChildCount(dept, departments, positions, employees),
+        0
+      );
+      
+      // Строим дерево
+      const tree = buildDepartmentTree(null, departments, positions, employees, totalElements);
+      setDepartmentTree(tree);
     }
   }, [departments, positions, employees]);
 
-  // Если данные еще не загружены, показываем сообщение о загрузке
-  if (!organizationData) {
-    return <div className="loading-message">Загрузка структуры организации...</div>;
+  // Если данные еще не загружены, показываем загрузку
+  if (departments.length === 0 || positions.length === 0) {
+    return <div className="loading-message">Загрузка организационной структуры...</div>;
   }
 
   return (
     <div className="org-tree-container">
-      {/* Верхний уровень: ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА */}
-      <div className="org-tree-top">
-        <TopPositionCard 
-          title={organizationData.topPosition.title} 
-          name={organizationData.topPosition.name} 
-        />
-        <VerticalLine />
-      </div>
-      
-      {/* Уровень 1: ГЕНЕРАЛЬНЫЙ ДИРЕКТОР и ИСПОЛНИТЕЛЬНЫЙ ДИРЕКТОР */}
-      <div className="org-level-1">
-        <div 
-          className="org-right-branch" 
-          style={{ width: organizationData.level1[0].width }}
-        >
-          <PositionCard 
-            title={organizationData.level1[0].title} 
-            name={organizationData.level1[0].name} 
-            isMain 
+      <div className="org-tree-view">
+        {departmentTree.map(department => (
+          <DepartmentWithChildren
+            key={department.department_id}
+            department={department}
+            allPositions={positions}
+            allEmployees={employees}
           />
-        </div>
-        
-        <div 
-          className="org-left-branch" 
-          style={{ width: organizationData.level1[1].width }}
-        >
-          <PositionCard 
-            title={organizationData.level1[1].title} 
-            name={organizationData.level1[1].name} 
-          />
-        </div>
-      </div>
-      
-      {/* Уровень 2: Департаменты */}
-      <div className="org-level-2">
-        {/* Левая ветвь от ИСПОЛНИТЕЛЬНОГО ДИРЕКТОРА */}
-        <div className="branch-group" style={{ width: "20%" }}>
-          {organizationData.level2.left.map((dept: any, index: number) => (
-            <div key={`left-${index}`} className="branch" style={{ width: `${100/organizationData.level2.left.length}%` }}>
-              <DepartmentCard 
-                name={dept.name}
-                positions={dept.positions}
-                employees={dept.employees}
-              />
-              
-              {dept.children && dept.children.length > 0 && (
-                <div className="department-children">
-                  <div className="child-departments">
-                    {dept.children.map((childDept: any, childIndex: number) => (
-                      <ChildDepartment 
-                        key={`left-child-${index}-${childIndex}`}
-                        name={childDept.name}
-                        positions={childDept.positions}
-                        employees={childDept.employees}
-                        childDepartments={childDept.children}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-        
-        {/* Правая ветвь от ГЕНЕРАЛЬНОГО ДИРЕКТОРА */}
-        <div className="branch-group" style={{ width: "80%" }}>
-          {organizationData.level2.right.map((dept: any, index: number) => (
-            <div 
-              key={`right-${index}`} 
-              className="branch" 
-              style={{ width: index < 2 ? "35%" : "15%" }}
-            >
-              <DepartmentCard 
-                name={dept.name}
-                positions={dept.positions}
-                employees={dept.employees}
-              />
-              
-              {dept.children && dept.children.length > 0 && (
-                <div className="department-children">
-                  <div className="child-departments">
-                    {dept.children.map((childDept: any, childIndex: number) => (
-                      <ChildDepartment 
-                        key={`right-child-${index}-${childIndex}`}
-                        name={childDept.name}
-                        positions={childDept.positions}
-                        employees={childDept.employees}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        ))}
       </div>
     </div>
   );

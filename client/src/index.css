@@ -380,6 +380,68 @@
   border-left: 2px solid #a40000;
 }
 
+/* Новые стили для динамического организационного дерева */
+.department-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+  position: relative;
+  padding: 10px;
+}
+
+.department-node .department-card {
+  width: 100%;
+  max-width: calc(100% - 20px);
+  margin-bottom: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.department-children {
+  width: 100%;
+  position: relative;
+  padding-top: 30px;
+}
+
+.department-children:before {
+  content: "";
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  width: 2px;
+  height: 15px;
+  background-color: #a40000;
+}
+
+.child-departments {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  position: relative;
+}
+
+.child-departments:before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #a40000;
+}
+
+.position-name-small.empty {
+  color: #888;
+  font-style: italic;
+}
+
+.org-tree-view {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 /* Стили для хедера с картинкой */
 .header-with-image {
   background-color: #a40000;
