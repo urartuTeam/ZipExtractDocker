@@ -366,6 +366,19 @@
   font-size: 0.85rem;
   font-weight: 500;
 }
+
+.department-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+.position-employees-list {
+  margin-top: 10px;
+  margin-left: 15px;
+  padding-left: 10px;
+  border-left: 2px solid #a40000;
+}
 .org-chart {
   width: 100%;
   margin-top: 0.5rem;

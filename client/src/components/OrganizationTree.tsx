@@ -54,10 +54,12 @@ const DepartmentCard = ({ name, positions, employees }: {
   employees: Employee[] 
 }) => {
   return (
-    <div className="department-card">
-      <div className="department-title">{name}</div>
+    <div className="department-group">
+      <div className="department-card">
+        <div className="department-title">{name}</div>
+      </div>
       
-      <div className="position-list">
+      <div className="position-employees-list">
         {positions.map((position) => {
           const positionEmployees = employees.filter(emp => emp.position_id === position.position_id);
           return positionEmployees.map(employee => (
@@ -89,30 +91,30 @@ const ChildDepartment = ({
     <div className="child-department">
       <div className="child-department-card">
         <div className="department-title">{name}</div>
-        
-        <div className="position-list">
-          {positions.map((position) => {
-            const positionEmployees = employees.filter(emp => emp.position_id === position.position_id);
-            return positionEmployees.map(employee => (
-              <div key={`${position.position_id}-${employee.employee_id}`} className="position-employee-card">
-                <div className="position-title-small">{position.name}</div>
-                <div className="position-divider-small"></div>
-                <div className="position-name-small">{employee.full_name}</div>
-              </div>
-            ));
-          })}
-        </div>
-        
-        {childDepartments && childDepartments.length > 0 && (
-          <div className="deep-children">
-            {childDepartments.map(dept => (
-              <div key={dept.department_id} className="deep-child">
-                {dept.name}
-              </div>
-            ))}
-          </div>
-        )}
       </div>
+      
+      <div className="position-employees-list">
+        {positions.map((position) => {
+          const positionEmployees = employees.filter(emp => emp.position_id === position.position_id);
+          return positionEmployees.map(employee => (
+            <div key={`${position.position_id}-${employee.employee_id}`} className="position-employee-card">
+              <div className="position-title-small">{position.name}</div>
+              <div className="position-divider-small"></div>
+              <div className="position-name-small">{employee.full_name}</div>
+            </div>
+          ));
+        })}
+      </div>
+      
+      {childDepartments && childDepartments.length > 0 && (
+        <div className="deep-children">
+          {childDepartments.map(dept => (
+            <div key={dept.department_id} className="deep-child">
+              {dept.name}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
