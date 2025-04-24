@@ -38,15 +38,7 @@ export default function Header({ toggleSidebar, activeTab }: HeaderProps) {
 
   return (
     <header className="w-full border-b border-neutral-200">
-      <div 
-        className="flex items-center justify-between h-16 px-6"
-        style={{
-          backgroundImage: `url(${headerBg})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        }}
-      >
+      <div className="flex items-center justify-between header-with-image px-6">
         <div className="flex items-center">
           <button onClick={toggleSidebar} className="text-white focus:outline-none mr-4">
             <Menu className="h-6 w-6" />
