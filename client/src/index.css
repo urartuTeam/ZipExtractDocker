@@ -74,54 +74,30 @@
 .top-position {
   width: 100%;
   max-width: 500px;
-  background-color: rgb(171, 13, 13);
-  color: white;
+  background-color: #f8f0f0;
+  border: 2px solid #a40000;
   padding: 15px;
-  border-radius: 4px;
-  text-align: left;
+  border-radius: 8px;
+  text-align: center;
   margin-bottom: 15px;
-  position: relative;
 }
 
 .top-position-title {
   font-weight: 700;
-  font-size: 1.2rem;
-  max-width: 70%;
+  font-size: 1.5rem;
+  color: #a40000;
 }
 
 .position-divider {
   width: 60%;
   height: 2px;
-  background-color: rgba(255, 255, 255, 0.2);
-  margin: 8px 0;
+  background-color: #a40000;
+  margin: 10px auto;
 }
 
 .top-position-name {
-  font-size: 1rem;
+  font-size: 1.2rem;
   font-weight: 500;
-}
-
-.position-counter-top {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background-color: rgb(171, 13, 13);
-  color: white;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 0.8rem;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.position-counter-bottom {
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  background-color: rgb(139, 138, 138);
-  color: white;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 0.8rem;
 }
 
 .org-vertical-line {
@@ -159,30 +135,29 @@
 }
 
 .position-card {
-  position: relative;
-  border-radius: 4px;
+  border: 1px solid #a40000;
+  border-radius: 8px;
   padding: 12px;
-  background-color: rgb(171, 13, 13);
-  color: white;
+  background-color: white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   margin-bottom: 10px;
-  text-align: left;
 }
 
 .position-card.main {
-  background-color: rgb(171, 13, 13);
+  border-width: 2px;
 }
 
 .position-title {
   font-weight: 600;
-  font-size: 0.9rem;
-  max-width: 70%;
+  font-size: 1.1rem;
+  color: #a40000;
+  text-align: center;
 }
 
 .position-name {
+  text-align: center;
   margin-top: 8px;
   font-weight: 500;
-  font-size: 0.85rem;
 }
 
 .org-level-2 {
@@ -240,21 +215,20 @@
 
 .department-card {
   width: 100%;
-  border-radius: 4px;
+  border: 1px solid #a40000;
+  border-radius: 8px;
   padding: 10px;
-  background-color: rgb(220, 107, 107);
-  color: white;
+  background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
-  position: relative;
 }
 
 .department-title {
   font-weight: 600;
-  text-align: left;
-  font-size: 0.85rem;
+  color: #a40000;
+  text-align: center;
+  font-size: 0.95rem;
   margin-bottom: 5px;
-  max-width: 70%;
 }
 
 .department-children {
@@ -296,18 +270,17 @@
 }
 
 .child-department-card {
-  border-radius: 4px;
+  border: 1px solid #a40000;
+  border-radius: 6px;
   padding: 8px;
-  background-color: rgb(220, 107, 107);
-  color: white;
-  font-size: 0.8rem;
-  position: relative;
+  background-color: #fffdfd;
+  font-size: 0.85rem;
 }
 
 .deep-children {
   margin-top: 15px;
   padding-left: 15px;
-  border-left: 1px dashed rgba(255, 255, 255, 0.5);
+  border-left: 1px dashed #a40000;
   position: relative;
 }
 
@@ -318,32 +291,32 @@
   left: 0;
   width: 8px;
   height: 1px;
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: #a40000;
 }
 
 .deep-child {
   margin: 5px 0;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 500;
-  color: white;
+  color: #666;
 }
 
 .position-list {
   margin-top: 8px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
 .position-item {
   padding: 4px 8px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  background-color: #f8f0f0;
+  border-radius: 4px;
   margin-bottom: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid #e0c0c0;
 }
 
 .position-item.small {
   padding: 3px 6px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 .position-header {
@@ -355,13 +328,13 @@
 .employee-list {
   margin-top: 5px;
   padding-left: 10px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
 }
 
 .employee-item {
   padding: 2px 6px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: white;
+  border: 1px solid #e0e0e0;
   border-radius: 3px;
   margin-bottom: 2px;
 }
@@ -369,125 +342,22 @@
   width: 100%;
   margin-top: 0.5rem;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.tree-container {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.root-departments {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 40px;
-}
-
-.root-department-item {
-  margin-bottom: 30px;
-}
-
-.top-department {
-  width: 100%;
-  max-width: 600px;
-  margin-bottom: 20px;
-}
-
-.horizontal-tree {
-  width: 100%;
-  margin-top: 2rem;
-  position: relative;
-}
-
-.org-horizontal-branches {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  width: 100%;
-  gap: 20px;
-  position: relative;
-}
-
-.org-horizontal-branches:before {
-  content: "";
-  position: absolute;
-  top: -20px;
-  left: 5%;
-  right: 5%;
-  height: 2px;
-  background-color: #a40000;
-}
-
-.children-container {
-  margin-top: 40px;
-  width: 100%;
-  position: relative;
-}
-
-.children-branches {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-around;
-  gap: 20px;
-  position: relative;
-}
-
-.children-branches:before {
-  content: "";
-  position: absolute;
-  top: -20px;
-  left: 5%;
-  right: 5%;
-  height: 2px;
-  background-color: #a40000;
-}
-
-.children-container:before {
-  content: "";
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  width: 2px;
-  height: 20px;
-  background-color: #a40000;
-  transform: translateX(-50%);
-}
-
-.org-tree-lines {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
-}
-
-.org-tree-line {
-  position: absolute;
-  background-color: #a40000;
 }
 
 .org-level {
   display: flex;
   justify-content: center;
-  margin-bottom: 60px;  /* Увеличено для дерева */
+  margin-bottom: 35px;
   position: relative;
-  width: 100%;
 }
 
 .org-level:not(:last-child):after {
   content: "";
   position: absolute;
   width: 2px;
-  height: 60px;  /* Увеличено для дерева */
+  height: 35px;
   background-color: #a40000;
-  bottom: -60px;  /* Увеличено для дерева */
+  bottom: -35px;
   left: 50%;
   transform: translateX(-50%);
 }
@@ -551,87 +421,29 @@
   flex-wrap: wrap;
   justify-content: space-around;
   width: 100%;
-  position: relative;
-}
-
-.level-2-branches:before {
-  content: "";
-  position: absolute;
-  top: -20px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: #a40000;
 }
 
 .org-branch {
-  flex: 0 0 calc(33.33% - 20px); /* Делаем 3 колонки */
+  flex: 1;
   min-width: 250px;
-  margin: 0 10px 30px;
+  max-width: 350px;
+  margin: 0 10px 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
-}
-
-.branch-connector {
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  width: 2px;
-  height: 20px;
-  background-color: #a40000;
-  transform: translateX(-50%);
 }
 
 .org-node-header {
-  background-color: rgb(171, 13, 13);
+  background-color: #a40000;
   color: white;
-  padding: 10px 15px;
-  border-radius: 2px; /* Уменьшена скругленность углов */
-  margin-bottom: 15px;
+  padding: 8px 15px;
+  border-radius: 5px;
+  margin-bottom: 10px;
   width: 100%;
-  text-align: left;
+  text-align: center;
   font-weight: bold;
-  font-size: 0.8rem; /* Уменьшен размер шрифта */
+  font-size: 0.9rem;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-  position: relative;
-  min-height: 80px; /* Увеличенная высота блоков */
-  display: flex;
-  align-items: flex-start; /* Выравнивание текста по верху */
-  line-height: 1.1; /* Уменьшение межстрочного интервала */
-  overflow: hidden;
-  overflow-wrap: break-word;
-  word-break: break-word;
-  white-space: normal;
-  max-height: 80px; /* Ограничение высоты */
-}
-
-.position-counter-top {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  background-color: rgb(171, 13, 13);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 3px;
-  font-size: 0.7rem;
-  padding: 2px 6px;
-  min-width: 20px;
-  text-align: center;
-}
-
-.position-counter-bottom {
-  position: absolute;
-  bottom: 5px;
-  right: 5px;
-  background-color: rgb(139, 138, 138);
-  color: white;
-  border-radius: 3px;
-  font-size: 0.7rem;
-  padding: 2px 6px;
-  min-width: 20px;
-  text-align: center;
 }
 
 .org-node-content {
@@ -639,7 +451,7 @@
 }
 
 .org-positions-list {
-  border-left: 2px solid rgba(255, 255, 255, 0.3);
+  border-left: 2px solid #e0e0e0;
   margin-left: 20px;
 }
 
@@ -656,42 +468,37 @@
   top: 8px;
   width: 10px;
   height: 2px;
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: #e0e0e0;
 }
 
 .org-position-header {
-  background-color: rgb(220, 107, 107);
-  color: white;
-  padding: 10px 15px;
-  border-radius: 2px; /* Уменьшена скругленность углов */
-  font-size: 0.8rem; /* Уменьшен размер шрифта */
-  min-height: 50px; /* Увеличенная высота блоков */
+  background-color: #f0e6e6;
+  border: 1px solid #a40000;
+  color: #a40000;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
   display: flex;
-  align-items: flex-start; /* Выравнивание текста по верху */
-  line-height: 1.1; /* Уменьшение межстрочного интервала */
-  position: relative;
-  overflow: hidden;
-  overflow-wrap: break-word;
-  word-break: break-word;
-  white-space: normal;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .org-employees-list {
   margin-top: 5px;
   margin-left: 15px;
-  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  border-left: 1px solid #e0e0e0;
   padding-left: 10px;
 }
 
 .org-employee {
-  background-color: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: white;
+  border: 1px solid #e0e0e0;
   padding: 4px 8px;
-  border-radius: 2px; /* Уменьшена скругленность углов */
+  border-radius: 4px;
   margin-bottom: 3px;
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   position: relative;
-  color: white;
 }
 
 .org-employee:before {
@@ -701,7 +508,7 @@
   top: 50%;
   width: 8px;
   height: 1px;
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: #e0e0e0;
 }
 
 @layer base {
