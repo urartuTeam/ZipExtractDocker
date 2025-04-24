@@ -36,9 +36,23 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { apiRequest } from "@/lib/queryClient";
 
+interface Department {
+  department_id: number;
+  name: string;
+  parent_department_id: number | null;
+}
+
+interface DepartmentLink {
+  position_link_id: number;
+  department_id: number;
+  department_name: string;
+  sort: number;
+}
+
 interface Position {
   position_id: number;
   name: string;
+  departments?: DepartmentLink[];
 }
 
 interface Employee {
@@ -162,9 +176,14 @@ export default function Positions() {
     },
   });
 
-  // Запрос на получение должностей
+  // Запрос на получение должностей с отделами
   const { data: positionsData, isLoading, error } = useQuery<{ status: string, data: Position[] }>({
-    queryKey: ['/api/positions'],
+    queryKey: ['/api/positions/with-departments'],
+  });
+
+  // Запрос на получение отделов
+  const { data: departmentsData } = useQuery<{ status: string, data: Department[] }>({
+    queryKey: ['/api/departments'],
   });
 
   // Запрос на получение сотрудников

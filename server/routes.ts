@@ -220,6 +220,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Получаем должности с информацией о связанных отделах
+  app.get('/api/positions/with-departments', async (req: Request, res: Response) => {
+    try {
+      const positions = await storage.getAllPositions();
+      const positionDepartments = await storage.getAllPositionDepartments();
+      const departments = await storage.getAllDepartments();
+      
+      // Создаем обогащенный список должностей с отделами
+      const positionsWithDepts = positions.map(position => {
+        // Находим все связи position_department для данной должности
+        const links = positionDepartments.filter(pd => pd.position_id === position.position_id);
+        // Находим соответствующие отделы
+        const linkedDepartments = links.map(link => {
+          const dept = departments.find(d => d.department_id === link.department_id);
+          return {
+            position_link_id: link.position_link_id,
+            department_id: link.department_id,
+            department_name: dept?.name || 'Неизвестный отдел',
+            sort: link.sort
+          };
+        });
+        
+        return {
+          ...position,
+          departments: linkedDepartments
+        };
+      });
+      
+      res.json({ status: 'success', data: positionsWithDepts });
+    } catch (error) {
+      console.error('Error fetching positions with departments:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch positions with departments' });
+    }
+  });
+  
   // Связи должностей и отделов (Position Department) endpoints
   app.get('/api/positiondepartments', async (req: Request, res: Response) => {
     try {
@@ -228,6 +263,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching position departments:', error);
       res.status(500).json({ status: 'error', message: 'Failed to fetch position departments' });
+    }
+  });
+  
+  // Создание связи должности с отделом
+  app.post('/api/positiondepartments', async (req: Request, res: Response) => {
+    try {
+      const linkData = req.body;
+      
+      // Проверка наличия обязательных полей
+      if (!linkData.position_id || !linkData.department_id) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Position ID and Department ID are required' 
+        });
+      }
+      
+      // Создаем связь
+      const link = await storage.createPositionDepartment(linkData);
+      res.status(201).json({ status: 'success', data: link });
+    } catch (error) {
+      console.error('Error creating position-department link:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Failed to create position-department link' 
+      });
+    }
+  });
+  
+  // Удаление связи должности с отделом
+  app.delete('/api/positiondepartments/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid link ID' });
+      }
+      
+      const deleted = await storage.deletePositionDepartment(id);
+      if (!deleted) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Position-department link not found' 
+        });
+      }
+      
+      res.json({ status: 'success', message: 'Position-department link deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting position-department link:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Failed to delete position-department link' 
+      });
     }
   });
 
@@ -247,6 +333,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching position:', error);
       res.status(500).json({ status: 'error', message: 'Failed to fetch position' });
+    }
+  });
+  
+  // Получаем информацию о должности с отделами
+  app.get('/api/positions/:id/with-departments', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid position ID' });
+      }
+
+      const position = await storage.getPosition(id);
+      if (!position) {
+        return res.status(404).json({ status: 'error', message: 'Position not found' });
+      }
+      
+      const positionDepartments = await storage.getAllPositionDepartments();
+      const departments = await storage.getAllDepartments();
+      
+      // Находим все связи position_department для данной должности
+      const links = positionDepartments.filter(pd => pd.position_id === position.position_id);
+      // Находим соответствующие отделы
+      const linkedDepartments = links.map(link => {
+        const dept = departments.find(d => d.department_id === link.department_id);
+        return {
+          position_link_id: link.position_link_id,
+          department_id: link.department_id,
+          department_name: dept?.name || 'Неизвестный отдел',
+          sort: link.sort
+        };
+      });
+      
+      const positionWithDepts = {
+        ...position,
+        departments: linkedDepartments
+      };
+      
+      res.json({ status: 'success', data: positionWithDepts });
+    } catch (error) {
+      console.error('Error fetching position with departments:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch position with departments' });
     }
   });
 
