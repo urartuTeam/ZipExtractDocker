@@ -24,7 +24,7 @@ function Router() {
 
   return (
     <Switch>
-      <ProtectedRoute path="/" component={Home} />
+      <Route path="/" component={Home} />
       <ProtectedRoute path="/departments" component={Departments} />
       <ProtectedRoute path="/positions" component={Positions} />
       <ProtectedRoute path="/employees" component={Employees} />
