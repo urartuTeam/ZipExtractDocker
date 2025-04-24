@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
