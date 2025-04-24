@@ -7,11 +7,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
-import Overview from "@/pages/Overview";
-import Services from "@/pages/Services";
-import ApiEndpoints from "@/pages/ApiEndpoints";
-import Database from "@/pages/Database";
-import Logs from "@/pages/Logs";
+import Home from "@/pages/Home";
+import Departments from "@/pages/Departments";
+import Positions from "@/pages/Positions";
+import Employees from "@/pages/Employees";
+import Projects from "@/pages/Projects";
+import Leaves from "@/pages/Leaves";
 import { useLocation } from 'wouter';
 
 function Router() {
@@ -19,11 +20,12 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/" component={Overview} />
-      <Route path="/services" component={Services} />
-      <Route path="/api" component={ApiEndpoints} />
-      <Route path="/database" component={Database} />
-      <Route path="/logs" component={Logs} />
+      <Route path="/" component={Home} />
+      <Route path="/departments" component={Departments} />
+      <Route path="/positions" component={Positions} />
+      <Route path="/employees" component={Employees} />
+      <Route path="/projects" component={Projects} />
+      <Route path="/leaves" component={Leaves} />
       <Route component={NotFound} />
     </Switch>
   );
