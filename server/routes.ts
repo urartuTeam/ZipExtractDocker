@@ -1,4 +1,4 @@
-import type { Express, Request, Response } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
@@ -13,8 +13,20 @@ import {
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
+import { setupAuth } from "./auth";
+
+// Промежуточное ПО для проверки аутентификации
+function isAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ status: 'error', message: 'Требуется авторизация' });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Настройка авторизации
+  setupAuth(app);
+  
   // API routes
   const apiRouter = app.route('/api');
 
