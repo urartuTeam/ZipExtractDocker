@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut, User, Menu } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Link } from 'wouter';
+import headerBg from '../assets/header-bg.png';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -36,29 +37,35 @@ export default function Header({ toggleSidebar, activeTab }: HeaderProps) {
   };
 
   return (
-    <header className="w-full bg-white border-b border-neutral-200">
-      <div className="flex items-center justify-between h-16 px-6">
+    <header className="w-full border-b border-neutral-200">
+      <div 
+        className="flex items-center justify-between h-16 px-6"
+        style={{
+          backgroundImage: `url(${headerBg})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
         <div className="flex items-center">
-          <button onClick={toggleSidebar} className="text-neutral-500 focus:outline-none mr-4">
+          <button onClick={toggleSidebar} className="text-white focus:outline-none mr-4">
             <Menu className="h-6 w-6" />
           </button>
-          <h1 className="text-xl font-semibold text-neutral-800">
-            {getTitle()}
-          </h1>
+          {/* Убираем заголовок */}
         </div>
         <div className="flex items-center space-x-4">
           {user && (
             <>
               <div className="hidden md:flex items-center">
-                <User className="w-5 h-5 mr-2 text-neutral-500" />
-                <span className="text-sm font-medium text-neutral-700">{user.username}</span>
+                <User className="w-5 h-5 mr-2 text-white" />
+                <span className="text-sm font-medium text-white">{user.username}</span>
               </div>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={handleLogout}
                 disabled={logoutMutation.isPending}
-                className="text-neutral-700 border-neutral-300 hover:bg-neutral-100"
+                className="text-white border-white hover:bg-white/20"
               >
                 <LogOut className="w-4 h-4 mr-2" />
                 Выйти
@@ -66,7 +73,7 @@ export default function Header({ toggleSidebar, activeTab }: HeaderProps) {
             </>
           )}
           {!user && (
-            <Button asChild variant="default" size="sm">
+            <Button asChild variant="outline" size="sm" className="text-white border-white hover:bg-white/20">
               <Link href="/auth">Войти</Link>
             </Button>
           )}
