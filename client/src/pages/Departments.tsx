@@ -313,9 +313,8 @@ export default function Departments() {
                                 Изменить
                               </Button>
                               <Button 
-                                variant="outline" 
+                                variant="destructive" 
                                 size="sm" 
-                                className="text-red-500"
                                 onClick={() => handleDelete(department)}
                                 disabled={hasEmployees || hasChildDepartments}
                                 title={

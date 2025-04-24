@@ -282,9 +282,8 @@ export default function Positions() {
                                 Изменить
                               </Button>
                               <Button 
-                                variant="outline" 
+                                variant="destructive" 
                                 size="sm" 
-                                className="text-red-500"
                                 onClick={() => handleDelete(position)}
                                 disabled={usedByEmployees}
                                 title={usedByEmployees ? "Невозможно удалить: должность назначена сотрудникам" : ""}

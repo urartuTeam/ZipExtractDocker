@@ -376,9 +376,8 @@ export default function Leaves() {
                                 Изменить
                               </Button>
                               <Button 
-                                variant="outline" 
+                                variant="destructive" 
                                 size="sm" 
-                                className="text-red-500"
                                 onClick={() => handleDelete(leave)}
                               >
                                 Удалить

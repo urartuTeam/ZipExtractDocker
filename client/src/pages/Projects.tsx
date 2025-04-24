@@ -359,9 +359,8 @@ export default function Projects() {
                                 Изменить
                               </Button>
                               <Button 
-                                variant="outline" 
+                                variant="destructive" 
                                 size="sm" 
-                                className="text-red-500"
                                 onClick={() => handleDelete(project)}
                                 disabled={hasEmployees}
                                 title={hasEmployees ? "Невозможно удалить: к проекту привязаны сотрудники" : ""}

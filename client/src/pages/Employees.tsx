@@ -416,9 +416,8 @@ export default function Employees() {
                                 Изменить
                               </Button>
                               <Button 
-                                variant="outline" 
+                                variant="destructive" 
                                 size="sm"
-                                className="text-red-500"
                                 onClick={() => handleDelete(employee)}
                                 disabled={!canDelete}
                                 title={!canDelete ? "Невозможно удалить: сотрудник является руководителем" : ""}
