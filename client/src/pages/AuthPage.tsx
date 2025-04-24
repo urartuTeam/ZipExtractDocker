@@ -16,6 +16,7 @@ const loginSchema = z.object({
   password: z.string().min(1, { message: 'Пароль обязателен' }),
 });
 
+// Закомментировал схему регистрации, но оставил её для возможного использования в будущем
 const registerSchema = z.object({
   username: z.string().min(3, { message: 'Имя пользователя должно содержать минимум 3 символа' }),
   email: z.string().email({ message: 'Введите корректный email' }),
@@ -30,7 +31,8 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
-  const [activeTab, setActiveTab] = useState<string>('login');
+  // Закомментировал управление активной вкладкой, т.к. теперь она всегда "login"
+  // const [activeTab, setActiveTab] = useState<string>('login');
   const { user, loginMutation, registerMutation } = useAuth();
 
   const loginForm = useForm<LoginFormValues>({
@@ -41,6 +43,7 @@ export default function AuthPage() {
     },
   });
 
+  // Закомментировал форму регистрации, но оставил её для возможного использования в будущем
   const registerForm = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues: {
@@ -71,9 +74,11 @@ export default function AuthPage() {
         <div className="lg:w-1/2 p-8 lg:p-12">
           <h1 className="text-3xl font-bold text-primary mb-4">Система управления персоналом</h1>
           <p className="text-neutral-600 mb-8">
-            Войдите или зарегистрируйтесь, чтобы получить доступ к системе управления персоналом.
+            Войдите в систему для доступа к управлению персоналом.
           </p>
 
+          {/* Закомментировал вкладки, оставив только форму входа */}
+          {/* 
           <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">
               <TabsTrigger value="login">Вход</TabsTrigger>
@@ -81,64 +86,71 @@ export default function AuthPage() {
             </TabsList>
 
             <TabsContent value="login">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Вход в систему</CardTitle>
-                  <CardDescription>
-                    Введите ваши учетные данные для входа
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Form {...loginForm}>
-                    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-                      <FormField
-                        control={loginForm.control}
-                        name="username"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Имя пользователя</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Введите имя пользователя" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={loginForm.control}
-                        name="password"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Пароль</FormLabel>
-                            <FormControl>
-                              <Input type="password" placeholder="Введите пароль" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <Button 
-                        type="submit" 
-                        className="w-full" 
-                        disabled={loginMutation.isPending}
-                      >
-                        {loginMutation.isPending ? 'Вход...' : 'Войти'}
-                      </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-                <CardFooter className="flex justify-center">
-                  <p className="text-sm text-neutral-500">
-                    Нет аккаунта?{' '}
-                    <button 
-                      onClick={() => setActiveTab('register')}
-                      className="text-primary hover:underline"
-                    >
-                      Зарегистрироваться
-                    </button>
-                  </p>
-                </CardFooter>
-              </Card>
+          */}
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Вход в систему</CardTitle>
+              <CardDescription>
+                Введите ваши учетные данные для входа
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...loginForm}>
+                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                  <FormField
+                    control={loginForm.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Имя пользователя</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Введите имя пользователя" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={loginForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Пароль</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="Введите пароль" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button 
+                    type="submit" 
+                    className="w-full" 
+                    disabled={loginMutation.isPending}
+                  >
+                    {loginMutation.isPending ? 'Вход...' : 'Войти'}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+            {/* Закомментировал ссылку на регистрацию 
+            <CardFooter className="flex justify-center">
+              <p className="text-sm text-neutral-500">
+                Нет аккаунта?{' '}
+                <button 
+                  onClick={() => setActiveTab('register')}
+                  className="text-primary hover:underline"
+                >
+                  Зарегистрироваться
+                </button>
+              </p>
+            </CardFooter>
+            */}
+          </Card>
+          
+          {/* Закомментированная вкладка регистрации */}
+          {/*
             </TabsContent>
 
             <TabsContent value="register">
@@ -232,6 +244,7 @@ export default function AuthPage() {
               </Card>
             </TabsContent>
           </Tabs>
+          */}
         </div>
         
         <div className="hidden lg:block lg:w-1/2 bg-gradient-to-r from-primary to-primary-foreground p-12 text-white">
