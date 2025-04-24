@@ -404,73 +404,88 @@ const OrganizationTree: React.FC = () => {
     
     return (
       <div className="org-chart">
-        {/* Уровень корневых департаментов */}
-        {sortedDepartments.map((dept: any) => {
-          // Подсчитываем статистику
-          const projectsCount = (projectsByDept[dept.department_id] || []).length;
-          const employeesCount = getTotalEmployees(dept.department_id);
-          const deptPositions = positionsByDept[dept.department_id] || [];
-          const childDepts = deptsByParent[dept.department_id] || [];
-          
-          return (
-            <div key={dept.department_id} className="org-level">
-              {/* Узел департамента */}
-              <div className="org-branch">
-                <div className="org-node-header" style={{ backgroundColor: "rgb(171, 13, 13)" }}>
-                  {dept.name}
-                  <div className="position-counter-top">{projectsCount}</div>
-                  <div className="position-counter-bottom">{employeesCount}</div>
-                </div>
-                
-                {/* Должности департамента */}
-                {deptPositions.length > 0 && (
-                  <div className="org-node-content">
-                    <div className="org-positions-list">
-                      {deptPositions.map((pos: any) => {
-                        const posEmployees = employeesByPosition[pos.position_id] || [];
-                        
-                        return (
-                          <div key={pos.position_id} className="org-position">
-                            <div className="org-position-header">
-                              {pos.name}
-                              <div className="position-counter-top">{posEmployees.length}</div>
-                            </div>
-                            
-                            {/* Сотрудники на должности */}
-                            {posEmployees.length > 0 && (
-                              <div className="org-employees-list">
-                                {posEmployees.map((emp: any) => (
-                                  <div key={emp.employee_id} className="org-employee">
-                                    {emp.last_name} {emp.first_name?.charAt(0)}.{emp.middle_name ? ` ${emp.middle_name.charAt(0)}.` : ''}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-                
-                {/* Дочерние департаменты (если есть) */}
-                {childDepts.length > 0 && (
-                  <div className="level-2-container">
-                    <div className="level-2-branches">
-                      {childDepts.map((childDept: any) => renderChildDepartment(childDept, 1))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {/* Уровень корневых департаментов - здесь только один верхний департамент */}
+        {sortedDepartments.length > 0 && (
+          <div className="tree-container">
+            {/* Отображаем только первый (главный) департамент в корне */}
+            {renderTopDepartment(sortedDepartments[0])}
+            
+            {/* Нижние уровни организуем в виде горизонтального дерева */}
+            {renderChildrenTree(sortedDepartments[0])}
+          </div>
+        )}
       </div>
     );
   };
   
-  // Рендер дочернего департамента (рекурсивно)
-  const renderChildDepartment = (dept: any, level: number) => {
+  // Рендерим верхний (корневой) департамент
+  const renderTopDepartment = (dept: any) => {
+    const projectsCount = (projectsByDept[dept.department_id] || []).length;
+    const employeesCount = getTotalEmployees(dept.department_id);
+    const deptPositions = positionsByDept[dept.department_id] || [];
+    
+    return (
+      <div className="top-department">
+        {/* Блок департамента */}
+        <div className="org-node-header" style={{ backgroundColor: "rgb(171, 13, 13)" }}>
+          {dept.name}
+          <div className="position-counter-top">{projectsCount}</div>
+          <div className="position-counter-bottom">{employeesCount}</div>
+        </div>
+        
+        {/* Должности и сотрудники департамента */}
+        {deptPositions.length > 0 && (
+          <div className="org-node-content">
+            <div className="org-positions-list">
+              {deptPositions.map((pos: any) => {
+                const posEmployees = employeesByPosition[pos.position_id] || [];
+                
+                return (
+                  <div key={pos.position_id} className="org-position">
+                    <div className="org-position-header">
+                      {pos.name}
+                      <div className="position-counter-top">{posEmployees.length}</div>
+                    </div>
+                    
+                    {/* Сотрудники на должности */}
+                    {posEmployees.length > 0 && (
+                      <div className="org-employees-list">
+                        {posEmployees.map((emp: any) => (
+                          <div key={emp.employee_id} className="org-employee">
+                            {emp.last_name} {emp.first_name?.charAt(0)}.{emp.middle_name ? ` ${emp.middle_name.charAt(0)}.` : ''}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+  
+  // Рендерим дочерние департаменты в виде дерева
+  const renderChildrenTree = (dept: any) => {
+    const childDepts = deptsByParent[dept.department_id] || [];
+    
+    if (childDepts.length === 0) return null;
+    
+    return (
+      <div className="horizontal-tree">
+        <div className="org-level">
+          <div className="org-horizontal-branches">
+            {childDepts.map((childDept: any) => renderHorizontalBranch(childDept, 1))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
+  // Рендер дочернего департамента как горизонтальной ветви (рекурсивно)
+  const renderHorizontalBranch = (dept: any, level: number) => {
     const projectsCount = (projectsByDept[dept.department_id] || []).length;
     const employeesCount = getTotalEmployees(dept.department_id);
     const deptPositions = positionsByDept[dept.department_id] || [];
@@ -481,13 +496,14 @@ const OrganizationTree: React.FC = () => {
     
     return (
       <div key={dept.department_id} className="org-branch">
+        <div className="branch-connector"></div>
         <div className="org-node-header" style={{ backgroundColor: bgColor }}>
           {dept.name}
           <div className="position-counter-top">{projectsCount}</div>
           <div className="position-counter-bottom">{employeesCount}</div>
         </div>
         
-        {/* Должности департамента */}
+        {/* Должности департамента и их сотрудники */}
         {deptPositions.length > 0 && (
           <div className="org-node-content">
             <div className="org-positions-list">
@@ -518,11 +534,11 @@ const OrganizationTree: React.FC = () => {
           </div>
         )}
         
-        {/* Дочерние департаменты (если есть) - рекурсивный вызов */}
+        {/* Дочерние департаменты (если есть) - отображаем рекурсивно */}
         {childDepts.length > 0 && (
-          <div className="level-2-container">
-            <div className="level-2-branches">
-              {childDepts.map((childDept: any) => renderChildDepartment(childDept, level + 1))}
+          <div className="children-container">
+            <div className="children-branches">
+              {childDepts.map((childDept: any) => renderHorizontalBranch(childDept, level + 1))}
             </div>
           </div>
         )}

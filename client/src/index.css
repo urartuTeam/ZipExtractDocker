@@ -374,6 +374,79 @@
   align-items: center;
 }
 
+.tree-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.top-department {
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 40px;
+}
+
+.horizontal-tree {
+  width: 100%;
+  margin-top: 2rem;
+  position: relative;
+}
+
+.org-horizontal-branches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  gap: 20px;
+  position: relative;
+}
+
+.org-horizontal-branches:before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: 5%;
+  right: 5%;
+  height: 2px;
+  background-color: #a40000;
+}
+
+.children-container {
+  margin-top: 40px;
+  width: 100%;
+  position: relative;
+}
+
+.children-branches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 20px;
+  position: relative;
+}
+
+.children-branches:before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: 5%;
+  right: 5%;
+  height: 2px;
+  background-color: #a40000;
+}
+
+.children-container:before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  width: 2px;
+  height: 20px;
+  background-color: #a40000;
+  transform: translateX(-50%);
+}
+
 .org-tree-lines {
   position: absolute;
   top: 0;
@@ -481,13 +554,23 @@
 }
 
 .org-branch {
-  flex: 1;
+  flex: 0 0 calc(33.33% - 20px); /* Делаем 3 колонки */
   min-width: 250px;
-  max-width: 350px;
-  margin: 0 10px 20px;
+  margin: 0 10px 30px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
+}
+
+.branch-connector {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  width: 2px;
+  height: 20px;
+  background-color: #a40000;
+  transform: translateX(-50%);
 }
 
 .org-node-header {
