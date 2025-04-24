@@ -47,21 +47,178 @@
 --radius: 0.5rem;
   }
 
-/* Добавляем стили для организационной структуры */
+/* Добавляем стили для организационной структуры в виде дерева */
 .org-chart {
+  width: 100%;
   margin-top: 0.5rem;
-  display: grid;
-  gap: 1.5rem;
+  text-align: center;
+}
+
+.org-level {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 35px;
+  position: relative;
+}
+
+.org-level:not(:last-child):after {
+  content: "";
+  position: absolute;
+  width: 2px;
+  height: 35px;
+  background-color: #a40000;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .org-node {
-  margin-bottom: 0.5rem;
+  display: inline-block;
+  margin: 0 15px;
+  position: relative;
+  min-width: 200px;
 }
 
-@media (min-width: 1024px) {
-  .org-chart {
-    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  }
+.level-1-container {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  margin-bottom: 35px;
+}
+
+.level-1-container:after {
+  content: "";
+  position: absolute;
+  width: 80%;
+  height: 2px;
+  background-color: #a40000;
+  bottom: -15px;
+  left: 10%;
+}
+
+.level-1-nodes {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.level-1-node {
+  padding: 10px;
+  position: relative;
+}
+
+.level-1-node:after {
+  content: "";
+  position: absolute;
+  width: 2px;
+  height: 15px;
+  background-color: #a40000;
+  bottom: -15px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.level-2-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.level-2-branches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  width: 100%;
+}
+
+.org-branch {
+  flex: 1;
+  min-width: 250px;
+  max-width: 350px;
+  margin: 0 10px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.org-node-header {
+  background-color: #a40000;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+  width: 100%;
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.9rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.org-node-content {
+  width: 100%;
+}
+
+.org-positions-list {
+  border-left: 2px solid #e0e0e0;
+  margin-left: 20px;
+}
+
+.org-position {
+  margin-bottom: 5px;
+  padding-left: 10px;
+  position: relative;
+}
+
+.org-position:before {
+  content: "";
+  position: absolute;
+  left: -2px;
+  top: 8px;
+  width: 10px;
+  height: 2px;
+  background-color: #e0e0e0;
+}
+
+.org-position-header {
+  background-color: #f0e6e6;
+  border: 1px solid #a40000;
+  color: #a40000;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.org-employees-list {
+  margin-top: 5px;
+  margin-left: 15px;
+  border-left: 1px solid #e0e0e0;
+  padding-left: 10px;
+}
+
+.org-employee {
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+  font-size: 0.85rem;
+  position: relative;
+}
+
+.org-employee:before {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  width: 8px;
+  height: 1px;
+  background-color: #e0e0e0;
 }
 
 @layer base {

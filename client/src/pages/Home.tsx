@@ -353,12 +353,89 @@ export default function Home() {
               <Skeleton className="h-8 w-1/2 ml-8" />
             </div>
           ) : getFirstLevelDepartments().length > 0 ? (
-            <div className="org-chart">
-              {getFirstLevelDepartments().map((department, index) => (
-                <div key={`root-${department.department_id}-${index}`} className="org-tree">
-                  {renderOrgTree(department)}
+            <div className="org-tree-container">
+              {/* Главное руководство */}
+              <div className="org-level">
+                <div className="org-node">
+                  <div className="org-node-header">ГЕНЕРАЛЬНЫЙ ДИРЕКТОР</div>
                 </div>
-              ))}
+              </div>
+              
+              {/* Верхний уровень */}
+              <div className="level-1-container">
+                <div className="level-1-nodes">
+                  {getRootDepartments().map((rootDept) => (
+                    rootDept.name === "Администрация" ? (
+                      <div key={`level1-${rootDept.department_id}`} className="level-1-node">
+                        <div className="org-node-header">{rootDept.name}</div>
+                      </div>
+                    ) : null
+                  ))}
+                </div>
+              </div>
+              
+              {/* Второй уровень отделов - которые подчиняются администрации */}
+              <div className="level-2-container">
+                <div className="level-2-branches">
+                  {getFirstLevelDepartments().map((department, index) => (
+                    <div key={`dept-${department.department_id}-${index}`} className="org-branch">
+                      <div className="org-node-header">{department.name}</div>
+                      <div className="org-node-content">
+                        {/* Должности отдела */}
+                        <div className="org-positions-list">
+                          {getPositionsForDepartment(department.department_id).map((position) => {
+                            const positionDeptKey = `${position.position_id}-${department.department_id}`;
+                            const isPositionExpanded = expandedPositions[positionDeptKey] || false;
+                            const employees = getEmployeesForPositionInDepartment(
+                              position.position_id, 
+                              department.department_id
+                            );
+                            
+                            return (
+                              <div key={positionDeptKey} className="org-position">
+                                <div 
+                                  className="org-position-header"
+                                  onClick={() => togglePosition(positionDeptKey)}
+                                >
+                                  <span>{position.positionName}</span>
+                                  <span>
+                                    {isPositionExpanded ? 
+                                      <ChevronDown className="h-4 w-4" /> : 
+                                      <ChevronRight className="h-4 w-4" />
+                                    }
+                                  </span>
+                                </div>
+                                
+                                {isPositionExpanded && employees.length > 0 && (
+                                  <div className="org-employees-list">
+                                    {employees.map(employee => (
+                                      <div key={employee.employee_id} className="org-employee">
+                                        {employee.full_name}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                        
+                        {/* Подотделы */}
+                        {getChildDepartments(department.department_id).length > 0 && (
+                          <div className="org-subdepartments mt-4">
+                            <h4 className="text-sm font-medium mb-2 ml-2">Подчинённые отделы:</h4>
+                            {getChildDepartments(department.department_id).map((subDept) => (
+                              <div key={`subdept-${subDept.department_id}`} className="ml-4 mb-2">
+                                <div className="org-node-header text-sm">{subDept.name}</div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           ) : (
             <div className="text-center py-12 text-neutral-500">
