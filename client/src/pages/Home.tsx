@@ -374,7 +374,7 @@ export default function Home() {
                 </div>
               </div>
               
-              {/* Второй уровень отделов - которые подчиняются администрации */}
+              {/* Второй уровень отделов и все вложенные уровни */}
               <div className="level-2-container">
                 <div className="level-2-branches">
                   {getFirstLevelDepartments().map((department, index) => (
@@ -420,15 +420,124 @@ export default function Home() {
                           })}
                         </div>
                         
-                        {/* Подотделы */}
+                        {/* Подотделы - рекурсивно отображаем всю вложенную иерархию */}
                         {getChildDepartments(department.department_id).length > 0 && (
                           <div className="org-subdepartments mt-4">
                             <h4 className="text-sm font-medium mb-2 ml-2">Подчинённые отделы:</h4>
-                            {getChildDepartments(department.department_id).map((subDept) => (
-                              <div key={`subdept-${subDept.department_id}`} className="ml-4 mb-2">
-                                <div className="org-node-header text-sm">{subDept.name}</div>
-                              </div>
-                            ))}
+                            <div className="org-child-departments ml-2">
+                              {getChildDepartments(department.department_id).map((subDept) => (
+                                <div key={`subdept-${subDept.department_id}`} className="org-child-department mb-4">
+                                  <div className="org-node-header text-sm">{subDept.name}</div>
+                                  
+                                  {/* Должности подотдела */}
+                                  <div className="org-positions-list ml-3 mt-2">
+                                    {getPositionsForDepartment(subDept.department_id).map((position) => {
+                                      const positionDeptKey = `${position.position_id}-${subDept.department_id}`;
+                                      const isPositionExpanded = expandedPositions[positionDeptKey] || false;
+                                      const employees = getEmployeesForPositionInDepartment(
+                                        position.position_id, 
+                                        subDept.department_id
+                                      );
+                                      
+                                      return (
+                                        <div key={positionDeptKey} className="org-position">
+                                          <div 
+                                            className="org-position-header"
+                                            onClick={() => togglePosition(positionDeptKey)}
+                                          >
+                                            <span>{position.positionName}</span>
+                                            <span>
+                                              {isPositionExpanded ? 
+                                                <ChevronDown className="h-4 w-4" /> : 
+                                                <ChevronRight className="h-4 w-4" />
+                                              }
+                                            </span>
+                                          </div>
+                                          
+                                          {isPositionExpanded && employees.length > 0 && (
+                                            <div className="org-employees-list">
+                                              {employees.map(employee => (
+                                                <div key={employee.employee_id} className="org-employee">
+                                                  {employee.full_name}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                  
+                                  {/* Третий уровень вложенности */}
+                                  {getChildDepartments(subDept.department_id).length > 0 && (
+                                    <div className="org-third-level ml-4 mt-2">
+                                      <h5 className="text-xs font-medium mb-1">Вложенные отделы:</h5>
+                                      {getChildDepartments(subDept.department_id).map((thirdLevelDept) => (
+                                        <div key={`third-level-${thirdLevelDept.department_id}`} className="mb-2">
+                                          <div className="org-node-header text-xs">{thirdLevelDept.name}</div>
+                                          
+                                          {/* Должности отдела третьего уровня */}
+                                          <div className="org-positions-list ml-2 mt-1">
+                                            {getPositionsForDepartment(thirdLevelDept.department_id).map((position) => {
+                                              const positionDeptKey = `${position.position_id}-${thirdLevelDept.department_id}`;
+                                              const isPositionExpanded = expandedPositions[positionDeptKey] || false;
+                                              const employees = getEmployeesForPositionInDepartment(
+                                                position.position_id, 
+                                                thirdLevelDept.department_id
+                                              );
+                                              
+                                              return (
+                                                <div key={positionDeptKey} className="org-position">
+                                                  <div 
+                                                    className="org-position-header text-xs"
+                                                    onClick={() => togglePosition(positionDeptKey)}
+                                                  >
+                                                    <span>{position.positionName}</span>
+                                                    <span>
+                                                      {isPositionExpanded ? 
+                                                        <ChevronDown className="h-3 w-3" /> : 
+                                                        <ChevronRight className="h-3 w-3" />
+                                                      }
+                                                    </span>
+                                                  </div>
+                                                  
+                                                  {isPositionExpanded && employees.length > 0 && (
+                                                    <div className="org-employees-list">
+                                                      {employees.map(employee => (
+                                                        <div key={employee.employee_id} className="org-employee text-xs">
+                                                          {employee.full_name}
+                                                        </div>
+                                                      ))}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                          
+                                          {/* Четвертый уровень и далее */}
+                                          {getChildDepartments(thirdLevelDept.department_id).length > 0 && (
+                                            <div className="ml-2 mt-1 pl-2 border-l-2 border-dashed border-gray-200">
+                                              <h6 className="text-xs italic font-medium ml-1">Дочерние:</h6>
+                                              {getChildDepartments(thirdLevelDept.department_id).map((deepDept) => (
+                                                <div key={`deep-dept-${deepDept.department_id}`} className="ml-2 mb-1">
+                                                  <div className="text-xs font-medium">{deepDept.name}</div>
+                                                  {getPositionsForDepartment(deepDept.department_id).length > 0 && (
+                                                    <div className="ml-2 text-xs text-gray-500">
+                                                      ({getPositionsForDepartment(deepDept.department_id).length} должностей)
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
