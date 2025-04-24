@@ -4,8 +4,9 @@ import { Link } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight, ChevronDown, Users, UserCircle, Building, User } from 'lucide-react';
+import { ChevronRight, ChevronDown, Users, UserCircle, Building, User, LogInIcon } from 'lucide-react';
 import { useAuth } from "@/hooks/use-auth";
+import OrganizationTree from "@/components/OrganizationTree";
 
 // Типы данных для структуры организации
 type Department = {

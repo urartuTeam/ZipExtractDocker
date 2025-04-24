@@ -48,6 +48,296 @@
   }
 
 /* Добавляем стили для организационной структуры в виде дерева */
+.org-tree-container {
+  width: 100%;
+  padding: 20px;
+  overflow-x: auto;
+  min-height: 600px;
+  position: relative;
+}
+
+.org-tree-view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.org-tree-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+.top-position {
+  width: 100%;
+  max-width: 500px;
+  background-color: #f8f0f0;
+  border: 2px solid #a40000;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.top-position-title {
+  font-weight: 700;
+  font-size: 1.5rem;
+  color: #a40000;
+}
+
+.position-divider {
+  width: 60%;
+  height: 2px;
+  background-color: #a40000;
+  margin: 10px auto;
+}
+
+.top-position-name {
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.org-vertical-line {
+  width: 2px;
+  height: 40px;
+  background-color: #a40000;
+  margin: 8px 0;
+}
+
+.org-level-1 {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 30px;
+  position: relative;
+}
+
+.org-level-1:after {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  width: 80%;
+  height: 2px;
+  background-color: #a40000;
+  transform: translateX(-50%);
+}
+
+.org-left-branch {
+  padding: 10px;
+}
+
+.org-right-branch {
+  padding: 10px;
+}
+
+.position-card {
+  border: 1px solid #a40000;
+  border-radius: 8px;
+  padding: 12px;
+  background-color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 10px;
+}
+
+.position-card.main {
+  border-width: 2px;
+}
+
+.position-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #a40000;
+  text-align: center;
+}
+
+.position-name {
+  text-align: center;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.org-level-2 {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 40px;
+  position: relative;
+}
+
+.org-level-2:before {
+  content: "";
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  height: 30px;
+  width: 2px;
+  background-color: #a40000;
+}
+
+.branch-group {
+  display: flex;
+  position: relative;
+}
+
+.branch-group:before {
+  content: "";
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  width: 80%;
+  height: 2px;
+  background-color: #a40000;
+  transform: translateX(-50%);
+}
+
+.branch {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding: 0 10px;
+}
+
+.branch:before {
+  content: "";
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  height: 15px;
+  width: 2px;
+  background-color: #a40000;
+}
+
+.department-card {
+  width: 100%;
+  border: 1px solid #a40000;
+  border-radius: 8px;
+  padding: 10px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.department-title {
+  font-weight: 600;
+  color: #a40000;
+  text-align: center;
+  font-size: 0.95rem;
+  margin-bottom: 5px;
+}
+
+.department-children {
+  margin-top: 20px;
+  width: 100%;
+  position: relative;
+}
+
+.department-children:before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 2px;
+  height: 10px;
+  background-color: #a40000;
+}
+
+.child-departments {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  position: relative;
+}
+
+.child-departments:before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 10%;
+  right: 10%;
+  height: 2px;
+  background-color: #a40000;
+}
+
+.child-department {
+  width: calc(50% - 10px);
+  margin: 5px;
+}
+
+.child-department-card {
+  border: 1px solid #a40000;
+  border-radius: 6px;
+  padding: 8px;
+  background-color: #fffdfd;
+  font-size: 0.85rem;
+}
+
+.deep-children {
+  margin-top: 15px;
+  padding-left: 15px;
+  border-left: 1px dashed #a40000;
+  position: relative;
+}
+
+.deep-children:before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 8px;
+  height: 1px;
+  background-color: #a40000;
+}
+
+.deep-child {
+  margin: 5px 0;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #666;
+}
+
+.position-list {
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+
+.position-item {
+  padding: 4px 8px;
+  background-color: #f8f0f0;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  border: 1px solid #e0c0c0;
+}
+
+.position-item.small {
+  padding: 3px 6px;
+  font-size: 0.8rem;
+}
+
+.position-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.employee-list {
+  margin-top: 5px;
+  padding-left: 10px;
+  font-size: 0.8rem;
+}
+
+.employee-item {
+  padding: 2px 6px;
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 3px;
+  margin-bottom: 2px;
+}
 .org-chart {
   width: 100%;
   margin-top: 0.5rem;
