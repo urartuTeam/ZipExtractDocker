@@ -1,0 +1,54 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: app_db
+      POSTGRES_USER: app_user
+      POSTGRES_PASSWORD: secret
+    ports: ["5432:5432"]
+    volumes: [postgres_data:/var/lib/postgresql/data]
+    networks: [app-network]
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U app_user -d app_db"]
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: ["9000:9000"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://app_user:secret@postgres:5432/app_db?sslmode=disable
+    volumes: ['./api:/app']
+    networks: [app-network]
+
+  react:
+    image: node:18
+    working_dir: /app
+    volumes: ['./react:/app']
+    ports: ["3000:3000"]
+    command: sh -c "if [ ! -d node_modules ]; then npm install; fi && npm start -- --host 0.0.0.0"
+    depends_on: [api]
+    networks: [app-network]
+    environment:
+      REACT_APP_API_URL: http://api:9000
+
+  nginx:
+    image: nginx:alpine
+    ports: ["80:80"]
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on: [api, react]
+    networks: [app-network]
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

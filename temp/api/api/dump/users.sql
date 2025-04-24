@@ -1,0 +1,2 @@
+insert into public.users (id, username, password, email, first_name, last_name, role, active, created_at, updated_at)
+values  (1, 'admin', '$2b$10$d8GUxBoVDfI0yL3P9FcUE.CUILhd3hn4/oN3vD00xRuLAT9iC1mLq', 'admin@test.ru', 'Admin', 'Cyfrolab', 'employee', true, '2025-04-23 12:10:51.608227', '2025-04-23 12:10:51.608227');
