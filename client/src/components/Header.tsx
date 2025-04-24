@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { LogOut, User, Menu } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import { Link } from 'wouter';
-import headerBg from '../assets/header-bg.png';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -71,6 +70,17 @@ export default function Header({ toggleSidebar, activeTab }: HeaderProps) {
           )}
         </div>
       </div>
+      {/* Изображение вне зависимости от CSS */}
+      <style>{`
+        .header-with-image {
+          background-image: url('/header-bg.png');
+          background-color: #a40000;
+          background-size: cover;
+          background-position: center;
+          background-repeat: no-repeat;
+          height: 4rem;
+        }
+      `}</style>
     </header>
   );
 }

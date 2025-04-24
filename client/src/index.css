@@ -382,7 +382,8 @@
 
 /* Стили для хедера с картинкой */
 .header-with-image {
-  background-image: url('/header-bg.png');
+  background-color: #a40000;
+  background-image: url('header-bg.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
