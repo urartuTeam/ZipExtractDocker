@@ -9,12 +9,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
-  first_name: text("first_name"),
-  last_name: text("last_name"),
-  role: text("role").default("employee"),
-  active: boolean("active").default(true),
   created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
 });
 
 // Отделы
@@ -158,7 +153,6 @@ export const leavesRelations = relations(leaves, ({ one }) => ({
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   created_at: true,
-  updated_at: true,
 });
 
 export const insertDepartmentSchema = createInsertSchema(departments).omit({
