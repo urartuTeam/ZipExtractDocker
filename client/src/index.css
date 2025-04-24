@@ -13,7 +13,7 @@
 --card-foreground: 20 14.3% 4.1%;
 --border: 20 5.9% 90%;
 --input: 20 5.9% 90%;
---primary: 0 84% 50%;
+--primary: 0 84% 32%;
 --primary-foreground: 0 0% 100%;
 --secondary: 0 10% 95%;
 --secondary-foreground: 0 50% 30%;
@@ -21,7 +21,7 @@
 --accent-foreground: 0 50% 30%;
 --destructive: 0 84.2% 60.2%;
 --destructive-foreground: 60 9.1% 97.8%;
---ring: 0 84% 50%;
+--ring: 0 84% 32%;
 --radius: 0.5rem;
   }
   .dark {
@@ -35,7 +35,7 @@
 --card-foreground: 0 0% 98%;
 --border: 240 3.7% 15.9%;
 --input: 240 3.7% 15.9%;
---primary: 0 84% 50%;
+--primary: 0 84% 32%;
 --primary-foreground: 0 0% 100%;
 --secondary: 240 3.7% 15.9%;
 --secondary-foreground: 0 0% 98%;
@@ -43,9 +43,26 @@
 --accent-foreground: 0 0% 98%;
 --destructive: 0 62.8% 30.6%;
 --destructive-foreground: 0 0% 98%;
---ring: 0 84% 50%;
+--ring: 0 84% 32%;
 --radius: 0.5rem;
   }
+
+/* Добавляем стили для организационной структуры */
+.org-chart {
+  margin-top: 0.5rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.org-node {
+  margin-bottom: 0.5rem;
+}
+
+@media (min-width: 1024px) {
+  .org-chart {
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  }
+}
 
 @layer base {
   * {

@@ -42,7 +42,7 @@ type PositionDepartment = {
 
 export default function Home() {
   const { user } = useAuth();
-  const [expandedDepartments, setExpandedDepartments] = useState<{[key: number]: boolean}>({});
+  const [expandedDepartments, setExpandedDepartments] = useState<{[key: number]: boolean}>({1: true}); // Автоматически раскрываем корневой отдел
   const [expandedPositions, setExpandedPositions] = useState<{[key: string]: boolean}>({});
 
   // Запрос на получение общего количества отделов
@@ -95,6 +95,17 @@ export default function Home() {
   const getRootDepartments = () => {
     return departments?.filter(dept => dept.parent_department_id === null) || [];
   };
+
+  // Получаем следующий уровень отделов (первые подчиненные администрации)
+  const getFirstLevelDepartments = () => {
+    const rootDepartments = getRootDepartments();
+    if (rootDepartments.length === 0) return [];
+
+    // Возвращаем подчиненные отделы администрации
+    return departments?.filter(dept => 
+      dept.parent_department_id === rootDepartments[0].department_id
+    ) || [];
+  };
   
   // Получаем дочерние отделы для указанного отдела
   const getChildDepartments = (parentId: number) => {
@@ -121,14 +132,103 @@ export default function Home() {
     ) || [];
   };
 
-  // Рендер отдела и его содержимого
+  // Функция для рендеринга организационной структуры в виде более наглядного дерева
+  const renderOrgTree = (department: Department) => {
+    const positions = getPositionsForDepartment(department.department_id);
+    const childDepartments = getChildDepartments(department.department_id);
+    const isExpanded = expandedDepartments[department.department_id] || false;
+    
+    return (
+      <div className="org-node">
+        {/* Заголовок отдела */}
+        <div 
+          className="bg-[#a40000] text-white px-4 py-2 rounded-md cursor-pointer mb-2 flex items-center justify-between"
+          onClick={() => toggleDepartment(department.department_id)}
+        >
+          <div className="font-bold">{department.name}</div>
+          <div>
+            {isExpanded ? 
+              <ChevronDown className="h-4 w-4 ml-2" /> : 
+              <ChevronRight className="h-4 w-4 ml-2" />
+            }
+          </div>
+        </div>
+        
+        {isExpanded && (
+          <div className="pl-6 border-l-2 border-gray-300 ml-4">
+            {/* Должности и сотрудники */}
+            {positions.length > 0 && (
+              <div className="mb-4">
+                {positions.map(positionLink => {
+                  const positionDeptKey = `${positionLink.position_id}-${department.department_id}`;
+                  const isPositionExpanded = expandedPositions[positionDeptKey] || false;
+                  const positionEmployees = getEmployeesForPositionInDepartment(
+                    positionLink.position_id, 
+                    department.department_id
+                  );
+                  
+                  return (
+                    <div key={positionDeptKey} className="mb-2">
+                      <div 
+                        className="bg-[#f0e6e6] border-[#a40000] border px-3 py-1 rounded cursor-pointer flex items-center justify-between"
+                        onClick={() => togglePosition(positionDeptKey)}
+                      >
+                        <div className="font-medium text-[#a40000]">{positionLink.positionName}</div>
+                        <div>
+                          {isPositionExpanded ? 
+                            <ChevronDown className="h-4 w-4 ml-2 text-[#a40000]" /> : 
+                            <ChevronRight className="h-4 w-4 ml-2 text-[#a40000]" />
+                          }
+                        </div>
+                      </div>
+                      
+                      {isPositionExpanded && (
+                        <div className="pl-4 border-l border-gray-300 ml-3 mt-1">
+                          {positionEmployees.length > 0 ? (
+                            positionEmployees.map(employee => (
+                              <div 
+                                key={employee.employee_id} 
+                                className="bg-white border border-gray-200 px-3 py-1 rounded my-1 flex items-center"
+                              >
+                                <User className="h-4 w-4 mr-2 text-gray-500" />
+                                <span>{employee.full_name}</span>
+                              </div>
+                            ))
+                          ) : (
+                            <div className="text-sm text-gray-500 italic py-1">Нет сотрудников</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            
+            {/* Подчиненные отделы */}
+            {childDepartments.length > 0 && (
+              <div className="grid gap-4">
+                {childDepartments.map((childDept, index) => (
+                  <div key={`child-${childDept.department_id}-${index}`}>
+                    {renderOrgTree(childDept)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Рендер отдела и его содержимого (старый способ)
   const renderDepartment = (department: Department, level: number = 0) => {
     const isExpanded = expandedDepartments[department.department_id] || false;
     const childDepartments = getChildDepartments(department.department_id);
     const positions = getPositionsForDepartment(department.department_id);
     
     return (
-      <div key={department.department_id} className="ml-4">
+      <div key={`dept-${department.department_id}-${level}`} className="ml-4">
         <div 
           className="flex items-center p-2 cursor-pointer hover:bg-neutral-100 rounded-md"
           onClick={() => toggleDepartment(department.department_id)}
@@ -206,24 +306,45 @@ export default function Home() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Система управления персоналом</h1>
-        {!user && (
-          <Button asChild className="text-lg" variant="default">
-            <Link href="/auth">Войти в систему</Link>
-          </Button>
-        )}
+    <div className="flex flex-col h-screen">
+      {/* Верхняя панель с логотипами и названием */}
+      <div className="bg-[#a40000] text-white p-4 shadow-md flex justify-between items-center">
+        <div className="flex items-center">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" className="h-10 w-10 mr-2">
+            <path d="M13.983 16.957V18.943H20.194V16.957H13.983M2.983 16.957V18.943H9.983V16.957H2.983M8.983 12.957V14.943H15.194V12.957H8.983M13.983 8.957V10.943H20.194V8.957H13.983M2.983 8.957V10.943H9.983V8.957H2.983M8.983 4.957V6.943H15.194V4.957H8.983M18.983 4.957C19.49 4.957 19.983 5.45 19.983 5.957V10.943C19.983 11.45 19.49 11.943 18.983 11.943H15.983V12.957C15.983 13.464 15.49 13.957 14.983 13.957H8.983C8.476 13.957 7.983 13.464 7.983 12.957V11.943H4.983C4.476 11.943 3.983 11.45 3.983 10.943V5.957C3.983 5.45 4.476 4.957 4.983 4.957H7.983V5.957C7.983 6.464 8.476 6.957 8.983 6.957H14.983C15.49 6.957 15.983 6.464 15.983 5.957V4.957H18.983M4.983 16.957C4.476 16.957 3.983 17.45 3.983 17.957V20.943C3.983 21.45 4.476 21.943 4.983 21.943H9.983C10.49 21.943 10.983 21.45 10.983 20.943V17.957C10.983 17.45 10.49 16.957 9.983 16.957H4.983M18.983 16.957C18.476 16.957 17.983 17.45 17.983 17.957V20.943C17.983 21.45 18.476 21.943 18.983 21.943H19.983C20.49 21.943 20.983 21.45 20.983 20.943V17.957C20.983 17.45 20.49 16.957 19.983 16.957H18.983Z" />
+          </svg>
+          <span className="text-xl font-bold">ГРАДОСТРОИТЕЛЬНЫЙ КОМПЛЕКС</span>
+        </div>
+        
+        <div className="text-center flex-1 text-2xl font-bold">
+          Система управления персоналом
+        </div>
+        
+        <div>
+          {!user ? (
+            <Button asChild variant="outline" className="bg-transparent border-white text-white hover:bg-white/20">
+              <Link href="/auth">
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                </svg>
+                Войти
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="outline" className="bg-transparent border-white text-white hover:bg-white/20">
+              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              {user.username}
+            </Button>
+          )}
+        </div>
       </div>
-
-      <Card className="mt-8">
-        <CardHeader>
-          <CardTitle>Структура организации</CardTitle>
-          <CardDescription>
-            Иерархическая структура отделов, должностей и сотрудников
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      
+      {/* Основной контент */}
+      <div className="flex-1 p-4 bg-gray-100 overflow-auto">
+        {/* Организационная структура */}
+        <div className="bg-white rounded-md shadow-sm p-6 mb-8">
           {isLoading ? (
             <div className="space-y-4">
               <Skeleton className="h-12 w-1/2" />
@@ -231,14 +352,18 @@ export default function Home() {
               <Skeleton className="h-8 w-2/3 ml-8" />
               <Skeleton className="h-8 w-1/2 ml-8" />
             </div>
-          ) : getRootDepartments().length > 0 ? (
-            <div>
-              {getRootDepartments().map(department => renderDepartment(department))}
+          ) : getFirstLevelDepartments().length > 0 ? (
+            <div className="org-chart">
+              {getFirstLevelDepartments().map((department, index) => (
+                <div key={`root-${department.department_id}-${index}`} className="org-tree">
+                  {renderOrgTree(department)}
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="text-center py-6 text-neutral-500">
-              <Building className="h-12 w-12 mx-auto mb-2 text-neutral-300" />
-              <p>Нет доступных данных о структуре организации</p>
+            <div className="text-center py-12 text-neutral-500">
+              <Building className="h-16 w-16 mx-auto mb-3 text-neutral-300" />
+              <p className="text-lg">Нет доступных данных о структуре организации</p>
               {!user && (
                 <Button asChild className="mt-4" variant="default">
                   <Link href="/auth">Войти для управления</Link>
@@ -246,75 +371,67 @@ export default function Home() {
               )}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mt-12">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xl font-medium">Отделы</CardTitle>
-            <svg className="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
+        </div>
+        
+        {/* Статистика в нижней части страницы */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="bg-white p-4 rounded-md shadow-sm">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-medium text-lg">Отделы</h3>
+              <svg className="h-5 w-5 text-[#a40000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <div className="text-2xl font-bold">
               {isLoadingDepartments ? (
                 <span className="text-gray-400">Загрузка...</span>
               ) : (
                 departments.length || 0
               )}
             </div>
-            <p className="text-xs text-muted-foreground">Всего отделов</p>
-            <Button asChild className="mt-4 w-full" variant="outline">
+            <Button asChild className="mt-2 w-full" variant="outline">
               <Link href="/departments">Просмотреть все отделы</Link>
             </Button>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xl font-medium">Сотрудники</CardTitle>
-            <svg className="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
+          <div className="bg-white p-4 rounded-md shadow-sm">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-medium text-lg">Сотрудники</h3>
+              <svg className="h-5 w-5 text-[#a40000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <div className="text-2xl font-bold">
               {isLoadingEmployees ? (
                 <span className="text-gray-400">Загрузка...</span>
               ) : (
                 employees.length || 0
               )}
             </div>
-            <p className="text-xs text-muted-foreground">Всего сотрудников</p>
-            <Button asChild className="mt-4 w-full" variant="outline">
+            <Button asChild className="mt-2 w-full" variant="outline">
               <Link href="/employees">Просмотреть всех сотрудников</Link>
             </Button>
-          </CardContent>
-        </Card>
+          </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xl font-medium">Проекты</CardTitle>
-            <svg className="h-6 w-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
+          <div className="bg-white p-4 rounded-md shadow-sm">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-medium text-lg">Проекты</h3>
+              <svg className="h-5 w-5 text-[#a40000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+            </div>
+            <div className="text-2xl font-bold">
               {isLoadingProjects ? (
                 <span className="text-gray-400">Загрузка...</span>
               ) : (
                 projectsResponse?.data.length || 0
               )}
             </div>
-            <p className="text-xs text-muted-foreground">Всего проектов</p>
-            <Button asChild className="mt-4 w-full" variant="outline">
+            <Button asChild className="mt-2 w-full" variant="outline">
               <Link href="/projects">Просмотреть все проекты</Link>
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </div>
   );
