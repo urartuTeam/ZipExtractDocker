@@ -98,32 +98,33 @@ export default function AuthPage() {
             <CardContent>
               <Form {...loginForm}>
                 <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-                  <FormField
-                    control={loginForm.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Имя пользователя</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Введите имя пользователя" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                  <div className="mb-4">
+                    <Label htmlFor="username">Имя пользователя</Label>
+                    <Input 
+                      id="username"
+                      placeholder="Введите имя пользователя" 
+                      value={loginForm.watch("username")}
+                      onChange={(e) => loginForm.setValue("username", e.target.value)}
+                    />
+                    {loginForm.formState.errors.username && (
+                      <p className="text-red-500 text-sm mt-1">{loginForm.formState.errors.username.message}</p>
                     )}
-                  />
-                  <FormField
-                    control={loginForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Пароль</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="Введите пароль" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <Label htmlFor="password">Пароль</Label>
+                    <Input 
+                      id="password"
+                      type="password" 
+                      placeholder="Введите пароль" 
+                      value={loginForm.watch("password")}
+                      onChange={(e) => loginForm.setValue("password", e.target.value)}
+                    />
+                    {loginForm.formState.errors.password && (
+                      <p className="text-red-500 text-sm mt-1">{loginForm.formState.errors.password.message}</p>
                     )}
-                  />
+                  </div>
+                  
                   <Button 
                     type="submit" 
                     className="w-full" 
