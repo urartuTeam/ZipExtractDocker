@@ -1,9 +1,37 @@
 import { useState } from 'react';
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter,
+  DialogDescription
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Employee {
   employee_id: number;
@@ -25,8 +53,73 @@ interface Department {
   name: string;
 }
 
+// Схема валидации для формы
+const employeeFormSchema = z.object({
+  full_name: z.string().min(2, "ФИО должно содержать минимум 2 символа").max(100, "ФИО не должно превышать 100 символов"),
+  position_id: z.string().nullable().transform(val => 
+    val && val !== "null" ? Number(val) : null
+  ),
+  department_id: z.string().nullable().transform(val => 
+    val && val !== "null" ? Number(val) : null
+  ),
+  manager_id: z.string().nullable().transform(val => 
+    val && val !== "null" ? Number(val) : null
+  ),
+  email: z.string().email("Некорректный email").nullable().or(z.literal('')).transform(val => 
+    val === '' ? null : val
+  ),
+  phone: z.string().nullable().or(z.literal('')).transform(val => 
+    val === '' ? null : val
+  ),
+});
+
+type EmployeeFormValues = z.infer<typeof employeeFormSchema>;
+
 export default function Employees() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Form
+  const form = useForm<EmployeeFormValues>({
+    resolver: zodResolver(employeeFormSchema),
+    defaultValues: {
+      full_name: "",
+      position_id: null,
+      department_id: null,
+      manager_id: null,
+      email: "",
+      phone: "",
+    },
+  });
+
+  // Mutation для создания нового сотрудника
+  const createEmployee = useMutation({
+    mutationFn: async (values: EmployeeFormValues) => {
+      const res = await apiRequest("POST", "/api/employees", values);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при создании сотрудника");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Сотрудник добавлен успешно",
+        description: "Новый сотрудник был добавлен в систему",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/employees'] });
+      setIsAddDialogOpen(false);
+      form.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при добавлении сотрудника",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Запрос на получение сотрудников
   const { data: employeesData, isLoading: isLoadingEmployees, error: employeesError } = useQuery<{ status: string, data: Employee[] }>({
@@ -72,11 +165,15 @@ export default function Employees() {
     return manager ? manager.full_name : '—';
   };
 
+  const onSubmit = (values: EmployeeFormValues) => {
+    createEmployee.mutate(values);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Сотрудники</h1>
-        <Button>Добавить сотрудника</Button>
+        <Button onClick={() => setIsAddDialogOpen(true)}>Добавить сотрудника</Button>
       </div>
 
       <div className="flex items-center py-4">
@@ -154,6 +251,173 @@ export default function Employees() {
           )}
         </CardContent>
       </Card>
+
+      {/* Диалог добавления сотрудника */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Добавить нового сотрудника</DialogTitle>
+            <DialogDescription>
+              Введите информацию о новом сотруднике
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="full_name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ФИО</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Введите ФИО сотрудника" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="position_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Должность</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value?.toString() || "null"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Выберите должность" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="null">Не указана</SelectItem>
+                          {positionsData?.data.map((position) => (
+                            <SelectItem 
+                              key={position.position_id} 
+                              value={position.position_id.toString()}
+                            >
+                              {position.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="department_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Отдел</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value?.toString() || "null"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Выберите отдел" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="null">Не указан</SelectItem>
+                          {departmentsData?.data.map((department) => (
+                            <SelectItem 
+                              key={department.department_id} 
+                              value={department.department_id.toString()}
+                            >
+                              {department.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="manager_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Руководитель</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value?.toString() || "null"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите руководителя" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="null">Нет руководителя</SelectItem>
+                        {employeesData?.data.map((employee) => (
+                          <SelectItem 
+                            key={employee.employee_id} 
+                            value={employee.employee_id.toString()}
+                          >
+                            {employee.full_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Введите email" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Телефон</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Введите телефон" {...field} value={field.value || ""} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  type="submit" 
+                  disabled={createEmployee.isPending}
+                >
+                  {createEmployee.isPending ? "Добавление..." : "Добавить сотрудника"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
