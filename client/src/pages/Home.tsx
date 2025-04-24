@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Building, LogInIcon } from 'lucide-react';
 import { useAuth } from "@/hooks/use-auth";
-import OrganizationTreeNew from "@/components/OrganizationTreeNew";
+import OrganizationTree from "@/components/OrganizationTree";
 import headerBgImage from '../assets/image_1745501657968.png';
 
 export default function Home() {
@@ -83,7 +83,7 @@ export default function Home() {
               <Skeleton className="h-8 w-1/2 ml-8" />
             </div>
           ) : (
-            <OrganizationTreeNew />
+            <OrganizationTree />
           )}
         </div>
 
