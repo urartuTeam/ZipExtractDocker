@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Building, LogInIcon } from 'lucide-react';
 import { useAuth } from "@/hooks/use-auth";
-import OrganizationTree from "@/components/OrganizationTree";
+import OrganizationTreeNew from "@/components/OrganizationTreeNew";
 import headerBgImage from '../assets/image_1745501657968.png';
 
 export default function Home() {
@@ -49,7 +49,7 @@ export default function Home() {
         </div>
         
         <div className="text-center flex-1 text-2xl font-bold">
-          Система управления персоналом
+          
         </div>
         
         <div className="flex-1 flex justify-end">
@@ -83,7 +83,7 @@ export default function Home() {
               <Skeleton className="h-8 w-1/2 ml-8" />
             </div>
           ) : (
-            <OrganizationTree />
+            <OrganizationTreeNew />
           )}
         </div>
 
