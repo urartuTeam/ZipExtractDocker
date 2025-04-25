@@ -26,6 +26,8 @@ type Position = {
   staff_units: number;
   current_count: number;
   vacancies: number;
+  parent_position_id: number | null;
+  sort?: number;
 }
 
 type Employee = {
@@ -231,12 +233,117 @@ export default function OrganizationStructure() {
     ) || [];
   };
   
+  // Функция для построения дерева должностей
+  const buildPositionTree = (positions: any[]) => {
+    // Индексируем должности по ID для быстрого доступа
+    const positionMap = positions.reduce((map, pos) => {
+      map[pos.position_id] = { ...pos, children: [] };
+      return map;
+    }, {} as Record<number, any>);
+    
+    // Корневые должности
+    const rootPositions: any[] = [];
+    
+    // Строим дерево должностей на основе parent_position_id
+    positions.forEach(pos => {
+      if (pos.parent_position_id === null) {
+        // Корневые должности не имеют родителя
+        rootPositions.push(positionMap[pos.position_id]);
+      } else if (positionMap[pos.parent_position_id]) {
+        // Добавляем должность как дочернюю к родительской
+        positionMap[pos.parent_position_id].children.push(positionMap[pos.position_id]);
+      } else {
+        // Если родительская должность не найдена, добавляем как корневую
+        rootPositions.push(positionMap[pos.position_id]);
+      }
+    });
+    
+    return { rootPositions, positionMap };
+  };
+
+  // Функция для рендеринга должности и ее подчиненных
+  const renderPosition = (position: any, departmentId: number, level: number = 0) => {
+    const positionDeptKey = `${position.position_id}-${departmentId}`;
+    const isPositionExpanded = expandedPositions[positionDeptKey] || false;
+    const positionEmployees = getEmployeesForPositionInDepartment(position.position_id, departmentId);
+    
+    // Находим подчиненные отделы для этой должности
+    const positionChildDepartments = departments?.filter(dept => 
+      dept.parent_position_id === position.position_id
+    ) || [];
+    
+    return (
+      <div key={positionDeptKey} className="mb-2">
+        <div 
+          className="flex items-center p-2 cursor-pointer hover:bg-neutral-100 rounded-md"
+          onClick={() => togglePosition(positionDeptKey)}
+          style={{ paddingLeft: `${level * 16 + 8}px` }}
+        >
+          {isPositionExpanded ? 
+            <ChevronDown className="h-4 w-4 mr-2 text-neutral-500" /> : 
+            <ChevronRight className="h-4 w-4 mr-2 text-neutral-500" />
+          }
+          <Users className="h-5 w-5 mr-2 text-blue-500" />
+          <span>{position.positionName}</span>
+        </div>
+        
+        {isPositionExpanded && (
+          <div className="ml-6 border-l-2 border-neutral-200 pl-4 py-2">
+            {/* Сотрудники на должности */}
+            {positionEmployees.length > 0 ? (
+              positionEmployees.map(employee => (
+                <div key={employee.employee_id}>
+                  <div 
+                    className="flex items-center p-2 hover:bg-neutral-100 rounded-md"
+                  >
+                    <User className="h-5 w-5 mr-2 text-green-500" />
+                    <span>{employee.full_name}</span>
+                  </div>
+                  
+                  {/* Подчиненные отделы сотрудника */}
+                  {positionChildDepartments.length > 0 && (
+                    <div className="ml-6 border-l-2 border-neutral-200 pl-4 py-2">
+                      <div className="font-medium mb-2 pl-2">Подчиненные отделы:</div>
+                      {positionChildDepartments.map(childDept => renderDepartment(childDept, level + 1))}
+                    </div>
+                  )}
+                </div>
+              ))
+            ) : (
+              <div className="text-neutral-500 italic pl-7">
+                Нет сотрудников на этой должности
+                
+                {/* Даже если нет сотрудников, показываем подчиненные отделы */}
+                {positionChildDepartments.length > 0 && (
+                  <div className="mt-4">
+                    <div className="font-medium mb-2 pl-2">Подчиненные отделы:</div>
+                    {positionChildDepartments.map(childDept => renderDepartment(childDept, level + 1))}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Подчиненные должности */}
+            {position.children && position.children.length > 0 && (
+              <div className="mt-2">
+                {position.children.map((child: any) => renderPosition(child, departmentId, level + 1))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+  
   // Рендер отдела и его содержимого
   const renderDepartment = (department: Department, level: number = 0) => {
     const isExpanded = expandedDepartments[department.department_id] || false;
     const childDepartments = getChildDepartments(department.department_id);
     console.log(`Отдел: ${department.name} (ID: ${department.department_id}), дочерние отделы: ${childDepartments.length}`);
+    
+    // Получаем все должности для отдела и строим дерево должностей
     const positions = getPositionsForDepartment(department.department_id);
+    const { rootPositions, positionMap } = buildPositionTree(positions);
     
     return (
       <div key={department.department_id} className="ml-4">
@@ -254,75 +361,9 @@ export default function OrganizationStructure() {
         
         {isExpanded && (
           <div className="ml-6 border-l-2 border-neutral-200 pl-4 py-2">
-            {/* Должности в отделе */}
-            {positions.length > 0 ? (
-              positions.map(positionLink => {
-                const positionDeptKey = `${positionLink.position_id}-${department.department_id}`;
-                const isPositionExpanded = expandedPositions[positionDeptKey] || false;
-                const positionEmployees = getEmployeesForPositionInDepartment(
-                  positionLink.position_id, 
-                  department.department_id
-                );
-                
-                // Находим подчиненные отделы для этой должности
-                const positionChildDepartments = departments?.filter(dept => 
-                  dept.parent_position_id === positionLink.position_id
-                ) || [];
-                
-                return (
-                  <div key={positionDeptKey} className="mb-2">
-                    <div 
-                      className="flex items-center p-2 cursor-pointer hover:bg-neutral-100 rounded-md"
-                      onClick={() => togglePosition(positionDeptKey)}
-                    >
-                      {isPositionExpanded ? 
-                        <ChevronDown className="h-4 w-4 mr-2 text-neutral-500" /> : 
-                        <ChevronRight className="h-4 w-4 mr-2 text-neutral-500" />
-                      }
-                      <Users className="h-5 w-5 mr-2 text-blue-500" />
-                      <span>{positionLink.positionName}</span>
-                    </div>
-                    
-                    {isPositionExpanded && (
-                      <div className="ml-6 border-l-2 border-neutral-200 pl-4 py-2">
-                        {/* Сотрудники на должности */}
-                        {positionEmployees.length > 0 ? (
-                          positionEmployees.map(employee => (
-                            <div key={employee.employee_id}>
-                              <div 
-                                className="flex items-center p-2 hover:bg-neutral-100 rounded-md"
-                              >
-                                <User className="h-5 w-5 mr-2 text-green-500" />
-                                <span>{employee.full_name}</span>
-                              </div>
-                              
-                              {/* Подчиненные отделы сотрудника */}
-                              {positionChildDepartments.length > 0 && (
-                                <div className="ml-6 border-l-2 border-neutral-200 pl-4 py-2">
-                                  <div className="font-medium mb-2 pl-2">Подчиненные отделы:</div>
-                                  {positionChildDepartments.map(childDept => renderDepartment(childDept, level + 1))}
-                                </div>
-                              )}
-                            </div>
-                          ))
-                        ) : (
-                          <div className="text-neutral-500 italic pl-7">
-                            Нет сотрудников на этой должности
-                            
-                            {/* Даже если нет сотрудников, показываем подчиненные отделы */}
-                            {positionChildDepartments.length > 0 && (
-                              <div className="mt-4">
-                                <div className="font-medium mb-2 pl-2">Подчиненные отделы:</div>
-                                {positionChildDepartments.map(childDept => renderDepartment(childDept, level + 1))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
+            {/* Должности в отделе как иерархическое дерево */}
+            {rootPositions.length > 0 ? (
+              rootPositions.map(position => renderPosition(position, department.department_id))
             ) : (
               <div className="text-neutral-500 italic pl-7">Нет должностей в этом отделе</div>
             )}
