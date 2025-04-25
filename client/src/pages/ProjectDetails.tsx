@@ -1,285 +1,384 @@
-import React, { useMemo } from 'react';
-import { useRoute, useLocation } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useLocation, useParams } from 'wouter';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Table, 
   TableBody, 
-  TableCaption, 
   TableCell, 
   TableHead, 
   TableHeader, 
   TableRow 
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/table";
 import { Skeleton } from '@/components/ui/skeleton';
+import { 
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { 
-  Project, 
-  EmployeeProject, 
-  Employee, 
-  Department,
-  Position
-} from '@shared/schema';
-import { ArrowLeft, Phone, Mail, Briefcase, Building } from 'lucide-react';
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter,
+  DialogDescription
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Project, EmployeeProject, Employee } from '@shared/schema';
+import { ArrowLeft, Plus, Trash } from 'lucide-react';
+import { apiRequest } from "@/lib/queryClient";
 
-// Тип для сгруппированных сотрудников по отделам
-type EmployeesByDepartment = {
-  [departmentId: string]: {
-    department: Department | null;
-    employees: Array<{
-      employee: Employee;
-      position: Position | null;
-      role: string;
-    }>;
-  };
-};
+interface ProjectDetailsProps {
+  id?: string;
+}
 
-export default function ProjectDetails() {
+const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
+  const params = useParams();
+  const idFromParams = params?.id || propId;
+  const projectId = parseInt(idFromParams as string);
   const [, navigate] = useLocation();
-  const [match, params] = useRoute<{ id: string }>('/projects/:id');
   const { toast } = useToast();
-  
-  // Получаем ID проекта из URL
-  const projectId = match ? parseInt(params.id) : 0;
+  const queryClient = useQueryClient();
+  const [showAddEmployeeDialog, setShowAddEmployeeDialog] = useState(false);
 
-  // Запрос на получение данных проекта
+  // Запрос проекта
   const { data: projectResponse, isLoading: isLoadingProject } = useQuery<{status: string, data: Project}>({
-    queryKey: [`/api/projects/${projectId}`],
-    enabled: !!projectId,
-    onError: () => {
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить информацию о проекте',
-        variant: 'destructive',
-      });
-      navigate('/projects');
-    },
+    queryKey: ['/api/projects', projectId],
+    enabled: !!projectId && !isNaN(projectId),
   });
 
-  // Запрос на получение связей сотрудников и проекта
-  const { data: employeeProjectsResponse, isLoading: isLoadingEmployeeProjects } = useQuery<{status: string, data: EmployeeProject[]}>({
-    queryKey: [`/api/employeeprojects/project/${projectId}`],
-    enabled: !!projectId,
-    onError: () => {
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить информацию о сотрудниках проекта',
-        variant: 'destructive',
-      });
-    },
+  // Запрос сотрудников проекта
+  const { data: projectEmployeesResponse, isLoading: isLoadingProjectEmployees } = useQuery<{status: string, data: EmployeeProject[]}>({
+    queryKey: ['/api/employeeprojects/project', projectId],
+    enabled: !!projectId && !isNaN(projectId),
   });
 
-  // Получаем всех сотрудников
+  // Запрос всех сотрудников
   const { data: employeesResponse, isLoading: isLoadingEmployees } = useQuery<{status: string, data: Employee[]}>({
     queryKey: ['/api/employees'],
-    onError: () => {
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить данные о сотрудниках',
-        variant: 'destructive',
-      });
-    },
   });
 
-  // Получаем все отделы
-  const { data: departmentsResponse, isLoading: isLoadingDepartments } = useQuery<{status: string, data: Department[]}>({
-    queryKey: ['/api/departments'],
-    onError: () => {
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить данные об отделах',
-        variant: 'destructive',
-      });
+  // Форма добавления сотрудника
+  const addEmployeeForm = useForm<{ employeeId: string }>({
+    defaultValues: {
+      employeeId: "",
     },
+    resolver: zodResolver(
+      z.object({
+        employeeId: z.string().nonempty("Необходимо выбрать сотрудника")
+      })
+    )
   });
 
-  // Получаем все должности
-  const { data: positionsResponse, isLoading: isLoadingPositions } = useQuery<{status: string, data: Position[]}>({
-    queryKey: ['/api/positions'],
-    onError: () => {
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить данные о должностях',
-        variant: 'destructive',
+  // Мутация для добавления сотрудника в проект
+  const addEmployeeToProject = useMutation({
+    mutationFn: async (values: { employeeId: string }) => {
+      const res = await apiRequest("POST", "/api/employeeprojects", {
+        employee_id: parseInt(values.employeeId),
+        project_id: projectId,
+        role: "Участник"
       });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при добавлении сотрудника в проект");
+      }
+      
+      return res.json();
     },
+    onSuccess: () => {
+      toast({
+        title: "Сотрудник добавлен в проект",
+        description: "Сотрудник успешно добавлен в проект",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/employeeprojects/project', projectId] });
+      setShowAddEmployeeDialog(false);
+      addEmployeeForm.reset();
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Мутация для удаления сотрудника из проекта
+  const removeEmployeeFromProject = useMutation({
+    mutationFn: async (employeeId: number) => {
+      const res = await apiRequest("DELETE", `/api/employeeprojects/${employeeId}/${projectId}`);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при удалении сотрудника из проекта");
+      }
+      
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Сотрудник удален из проекта",
+        description: "Сотрудник успешно удален из проекта",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/employeeprojects/project', projectId] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
   });
 
   const project = projectResponse?.data;
-  const employeeProjects = employeeProjectsResponse?.data || [];
-  const employees = employeesResponse?.data || [];
-  const departments = departmentsResponse?.data || [];
-  const positions = positionsResponse?.data || [];
+  const employeeProjects = projectEmployeesResponse?.data || [];
+  const allEmployees = employeesResponse?.data || [];
+  
+  // Получаем полную информацию о сотрудниках проекта
+  const projectEmployeesWithDetails = employeeProjects.map((ep: any) => {
+    const employee = allEmployees.find((e: any) => e.employee_id === ep.employee_id);
+    return {
+      ...ep,
+      employeeDetails: employee
+    };
+  });
 
-  const isLoading = isLoadingProject || isLoadingEmployeeProjects || 
-                    isLoadingEmployees || isLoadingDepartments || isLoadingPositions;
+  // Фильтруем сотрудников, которые еще не добавлены в проект
+  const availableEmployees = allEmployees.filter(
+    (emp: any) => !employeeProjects.some((ep: any) => ep.employee_id === emp.employee_id)
+  );
 
-  // Группируем сотрудников по отделам
-  const employeesByDepartment = useMemo(() => {
-    if (!employeeProjects.length || !employees.length) return {};
+  const isLoading = isLoadingProject || isLoadingProjectEmployees || isLoadingEmployees;
 
-    const result: EmployeesByDepartment = {};
-
-    // Сначала находим всех сотрудников проекта
-    employeeProjects.forEach(ep => {
-      const employee = employees.find(e => e.employee_id === ep.employee_id);
-      if (employee) {
-        const position = positions.find(p => p.position_id === employee.position_id) || null;
-        const departmentId = employee.department_id?.toString() || 'no-department';
-        
-        if (!result[departmentId]) {
-          const department = employee.department_id 
-            ? departments.find(d => d.department_id === employee.department_id) || null
-            : null;
-          
-          result[departmentId] = {
-            department,
-            employees: [],
-          };
-        }
-        
-        result[departmentId].employees.push({
-          employee,
-          position,
-          role: ep.role,
-        });
-      }
-    });
-
-    return result;
-  }, [employeeProjects, employees, departments, positions]);
-
-  // Если проект не найден, показываем сообщение об ошибке и кнопку возврата
-  if (!isLoading && !project) {
+  if (isLoading) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center p-12 border rounded-lg shadow-sm bg-white">
-          <h2 className="text-xl font-medium mb-4">Проект не найден</h2>
-          <Button variant="outline" onClick={() => navigate('/projects')}>
+        <div className="flex items-center mb-6">
+          <Button variant="outline" size="sm" className="mr-4" onClick={() => navigate('/admin/projects')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Вернуться к списку проектов
+            Назад к проектам
           </Button>
+          <Skeleton className="h-9 w-48" />
         </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-7 w-56 mb-2" />
+            <Skeleton className="h-5 w-32" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
+  if (!project) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center mb-6">
+          <Button variant="outline" size="sm" className="mr-4" onClick={() => navigate('/admin/projects')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Назад к проектам
+          </Button>
+          <h1 className="text-2xl font-bold">Проект не найден</h1>
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center p-12">
+              <h2 className="text-xl font-medium mb-2">Проект не найден</h2>
+              <p className="text-gray-500 mb-4">Проект с ID {projectId} не существует.</p>
+              <Button onClick={() => navigate('/admin/projects')}>
+                Вернуться к списку проектов
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const onSubmitAddEmployee = (values: { employeeId: string }) => {
+    addEmployeeToProject.mutate(values);
+  };
+
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center mb-6">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="mr-4"
-          onClick={() => navigate('/projects')}
-        >
+        <Button variant="outline" size="sm" className="mr-4" onClick={() => navigate('/admin/projects')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          К списку проектов
+          Назад к проектам
         </Button>
-        
-        {isLoading ? (
-          <Skeleton className="h-8 w-64" />
-        ) : (
-          <h1 className="text-2xl font-bold">{project?.name}</h1>
-        )}
+        <h1 className="text-2xl font-bold">{project.name}</h1>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-4">
-          <Skeleton className="h-12 w-full" />
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-32 w-full" />
-        </div>
-      ) : (
-        <div className="space-y-8">
-          <div className="bg-white rounded-md shadow-sm p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <Users className="mr-2 h-5 w-5 text-[#a40000]" />
-              Сотрудники проекта
-            </h2>
-            
-            {Object.keys(employeesByDepartment).length === 0 ? (
-              <div className="text-center p-8 border-2 border-dashed rounded-md">
-                <p className="text-gray-500">К проекту не привязаны сотрудники</p>
-              </div>
-            ) : (
-              <>
-                {Object.entries(employeesByDepartment).map(([departmentId, data]) => (
-                  <div key={departmentId} className="mb-6">
-                    <div className="flex items-center mb-2">
-                      <Building className="mr-2 h-4 w-4 text-gray-500" />
-                      <h3 className="text-lg font-medium text-gray-700">
-                        {data.department ? data.department.name : 'Без отдела'}
-                      </h3>
-                    </div>
-                    
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ФИО</TableHead>
-                          <TableHead>Должность</TableHead>
-                          <TableHead>Роль в проекте</TableHead>
-                          <TableHead>Телефон</TableHead>
-                          <TableHead>Email</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {data.employees.map(({ employee, position, role }) => (
-                          <TableRow key={employee.employee_id}>
-                            <TableCell className="font-medium">{employee.full_name}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center">
-                                <Briefcase className="mr-1 h-3 w-3 text-gray-400" />
-                                {position ? position.name : 'Н/Д'}
-                              </div>
-                            </TableCell>
-                            <TableCell>{role}</TableCell>
-                            <TableCell>
-                              {employee.phone ? (
-                                <div className="flex items-center">
-                                  <Phone className="mr-1 h-3 w-3 text-gray-400" />
-                                  {employee.phone}
-                                </div>
-                              ) : 'Н/Д'}
-                            </TableCell>
-                            <TableCell>
-                              {employee.email ? (
-                                <div className="flex items-center">
-                                  <Mail className="mr-1 h-3 w-3 text-gray-400" />
-                                  {employee.email}
-                                </div>
-                              ) : 'Н/Д'}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                ))}
-              </>
-            )}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Информация о проекте</CardTitle>
+          <CardDescription>Основные сведения о проекте</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Название проекта:</p>
+              <p className="text-lg">{project.name}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Описание:</p>
+              <p>{project.description || "Описание отсутствует"}</p>
+            </div>
           </div>
-        </div>
-      )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Сотрудники проекта</CardTitle>
+            <CardDescription>Всего сотрудников: {projectEmployeesWithDetails.length}</CardDescription>
+          </div>
+          <Button onClick={() => setShowAddEmployeeDialog(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Добавить сотрудника
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {projectEmployeesWithDetails.length === 0 ? (
+            <div className="text-center p-12 border rounded-lg shadow-sm bg-white">
+              <h2 className="text-xl font-medium mb-2">Сотрудники не назначены</h2>
+              <p className="text-gray-500 mb-4">На данный момент к проекту не привязаны сотрудники.</p>
+              <Button onClick={() => setShowAddEmployeeDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Привязать сотрудника
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ФИО</TableHead>
+                    <TableHead>Должность</TableHead>
+                    <TableHead>Отдел</TableHead>
+                    <TableHead>Роль в проекте</TableHead>
+                    <TableHead className="w-[100px]">Действия</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {projectEmployeesWithDetails.map((ep: any) => (
+                    <TableRow key={ep.employee_id}>
+                      <TableCell className="font-medium">{ep.employeeDetails?.full_name || "Неизвестный сотрудник"}</TableCell>
+                      <TableCell>{ep.employeeDetails?.position_id || "—"}</TableCell>
+                      <TableCell>{ep.employeeDetails?.department_id || "—"}</TableCell>
+                      <TableCell>{ep.role || "Участник"}</TableCell>
+                      <TableCell>
+                        <Button 
+                          variant="destructive" 
+                          size="sm"
+                          onClick={() => removeEmployeeFromProject.mutate(ep.employee_id)}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={showAddEmployeeDialog} onOpenChange={setShowAddEmployeeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Добавить сотрудника в проект</DialogTitle>
+            <DialogDescription>
+              Выберите сотрудника для добавления в проект "{project.name}"
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...addEmployeeForm}>
+            <form onSubmit={addEmployeeForm.handleSubmit(onSubmitAddEmployee)} className="space-y-4">
+              <FormField
+                control={addEmployeeForm.control}
+                name="employeeId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Сотрудник</FormLabel>
+                    <Select 
+                      value={field.value} 
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите сотрудника" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {availableEmployees.length === 0 ? (
+                          <SelectItem value="none" disabled>Нет доступных сотрудников</SelectItem>
+                        ) : (
+                          availableEmployees.map((employee: any) => (
+                            <SelectItem key={employee.employee_id} value={employee.employee_id.toString()}>
+                              {employee.full_name}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowAddEmployeeDialog(false)}
+                >
+                  Отмена
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={addEmployeeToProject.isPending || availableEmployees.length === 0}
+                >
+                  {addEmployeeToProject.isPending ? "Добавление..." : "Добавить"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
+};
 
-// Компонент значка Users
-const Users = ({ className }: { className?: string }) => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-    <circle cx="9" cy="7" r="4" />
-    <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-  </svg>
-);
+export default ProjectDetails;

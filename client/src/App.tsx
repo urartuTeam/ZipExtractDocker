@@ -31,6 +31,8 @@ function Router() {
       <ProtectedRoute path="/employees" component={Employees} />
       <Route path="/projects" component={Projects} />
       <Route path="/projects/:id" component={ProjectDetails} />
+      <ProtectedRoute path="/admin/projects" component={Projects} />
+      <ProtectedRoute path="/admin/projects/:id" component={Projects} />
       <ProtectedRoute path="/leaves" component={Leaves} />
       <ProtectedRoute path="/organization" component={OrganizationStructure} />
       <Route path="/auth" component={AuthPage} />

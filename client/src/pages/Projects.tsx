@@ -53,9 +53,10 @@ import { ArrowLeft, Users, Plus, Edit, Trash } from 'lucide-react';
 import { apiRequest } from "@/lib/queryClient";
 
 // Отдельная страница для проекта
-const ProjectDetails = () => {
-  const { id } = useParams();
-  const projectId = parseInt(id as string);
+export const ProjectDetails = ({ id: propId }: { id?: string }) => {
+  const params = useParams();
+  const idFromParams = params?.id || propId;
+  const projectId = parseInt(idFromParams as string);
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
