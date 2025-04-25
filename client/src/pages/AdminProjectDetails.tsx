@@ -52,15 +52,11 @@ import {
   TableRow 
 } from "@/components/ui/table";
 
-interface ProjectDetailsProps {
-  id?: string;
-}
+import { RouteComponentProps } from 'wouter';
 
 // Компонент отображения деталей проекта для администраторов
-export default function AdminProjectDetails({ id: propId }: ProjectDetailsProps) {
-  const params = useParams();
-  const idFromParams = params?.id || propId;
-  const projectId = parseInt(idFromParams as string);
+export default function AdminProjectDetails({ params }: RouteComponentProps<{ id: string }>) {
+  const projectId = parseInt(params.id);
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [showAddEmployeeDialog, setShowAddEmployeeDialog] = useState(false);
@@ -285,7 +281,7 @@ export default function AdminProjectDetails({ id: propId }: ProjectDetailsProps)
   };
 
   const handleRemoveEmployee = () => {
-    if (employeeToRemove !== null) {
+    if (typeof employeeToRemove === 'number') {
       removeEmployeeFromProject.mutate(employeeToRemove);
     }
   };

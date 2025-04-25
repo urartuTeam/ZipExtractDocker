@@ -22,15 +22,11 @@ import {
   TableRow 
 } from "@/components/ui/table";
 
-interface ProjectDetailsProps {
-  id?: string;
-}
+import { RouteComponentProps } from 'wouter';
 
 // Компонент отображения деталей проекта для обычных пользователей
-export default function UserProjectDetails({ id: propId }: ProjectDetailsProps) {
-  const params = useParams();
-  const idFromParams = params?.id || propId;
-  const projectId = parseInt(idFromParams as string);
+export default function UserProjectDetails({ params }: RouteComponentProps<{ id: string }>) {
+  const projectId = parseInt(params.id);
   const [, navigate] = useLocation();
   const { toast } = useToast();
   
