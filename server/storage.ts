@@ -34,6 +34,7 @@ export interface IStorage {
   createPosition(position: InsertPosition): Promise<Position>;
   updatePosition(id: number, position: Partial<InsertPosition>): Promise<Position | undefined>;
   deletePosition(id: number): Promise<boolean>;
+  getPositionSubordinates(positionId: number): Promise<Position[]>;
 
   // Связь должностей и отделов
   getPositionDepartment(id: number): Promise<PositionDepartment | undefined>;
@@ -183,6 +184,10 @@ export class DatabaseStorage implements IStorage {
       .where(eq(positions.position_id, id))
       .returning({ id: positions.position_id });
     return !!deleted;
+  }
+  
+  async getPositionSubordinates(positionId: number): Promise<Position[]> {
+    return await db.select().from(positions).where(eq(positions.parent_position_id, positionId));
   }
 
   // Методы для работы со связью должностей и отделов
