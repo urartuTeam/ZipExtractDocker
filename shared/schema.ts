@@ -59,7 +59,6 @@ export const employees = pgTable("employees", {
 export const projects = pgTable("projects", {
   project_id: serial("project_id").primaryKey(),
   name: text("name").notNull(),
-  description: text("description"),
   department_id: integer("department_id").references(() => departments.department_id),
 });
 

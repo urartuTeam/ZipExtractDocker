@@ -250,8 +250,8 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
               <p className="text-lg">{project.name}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Описание:</p>
-              <p>{project.description || "Описание отсутствует"}</p>
+              <p className="text-sm font-medium text-gray-500">ID проекта:</p>
+              <p>#{project.project_id}</p>
             </div>
           </div>
         </CardContent>
