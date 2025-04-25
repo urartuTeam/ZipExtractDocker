@@ -381,20 +381,97 @@
 }
 
 /* Новые стили для динамического организационного дерева */
-.department-node {
+.org-tree-container {
+  width: 100%;
+  overflow-x: auto;
+  padding: 20px 0;
+}
+
+.org-tree-view {
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 20px;
+}
+
+.department-level {
+  margin-bottom: 30px;
+  width: 100%;
+}
+
+.department-row {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.department-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   position: relative;
   padding: 10px;
 }
 
-.department-node .department-card {
+.department-box {
   width: 100%;
-  max-width: calc(100% - 20px);
-  margin-bottom: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-width: 280px;
+  border: 2px solid #a40000;
+  border-radius: 8px;
+  padding: 15px;
+  background-color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.department-title {
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #a40000;
+  text-align: center;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #a40000;
+  padding-bottom: 8px;
+}
+
+.positions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.position-card {
+  border: 1px solid #a40000;
+  border-radius: 6px;
+  padding: 10px;
+  background-color: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+.position-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #a40000;
+  text-align: center;
+}
+
+.position-divider {
+  width: 50%;
+  height: 1px;
+  background-color: #a40000;
+  margin: 6px auto;
+}
+
+.position-name {
+  text-align: center;
+  font-size: 0.9rem;
+  padding: 3px 0;
+}
+
+.position-name.empty {
+  color: #888;
+  font-style: italic;
 }
 
 .department-children {
@@ -406,40 +483,43 @@
 .department-children:before {
   content: "";
   position: absolute;
-  top: 15px;
+  top: 0;
   left: 50%;
   width: 2px;
-  height: 15px;
+  height: 30px;
   background-color: #a40000;
+  transform: translateX(-50%);
 }
 
-.child-departments {
-  display: flex;
-  flex-wrap: wrap;
-  width: 100%;
+/* Вертикальные линии для соединения уровней отделов */
+.level-0 {
   position: relative;
 }
 
-.child-departments:before {
+.level-0:before {
   content: "";
   position: absolute;
-  top: -5px;
-  left: 0;
-  right: 0;
+  top: -20px;
+  left: 50%;
+  width: 2px;
+  height: 20px;
+  background-color: #a40000;
+  transform: translateX(-50%);
+}
+
+/* Горизонтальные линии для соединения отделов на одном уровне */
+.department-level .department-row {
+  position: relative;
+}
+
+.department-level .department-row:before {
+  content: "";
+  position: absolute;
+  top: -15px;
+  left: 10%;
+  right: 10%;
   height: 2px;
   background-color: #a40000;
-}
-
-.position-name-small.empty {
-  color: #888;
-  font-style: italic;
-}
-
-.org-tree-view {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 /* Стили для хедера с картинкой */
