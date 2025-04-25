@@ -189,6 +189,7 @@ type PositionHierarchyNode = {
   position: Position;
   employee: Employee | null;
   subordinates: PositionHierarchyNode[];
+  childDepartments?: Department[]; // Дочерние отделы, связанные с этой должностью
 }
 
 // Компонент для отображения горизонтального дерева иерархии должностей
@@ -277,6 +278,18 @@ const PositionTree = ({
                               <div className="employee-name">{grandChild.employee.full_name}</div>
                             ) : (
                               <div className="position-vacant">Вакантная должность</div>
+                            )}
+                            
+                            {/* Отображаем дочерние отделы для должности */}
+                            {grandChild.childDepartments && grandChild.childDepartments.length > 0 && (
+                              <div className="child-departments">
+                                <div className="child-departments-title">Подчиненные отделы:</div>
+                                {grandChild.childDepartments.map((dept) => (
+                                  <div key={dept.department_id} className="child-department-name">
+                                    {dept.name}
+                                  </div>
+                                ))}
+                              </div>
                             )}
                           </div>
                         </div>
