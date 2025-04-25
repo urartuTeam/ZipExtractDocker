@@ -24,17 +24,29 @@ async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
-  // Проверяем, содержит ли хеш точку (разделитель соли)
-  if (stored.includes('.')) {
-    // Формат хеша с солью (хеш.соль)
-    const [hashed, salt] = stored.split(".");
-    const hashedBuf = Buffer.from(hashed, "hex");
-    const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-    return timingSafeEqual(hashedBuf, suppliedBuf);
-  } else {
-    // Простой хеш SHA-256 (для совместимости с существующими пользователями)
-    const hashedPassword = createHash('sha256').update(supplied).digest('hex');
-    return hashedPassword === stored;
+  try {
+    // Проверяем, содержит ли хеш точку (разделитель соли)
+    if (stored.includes('.')) {
+      // Формат хеша с солью (хеш.соль)
+      const [hashed, salt] = stored.split(".");
+      const hashedBuf = Buffer.from(hashed, "hex");
+      const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
+      
+      // Проверяем, что буферы имеют одинаковую длину для timingSafeEqual
+      if (hashedBuf.length !== suppliedBuf.length) {
+        console.error("Ошибка сравнения паролей: буферы имеют разную длину");
+        return false;
+      }
+      
+      return timingSafeEqual(hashedBuf, suppliedBuf);
+    } else {
+      // Простой хеш SHA-256 (для совместимости с существующими пользователями)
+      const hashedPassword = createHash('sha256').update(supplied).digest('hex');
+      return hashedPassword === stored;
+    }
+  } catch (error) {
+    console.error("Ошибка при сравнении паролей:", error);
+    return false;
   }
 }
 
