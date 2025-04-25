@@ -184,12 +184,31 @@ const DepartmentWithChildren = ({
   );
 };
 
-// Тип для построения иерархии позиций
-type PositionHierarchyNode = {
+// Типы для построения комбинированной иерархии позиций и отделов
+// Тип узла дерева может быть либо должностью, либо отделом
+type HierarchyNodeType = 'position' | 'department';
+
+// Базовый интерфейс для узла иерархии
+interface BaseHierarchyNode {
+  type: HierarchyNodeType;
+  id: number;
+  name: string;
+}
+
+// Для позиций в иерархии
+interface PositionHierarchyNode extends BaseHierarchyNode {
+  type: 'position';
   position: Position;
   employee: Employee | null;
-  subordinates: PositionHierarchyNode[];
-  childDepartments?: Department[]; // Дочерние отделы, связанные с этой должностью
+  subordinates: (PositionHierarchyNode | DepartmentHierarchyNode)[];
+}
+
+// Для отделов в иерархии
+interface DepartmentHierarchyNode extends BaseHierarchyNode {
+  type: 'department';
+  department: Department;
+  positions: PositionHierarchyNode[];
+  subordinates: (PositionHierarchyNode | DepartmentHierarchyNode)[];
 }
 
 // Компонент для отображения горизонтального дерева иерархии должностей
@@ -229,17 +248,7 @@ const PositionTree = ({
                 <div className="position-vacant">Вакантная должность</div>
               )}
               
-              {/* Отображаем дочерние отделы для должности */}
-              {firstNode.childDepartments && firstNode.childDepartments.length > 0 && (
-                <div className="child-departments">
-                  <div className="child-departments-title">Подчиненные отделы:</div>
-                  {firstNode.childDepartments.map((dept) => (
-                    <div key={dept.department_id} className="child-department-name">
-                      {dept.name}
-                    </div>
-                  ))}
-                </div>
-              )}
+
             </div>
           </div>
           
@@ -758,23 +767,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         emp.department_id === adminDepartment.department_id
       ) || null;
       
-      // Находим дочерние отделы, связанные с этой должностью
-      const childDepartments = departments.filter(dept => 
-        dept.parent_position_id === position.position_id
-      );
-      
       positionMap[position.position_id] = {
         position,
         employee,
-        subordinates: [],
-        childDepartments: childDepartments.length > 0 ? childDepartments : undefined
+        subordinates: []
       };
-      
-      // Выводим для отладки информацию о дочерних отделах
-      if (childDepartments.length > 0) {
-        console.log(`Должность "${position.name}" (ID: ${position.position_id}) имеет дочерние отделы:`, 
-          childDepartments.map(dept => `${dept.name} (ID: ${dept.department_id})`));
-      }
     });
     
     // Список корневых должностей (пока пустой)
