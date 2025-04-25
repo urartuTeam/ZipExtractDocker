@@ -55,10 +55,21 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // Не показываем Sidebar и Header на странице авторизации, главной странице
-  // и пользовательской странице проектов
-  if (location === '/auth' || location === '/' || location === '/projects' || location.startsWith('/projects/')) {
+  // Не показываем Sidebar и Header на странице авторизации и главной странице
+  if (location === '/auth' || location === '/') {
     return <>{children}</>;
+  }
+  
+  // На страницах проектов для обычных пользователей не показываем боковое меню, но оставляем header
+  if (location === '/projects' || location.startsWith('/projects/')) {
+    return (
+      <div className="h-screen flex flex-col overflow-hidden">
+        <Header toggleSidebar={toggleSidebar} activeTab={location} />
+        <main className="flex-1 overflow-y-auto bg-neutral-100 p-6">
+          {children}
+        </main>
+      </div>
+    );
   }
 
   return (
