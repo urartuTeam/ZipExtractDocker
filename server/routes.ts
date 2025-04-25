@@ -724,11 +724,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ status: 'error', message: 'Invalid project ID' });
       }
 
+      // Получаем информацию о проекте
+      const project = await storage.getProject(projectId);
+      if (!project) {
+        return res.status(404).json({ status: 'error', message: 'Project not found' });
+      }
+
+      // Получаем список сотрудников проекта
       const employeeProjects = await storage.getEmployeeProjectsByProject(projectId);
-      res.json({ status: 'success', data: employeeProjects });
+
+      // Формируем ответ, включающий как информацию о проекте, так и список сотрудников
+      res.json({ 
+        status: 'success', 
+        data: {
+          title: project.name,
+          description: project.description,
+          employees: employeeProjects
+        } 
+      });
     } catch (error) {
-      console.error('Error fetching employee projects:', error);
-      res.status(500).json({ status: 'error', message: 'Failed to fetch employee projects' });
+      console.error('Error fetching project details:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch project details' });
     }
   });
 
