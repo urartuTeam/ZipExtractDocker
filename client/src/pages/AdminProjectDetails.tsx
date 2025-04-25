@@ -404,11 +404,11 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
           <div className="space-y-4">
             <div>
               <p className="text-sm font-medium text-gray-500">Название проекта:</p>
-              <p className="text-lg">{projectData.name}</p>
+              <p className="text-lg">{projectDetails.title || projectData.name}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Описание:</p>
-              <p className="text-base">{projectData.description || "Описание отсутствует"}</p>
+              <p className="text-base">{projectDetails.description || projectData.description || "Описание отсутствует"}</p>
             </div>
           </div>
         </CardContent>
@@ -478,7 +478,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
           <DialogHeader>
             <DialogTitle>Добавить сотрудника в проект</DialogTitle>
             <DialogDescription>
-              Выберите сотрудника для добавления в проект "{projectData.name}"
+              Выберите сотрудника для добавления в проект "{projectDetails.title || projectData.name}"
             </DialogDescription>
           </DialogHeader>
           
@@ -610,7 +610,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
               Подтверждение удаления
             </DialogTitle>
             <DialogDescription>
-              Вы действительно хотите удалить проект "{projectData.name}"?
+              Вы действительно хотите удалить проект "{projectDetails.title || projectData.name}"?
               Это действие нельзя будет отменить.
             </DialogDescription>
           </DialogHeader>
