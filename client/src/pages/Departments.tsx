@@ -47,13 +47,13 @@ import { apiRequest } from "@/lib/queryClient";
 interface Department {
   department_id: number;
   name: string;
-  parent_department_id: number | null;
+  parent_position_id: number | null;
 }
 
 // Схема валидации для формы
 const departmentFormSchema = z.object({
   name: z.string().min(2, "Название должно содержать минимум 2 символа").max(100, "Название не должно превышать 100 символов"),
-  parent_department_id: z.string().nullable().transform(val => 
+  parent_position_id: z.string().nullable().transform(val => 
     val && val !== "null" ? Number(val) : null
   ),
 });

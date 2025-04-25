@@ -89,6 +89,12 @@ const employeeFormSchema = z.object({
   phone: z.string().nullable().or(z.literal('')).transform(val => 
     val === '' ? null : val
   ),
+}).refine(data => {
+  // Проверяем, что либо position_id, либо department_id заполнен
+  return data.position_id !== null || data.department_id !== null;
+}, {
+  message: "Необходимо выбрать либо должность, либо отдел",
+  path: ["position_id"]
 });
 
 type EmployeeFormValues = z.infer<typeof employeeFormSchema>;
@@ -103,26 +109,26 @@ export default function Employees() {
   const queryClient = useQueryClient();
 
   // Form для создания
-  const form = useForm<EmployeeFormValues>({
+  const form = useForm<z.infer<typeof employeeFormSchema>>({
     resolver: zodResolver(employeeFormSchema),
     defaultValues: {
       full_name: "",
-      position_id: null,
-      department_id: null,
-      manager_id: null,
+      position_id: null as any,
+      department_id: null as any,
+      manager_id: null as any,
       email: "",
       phone: "",
     },
   });
 
   // Form для редактирования
-  const editForm = useForm<EmployeeFormValues>({
+  const editForm = useForm<z.infer<typeof employeeFormSchema>>({
     resolver: zodResolver(employeeFormSchema),
     defaultValues: {
       full_name: "",
-      position_id: null,
-      department_id: null,
-      manager_id: null,
+      position_id: null as any,
+      department_id: null as any,
+      manager_id: null as any,
       email: "",
       phone: "",
     },
@@ -309,9 +315,9 @@ export default function Employees() {
     
     editForm.reset({
       full_name: employee.full_name,
-      position_id: employee.position_id ? employee.position_id.toString() : "null",
-      department_id: employee.department_id ? employee.department_id.toString() : "null",
-      manager_id: employee.manager_id ? employee.manager_id.toString() : "null",
+      position_id: employee.position_id !== null ? employee.position_id.toString() : null as any,
+      department_id: employee.department_id !== null ? employee.department_id.toString() : null as any,
+      manager_id: employee.manager_id !== null ? employee.manager_id.toString() : null as any,
       email: employee.email || "",
       phone: employee.phone || "",
     });
