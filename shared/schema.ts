@@ -27,6 +27,7 @@ export const positions = pgTable("positions", {
   staff_units: integer("staff_units").default(0),
   current_count: integer("current_count").default(0),
   vacancies: integer("vacancies").default(0),
+  parent_position_id: integer("parent_position_id").references(() => positions.position_id),
 });
 
 // Связь между должностями и отделами
@@ -86,9 +87,15 @@ export const departmentsRelations = relations(departments, ({ one, many }) => ({
   projects: many(projects),
 }));
 
-export const positionsRelations = relations(positions, ({ many }) => ({
+export const positionsRelations = relations(positions, ({ many, one }) => ({
   departments: many(position_department, { relationName: "position_departments" }),
   employees: many(employees),
+  parentPosition: one(positions, {
+    fields: [positions.parent_position_id],
+    references: [positions.position_id],
+    relationName: "parent_position"
+  }),
+  childPositions: many(positions, { relationName: "parent_position" }),
 }));
 
 export const position_departmentRelations = relations(position_department, ({ one }) => ({
