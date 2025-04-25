@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, useParams } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -46,9 +46,17 @@ import {
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Project, EmployeeProject, Employee } from '@shared/schema';
+import { EmployeeProject, Employee } from '@shared/schema';
 import { ArrowLeft, Pencil, Plus, Trash } from 'lucide-react';
 import { apiRequest } from "@/lib/queryClient";
+
+// Расширенный интерфейс Project с полем description
+interface Project {
+  project_id: number;
+  name: string;
+  description?: string;
+  department_id: number | null;
+}
 
 interface ProjectDetailsProps {
   id?: string;
@@ -102,8 +110,8 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
   // Форма редактирования проекта
   const editProjectForm = useForm<{ name: string, description: string }>({
     defaultValues: {
-      name: projectData?.name || "",
-      description: projectData?.description || "",
+      name: "",
+      description: "",
     },
     resolver: zodResolver(
       z.object({
@@ -112,6 +120,16 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
       })
     )
   });
+  
+  // Обновление формы при изменении данных проекта
+  useEffect(() => {
+    if (projectData) {
+      editProjectForm.reset({
+        name: projectData.name,
+        description: projectData.description || "",
+      });
+    }
+  }, [projectData, editProjectForm]);
 
   // Мутация для добавления сотрудника в проект
   const addEmployeeToProject = useMutation({
@@ -304,14 +322,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
           </div>
           <Button 
             variant="outline"
-            onClick={() => {
-              // Обновляем значения формы перед открытием диалога
-              editProjectForm.reset({
-                name: projectData.name,
-                description: projectData.description || ""
-              });
-              setShowEditProjectDialog(true);
-            }}
+            onClick={() => setShowEditProjectDialog(true)}
           >
             <Pencil className="mr-2 h-4 w-4" />
             Изменить описание
