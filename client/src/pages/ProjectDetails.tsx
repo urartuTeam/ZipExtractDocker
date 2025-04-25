@@ -18,6 +18,7 @@ import {
   CardTitle 
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Dialog, 
@@ -46,7 +47,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Project, EmployeeProject, Employee } from '@shared/schema';
-import { ArrowLeft, Plus, Trash } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, Trash } from 'lucide-react';
 import { apiRequest } from "@/lib/queryClient";
 
 interface ProjectDetailsProps {
@@ -384,6 +385,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
         </CardContent>
       </Card>
 
+      {/* Диалог добавления сотрудника */}
       <Dialog open={showAddEmployeeDialog} onOpenChange={setShowAddEmployeeDialog}>
         <DialogContent>
           <DialogHeader>
@@ -440,6 +442,52 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
                   disabled={addEmployeeToProject.isPending || availableEmployees.length === 0}
                 >
                   {addEmployeeToProject.isPending ? "Добавление..." : "Добавить"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Диалог редактирования проекта */}
+      <Dialog open={showEditProjectDialog} onOpenChange={setShowEditProjectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Редактировать проект</DialogTitle>
+            <DialogDescription>
+              Внесите изменения в информацию о проекте
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...editProjectForm}>
+            <form onSubmit={editProjectForm.handleSubmit(onSubmitEditProject)} className="space-y-4">
+              <FormField
+                control={editProjectForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Название проекта</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Введите название проекта" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowEditProjectDialog(false)}
+                >
+                  Отмена
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={updateProject.isPending}
+                >
+                  {updateProject.isPending ? "Сохранение..." : "Сохранить"}
                 </Button>
               </DialogFooter>
             </form>
