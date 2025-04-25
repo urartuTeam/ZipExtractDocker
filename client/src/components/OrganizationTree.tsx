@@ -679,16 +679,20 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Фильтруем иерархию при изменении выбранной должности
   useEffect(() => {
     if (!selectedPositionId || positionHierarchy.length === 0) {
-      // Если нет выбранной должности или иерархия еще не построена, 
-      // показываем только второй уровень иерархии, пропуская верхний уровень (Администрация)
+      // Если нет выбранной должности, показываем иерархию начиная с должности "ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА"
       if (positionHierarchy.length > 0) {
-        // Пропускаем первый уровень (Администрация) и берем только следующие 2 уровня
-        // Извлекаем подчиненные из первого (верхнего) узла, но не отображаем сам верхний узел
-        if (positionHierarchy[0] && positionHierarchy[0].subordinates) {
-          const secondLevelNodes = positionHierarchy[0].subordinates;
-          setFilteredHierarchy(secondLevelNodes);
+        // Находим узел с должностью "ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА" (position_id = 1)
+        const deputyHeadNode = positionHierarchy.find(node => 
+          node.position.position_id === 1
+        );
+        
+        if (deputyHeadNode) {
+          // Используем узел ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА как начальную точку
+          setFilteredHierarchy([deputyHeadNode]);
         } else {
-          setFilteredHierarchy([]);
+          // Если по какой-то причине не найден узел с ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА,
+          // используем стандартную логику с корневыми узлами
+          setFilteredHierarchy(positionHierarchy);
         }
       } else {
         setFilteredHierarchy([]);
