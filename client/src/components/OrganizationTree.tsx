@@ -228,6 +228,18 @@ const PositionTree = ({
               ) : (
                 <div className="position-vacant">Вакантная должность</div>
               )}
+              
+              {/* Отображаем дочерние отделы для должности */}
+              {firstNode.childDepartments && firstNode.childDepartments.length > 0 && (
+                <div className="child-departments">
+                  <div className="child-departments-title">Подчиненные отделы:</div>
+                  {firstNode.childDepartments.map((dept) => (
+                    <div key={dept.department_id} className="child-department-name">
+                      {dept.name}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           
@@ -254,6 +266,18 @@ const PositionTree = ({
                       <div className="employee-name">{subNode.employee.full_name}</div>
                     ) : (
                       <div className="position-vacant">Вакантная должность</div>
+                    )}
+                    
+                    {/* Отображаем дочерние отделы для должности */}
+                    {subNode.childDepartments && subNode.childDepartments.length > 0 && (
+                      <div className="child-departments">
+                        <div className="child-departments-title">Подчиненные отделы:</div>
+                        {subNode.childDepartments.map((dept) => (
+                          <div key={dept.department_id} className="child-department-name">
+                            {dept.name}
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                   
@@ -317,6 +341,18 @@ const PositionTree = ({
                 <div className="employee-name">{node.employee.full_name}</div>
               ) : (
                 <div className="position-vacant">Вакантная должность</div>
+              )}
+              
+              {/* Отображаем дочерние отделы для должности */}
+              {node.childDepartments && node.childDepartments.length > 0 && (
+                <div className="child-departments">
+                  <div className="child-departments-title">Подчиненные отделы:</div>
+                  {node.childDepartments.map((dept) => (
+                    <div key={dept.department_id} className="child-department-name">
+                      {dept.name}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           </div>
