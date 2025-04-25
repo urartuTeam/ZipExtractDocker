@@ -463,9 +463,9 @@ export default function Positions() {
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Добавить новую должность</DialogTitle>
+            <DialogTitle>Добавить должность</DialogTitle>
             <DialogDescription>
-              Введите название новой должности
+              Заполните информацию о новой должности
             </DialogDescription>
           </DialogHeader>
           
@@ -493,7 +493,7 @@ export default function Positions() {
                     <FormLabel>Родительская должность</FormLabel>
                     <Select
                       onValueChange={(value) => {
-                        field.onChange(value ? parseInt(value) : null);
+                        field.onChange(value === "null" ? null : parseInt(value));
                       }}
                       value={field.value?.toString() || undefined}
                     >
@@ -566,7 +566,7 @@ export default function Positions() {
                     <FormLabel>Родительская должность</FormLabel>
                     <Select
                       onValueChange={(value) => {
-                        field.onChange(value ? parseInt(value) : null);
+                        field.onChange(value === "null" ? null : parseInt(value));
                       }}
                       value={field.value?.toString() || undefined}
                     >
