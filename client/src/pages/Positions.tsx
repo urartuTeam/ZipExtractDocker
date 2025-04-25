@@ -53,6 +53,7 @@ interface Position {
   position_id: number;
   name: string;
   departments?: DepartmentLink[];
+  parent_position_id?: number | null;
 }
 
 interface Employee {
@@ -63,6 +64,7 @@ interface Employee {
 // Схема валидации для формы
 const positionFormSchema = z.object({
   name: z.string().min(2, "Название должно содержать минимум 2 символа").max(100, "Название не должно превышать 100 символов"),
+  parent_position_id: z.number().nullable().optional(),
 });
 
 type PositionFormValues = z.infer<typeof positionFormSchema>;
@@ -82,6 +84,7 @@ export default function Positions() {
     resolver: zodResolver(positionFormSchema),
     defaultValues: {
       name: "",
+      parent_position_id: null,
     },
   });
 
@@ -90,6 +93,7 @@ export default function Positions() {
     resolver: zodResolver(positionFormSchema),
     defaultValues: {
       name: "",
+      parent_position_id: null,
     },
   });
 
@@ -271,6 +275,7 @@ export default function Positions() {
     setSelectedPosition(position);
     editForm.reset({
       name: position.name,
+      parent_position_id: position.parent_position_id || null,
     });
     setIsEditDialogOpen(true);
   };
