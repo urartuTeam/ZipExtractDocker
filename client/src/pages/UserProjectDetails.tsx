@@ -72,9 +72,14 @@ export default function UserProjectDetails({ id: propId }: ProjectDetailsProps) 
   // Получаем полную информацию о сотрудниках проекта
   const projectEmployeesWithDetails = employeeProjects.map(ep => {
     const employee = allEmployees.find(e => e.employee_id === ep.employee_id);
+    const position = allPositions.find(p => p.position_id === employee?.position_id);
+    const department = allDepartments.find(d => d.department_id === employee?.department_id);
+    
     return {
       ...ep,
-      employeeDetails: employee
+      employeeDetails: employee,
+      positionName: position?.name || "Неизвестная должность",
+      departmentName: department?.name || "Неизвестный отдел"
     };
   });
 
@@ -188,8 +193,8 @@ export default function UserProjectDetails({ id: propId }: ProjectDetailsProps) 
                   {projectEmployeesWithDetails.map((ep) => (
                     <TableRow key={ep.employee_id}>
                       <TableCell className="font-medium">{ep.employeeDetails?.full_name || "Неизвестный сотрудник"}</TableCell>
-                      <TableCell>{ep.employeeDetails?.position_id || "—"}</TableCell>
-                      <TableCell>{ep.employeeDetails?.department_id || "—"}</TableCell>
+                      <TableCell>{ep.positionName}</TableCell>
+                      <TableCell>{ep.departmentName}</TableCell>
                       <TableCell>{ep.role || "Участник"}</TableCell>
                     </TableRow>
                   ))}
