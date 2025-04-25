@@ -344,27 +344,36 @@ const PositionTree = ({
 type OrganizationTreeProps = {
   initialPositionId?: number;
   onPositionClick?: (positionId: number) => void;
+  departmentsData?: Department[];
+  positionsData?: any[];
+  employeesData?: Employee[];
 };
 
 const OrganizationTree: React.FC<OrganizationTreeProps> = ({ 
   initialPositionId, 
-  onPositionClick 
+  onPositionClick,
+  departmentsData,
+  positionsData,
+  employeesData
 }) => {
-  // Загрузка данных из API
+  // Загрузка данных из API (если не переданы через пропсы)
   const { data: departmentsResponse } = useQuery<{status: string, data: Department[]}>({
     queryKey: ['/api/departments'],
+    enabled: !departmentsData, // Не выполнять запрос, если данные переданы через пропсы
   });
-  const departments = departmentsResponse?.data || [];
+  const departments = departmentsData || departmentsResponse?.data || [];
 
   const { data: positionsResponse } = useQuery<{status: string, data: Position[]}>({
     queryKey: ['/api/positions'],
+    enabled: !positionsData, // Не выполнять запрос, если данные переданы через пропсы
   });
   const positions = positionsResponse?.data || [];
 
   const { data: employeesResponse } = useQuery<{status: string, data: Employee[]}>({
     queryKey: ['/api/employees'],
+    enabled: !employeesData, // Не выполнять запрос, если данные переданы через пропсы
   });
-  const employees = employeesResponse?.data || [];
+  const employees = employeesData || employeesResponse?.data || [];
 
   // Состояние для хранения построенного дерева
   const [departmentTree, setDepartmentTree] = useState<DepartmentNode[]>([]);
@@ -378,10 +387,14 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Состояние для хранения отфильтрованной иерархии должностей, когда выбрана конкретная должность
   const [filteredHierarchy, setFilteredHierarchy] = useState<PositionHierarchyNode[]>([]);
   
-  // Состояние для хранения информации о должностях с отделами
+  // Состояние для хранения информации о должностях с отделами (если не переданы через пропсы)
   const { data: positionsWithDepartmentsResponse } = useQuery<{status: string, data: any[]}>({
     queryKey: ['/api/positions/with-departments'],
+    enabled: !positionsData, // Не выполнять запрос, если данные переданы через пропсы
   });
+  
+  // Используем данные о должностях с отделами из пропсов или из запроса
+  const positionsWithDepartments = positionsData || positionsWithDepartmentsResponse?.data || [];
   
   // Рекурсивно ищем узел должности по ID
   const findPositionNodeById = (

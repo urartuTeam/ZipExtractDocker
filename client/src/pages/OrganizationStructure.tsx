@@ -151,54 +151,77 @@ export default function OrganizationStructure() {
     return childDepts;
   };
   
-  // Получаем должности для указанного отдела
+  // Получаем должности для указанного отдела в правильной иерархии
   const getPositionsForDepartment = (departmentId: number) => {
-    // Используем улучшенный API endpoint с данными о должностях и отделах
     console.log(`Получение должностей для отдела ID:${departmentId}, имеем ${positionsWithDepartments.length} записей`);
     
-    // Сначала проверяем, есть ли данные из API
+    // Получаем все связанные должности
+    let departmentPositions: any[] = [];
+    
     if (positionsWithDepartments.length > 0) {
       // Фильтруем должности, у которых в массиве departments есть нужный department_id
-      const linkedPositions = positionsWithDepartments.filter(pos => 
+      const allLinkedPositions = positionsWithDepartments.filter(pos => 
         pos.departments && 
         Array.isArray(pos.departments) && 
         pos.departments.some((d: any) => d.department_id === departmentId)
       );
       
-      console.log(`Найдено ${linkedPositions.length} должностей, связанных с отделом ID:${departmentId}`);
+      console.log(`Найдено ${allLinkedPositions.length} должностей, связанных с отделом ID:${departmentId}`);
       
-      return linkedPositions.map(position => {
-        // Находим конкретную связь для этого отдела
+      // Преобразуем позиции в формат для отображения
+      departmentPositions = allLinkedPositions.map(position => {
         const deptLink = position.departments.find((d: any) => d.department_id === departmentId);
-        if (!deptLink) {
-          console.error(`Не удалось найти связь для должности ID:${position.position_id} в отделе ID:${departmentId}`);
-          return {
-            position_link_id: 0, // Временный ID
-            position_id: position.position_id,
-            department_id: departmentId,
-            positionName: position.name
-          };
-        }
         return {
-          position_link_id: deptLink.position_link_id,
+          position_link_id: deptLink?.position_link_id || 0,
           position_id: position.position_id,
           department_id: departmentId,
-          positionName: position.name
+          positionName: position.name,
+          parent_position_id: position.parent_position_id,
+          isRoot: position.parent_position_id === null
         };
       });
     } else {
       console.log('Используем резервную логику для получения должностей');
-      // Резервная логика - используем старые данные
+      // Резервная логика
       const positionLinks = positionDepartments?.filter(pd => pd.department_id === departmentId) || [];
       
-      return positionLinks.map(link => {
+      departmentPositions = positionLinks.map(link => {
         const position = positions?.find(p => p.position_id === link.position_id);
         return {
           ...link,
-          positionName: position?.name || 'Неизвестная должность'
+          positionName: position?.name || 'Неизвестная должность',
+          parent_position_id: position?.parent_position_id,
+          isRoot: position?.parent_position_id === null
         };
       });
     }
+    
+    // Создаем иерархическую структуру: вначале корневые должности, а затем их потомки
+    // Находим корневые должности (parent_position_id === null)
+    const rootPositions = departmentPositions.filter(pos => pos.isRoot);
+    
+    // Находим должности, родительские которых не входят в этот отдел
+    // Они также считаются корневыми для отображения
+    const otherRootPositions = departmentPositions.filter(pos => 
+      !pos.isRoot && 
+      !departmentPositions.some(parent => parent.position_id === pos.parent_position_id)
+    );
+    
+    // Объединяем все корневые должности
+    const allRootPositions = [...rootPositions, ...otherRootPositions];
+    
+    // Создаем результат: сначала корневые должности, затем все остальные
+    const result = [
+      ...allRootPositions,
+      ...departmentPositions.filter(pos => 
+        !allRootPositions.some(root => root.position_id === pos.position_id)
+      )
+    ];
+    
+    console.log(`Иерархия должностей для отдела ID:${departmentId}:`, 
+      result.map(p => `${p.positionName} (ID: ${p.position_id}, Parent: ${p.parent_position_id})`));
+    
+    return result;
   };
   
   // Получаем сотрудников для указанной должности в указанном отделе

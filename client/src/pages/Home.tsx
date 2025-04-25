@@ -23,12 +23,18 @@ export default function Home() {
   const { data: projectsResponse, isLoading: isLoadingProjects } = useQuery<{status: string, data: any[]}>({
     queryKey: ['/api/projects'],
   });
+  
+  // Запрос на получение должностей с отделами
+  const { data: positionsWithDepartmentsResponse, isLoading: isLoadingPositionsWithDepartments } = useQuery<{status: string, data: any[]}>({
+    queryKey: ['/api/positions/with-departments'],
+  });
 
   const departments = departmentsResponse?.data || [];
   const employees = employeesResponse?.data || [];
   const projects = projectsResponse?.data || [];
+  const positionsWithDepartments = positionsWithDepartmentsResponse?.data || [];
   
-  const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects;
+  const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects || isLoadingPositionsWithDepartments;
 
   return (
     <div className="flex flex-col h-screen">
@@ -78,7 +84,11 @@ export default function Home() {
               <Skeleton className="h-8 w-1/2 ml-8" />
             </div>
           ) : (
-            <OrganizationTree />
+            <OrganizationTree
+              departmentsData={departments}
+              positionsData={positionsWithDepartments}
+              employeesData={employees}
+            />
           )}
         </div>
 
