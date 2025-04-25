@@ -47,13 +47,19 @@ const DepartmentCard = ({ department }: { department: DepartmentNode }) => {
 // Карточка должности с сотрудниками
 const PositionCard = ({ 
   position, 
-  employees 
+  employees,
+  onClick
 }: { 
   position: Position, 
-  employees: Employee[] 
+  employees: Employee[],
+  onClick?: (positionId: number) => void
 }) => {
   return (
-    <div className="position-employee-card">
+    <div 
+      className="position-employee-card"
+      onClick={() => onClick && onClick(position.position_id)}
+      style={{ cursor: onClick ? 'pointer' : 'default' }}
+    >
       <div className="position-title-small">{position.name}</div>
       <div className="position-divider-small"></div>
       {employees.length > 0 ? (
@@ -188,11 +194,13 @@ type PositionHierarchyNode = {
 const PositionTree = ({ 
   nodes,
   allPositions,
-  allEmployees
+  allEmployees,
+  onPositionClick
 }: { 
   nodes: PositionHierarchyNode[], 
   allPositions: Position[],
-  allEmployees: Employee[]
+  allEmployees: Employee[],
+  onPositionClick?: (positionId: number) => void
 }) => {
   // Берем первую должность для основной ветви (если есть),
   // а остальные должности для дополнительных ветвей
@@ -207,7 +215,11 @@ const PositionTree = ({
         <div className="tree-branch">
           {/* Карточка первой должности верхнего уровня */}
           <div className="tree-node-container">
-            <div className="position-card">
+            <div 
+              className="position-card"
+              onClick={() => onPositionClick && onPositionClick(firstNode.position.position_id)}
+              style={{ cursor: onPositionClick ? 'pointer' : 'default' }}
+            >
               <div className="position-title">{firstNode.position.name}</div>
               {firstNode.employee ? (
                 <div className="employee-name">{firstNode.employee.full_name}</div>
@@ -230,7 +242,11 @@ const PositionTree = ({
               {/* Отображаем подчиненных */}
               {firstNode.subordinates.map((subNode: PositionHierarchyNode, index: number) => (
                 <div key={`${subNode.position.position_id}-${index}`} className="subordinate-branch">
-                  <div className="position-card">
+                  <div 
+                    className="position-card"
+                    onClick={() => onPositionClick && onPositionClick(subNode.position.position_id)}
+                    style={{ cursor: onPositionClick ? 'pointer' : 'default' }}
+                  >
                     <div className="position-title">{subNode.position.name}</div>
                     {subNode.employee ? (
                       <div className="employee-name">{subNode.employee.full_name}</div>
@@ -250,7 +266,11 @@ const PositionTree = ({
                       
                       {subNode.subordinates.map((grandChild: PositionHierarchyNode, grandIndex: number) => (
                         <div key={`${grandChild.position.position_id}-${grandIndex}`} className="subordinate-branch">
-                          <div className="position-card">
+                          <div 
+                            className="position-card"
+                            onClick={() => onPositionClick && onPositionClick(grandChild.position.position_id)}
+                            style={{ cursor: onPositionClick ? 'pointer' : 'default' }}
+                          >
                             <div className="position-title">{grandChild.position.name}</div>
                             {grandChild.employee ? (
                               <div className="employee-name">{grandChild.employee.full_name}</div>
@@ -273,7 +293,11 @@ const PositionTree = ({
       {otherNodes.map((node: PositionHierarchyNode, index: number) => (
         <div key={`${node.position.position_id}-${index}`} className="tree-branch" style={{ marginLeft: '30px' }}>
           <div className="tree-node-container">
-            <div className="position-card">
+            <div 
+              className="position-card"
+              onClick={() => onPositionClick && onPositionClick(node.position.position_id)}
+              style={{ cursor: onPositionClick ? 'pointer' : 'default' }}
+            >
               <div className="position-title">{node.position.name}</div>
               {node.employee ? (
                 <div className="employee-name">{node.employee.full_name}</div>
@@ -294,7 +318,11 @@ const PositionTree = ({
               
               {node.subordinates.map((subNode: PositionHierarchyNode, subIndex: number) => (
                 <div key={`${subNode.position.position_id}-${subIndex}`} className="subordinate-branch">
-                  <div className="position-card">
+                  <div 
+                    className="position-card"
+                    onClick={() => onPositionClick && onPositionClick(subNode.position.position_id)}
+                    style={{ cursor: onPositionClick ? 'pointer' : 'default' }}
+                  >
                     <div className="position-title">{subNode.position.name}</div>
                     {subNode.employee ? (
                       <div className="employee-name">{subNode.employee.full_name}</div>
@@ -312,7 +340,15 @@ const PositionTree = ({
   );
 };
 
-const OrganizationTree: React.FC = () => {
+type OrganizationTreeProps = {
+  initialPositionId?: number;
+  onPositionClick?: (positionId: number) => void;
+};
+
+const OrganizationTree: React.FC<OrganizationTreeProps> = ({ 
+  initialPositionId, 
+  onPositionClick 
+}) => {
   // Загрузка данных из API
   const { data: departmentsResponse } = useQuery<{status: string, data: Department[]}>({
     queryKey: ['/api/departments'],

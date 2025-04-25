@@ -376,6 +376,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Получаем подчиненных должностей для указанной должности
+  app.get('/api/positions/:id/subordinates', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid position ID' });
+      }
+      
+      // Проверяем, существует ли должность
+      const position = await storage.getPosition(id);
+      if (!position) {
+        return res.status(404).json({ status: 'error', message: 'Position not found' });
+      }
+      
+      // Получаем подчиненные должности
+      const subordinates = await storage.getPositionSubordinates(id);
+      
+      // Получаем сотрудников для каждой должности
+      const employees = await storage.getAllEmployees();
+      
+      // Создаем результат, включающий информацию о должностях и сотрудниках
+      const result = subordinates.map(position => {
+        const positionEmployees = employees.filter(emp => emp.position_id === position.position_id);
+        return {
+          position,
+          employees: positionEmployees
+        };
+      });
+      
+      // Находим сотрудника для основной должности
+      const positionEmployee = employees.find(emp => emp.position_id === position.position_id);
+      
+      res.json({ 
+        status: 'success', 
+        data: {
+          position,
+          employee: positionEmployee || null,
+          subordinates: result
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching position subordinates:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch position subordinates' });
+    }
+  });
+  
   // Получаем информацию о должности с отделами
   app.get('/api/positions/:id/with-departments', async (req: Request, res: Response) => {
     try {
