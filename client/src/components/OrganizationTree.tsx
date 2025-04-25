@@ -370,6 +370,12 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   
   // Состояние для хранения иерархии должностей
   const [positionHierarchy, setPositionHierarchy] = useState<PositionHierarchyNode[]>([]);
+  
+  // Состояние для хранения текущей выбранной должности
+  const [selectedPositionId, setSelectedPositionId] = useState<number | undefined>(initialPositionId);
+  
+  // Состояние для хранения отфильтрованной иерархии должностей, когда выбрана конкретная должность
+  const [filteredHierarchy, setFilteredHierarchy] = useState<PositionHierarchyNode[]>([]);
 
   // Рекурсивно вычисляем количество всех дочерних элементов для отдела
   const calculateChildCount = (
@@ -600,6 +606,17 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     return buildPositionHierarchy();
   };
 
+  // Обработчик клика по должности
+  const handlePositionClick = (positionId: number) => {
+    // Обновляем ID выбранной должности
+    setSelectedPositionId(positionId);
+    
+    // Если передан внешний обработчик, вызываем его
+    if (onPositionClick) {
+      onPositionClick(positionId);
+    }
+  };
+
   // Строим дерево, когда данные загружены
   useEffect(() => {
     if (departments.length > 0 && positions.length > 0) {
@@ -627,6 +644,46 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       }
     }
   }, [departments, positions, employees]);
+  
+  // Фильтруем иерархию при изменении выбранной должности
+  useEffect(() => {
+    if (!selectedPositionId || positionHierarchy.length === 0) {
+      // Если нет выбранной должности или иерархия еще не построена, 
+      // показываем первые два уровня
+      if (positionHierarchy.length > 0) {
+        const limitedHierarchy = positionHierarchy.map(node => ({
+          ...node,
+          subordinates: node.subordinates.slice(0, 5), // Ограничиваем до 5 подчиненных для каждого корневого узла
+        })).slice(0, 2); // Ограничиваем до 2 корневых узлов
+        
+        setFilteredHierarchy(limitedHierarchy);
+      } else {
+        setFilteredHierarchy([]);
+      }
+      return;
+    }
+
+    // Находим выбранную должность в иерархии
+    let selectedNode: PositionHierarchyNode | null = null;
+    for (const node of positionHierarchy) {
+      selectedNode = findPositionNodeById([node], selectedPositionId);
+      if (selectedNode) break;
+    }
+
+    // Если должность найдена, создаем новую иерархию с этой должностью в корне
+    if (selectedNode) {
+      // Создаем копию узла, чтобы избежать мутаций оригинальной иерархии
+      const filteredNode = {
+        ...selectedNode,
+        subordinates: [...selectedNode.subordinates], // Получаем всех непосредственных подчиненных
+      };
+      
+      setFilteredHierarchy([filteredNode]);
+    } else {
+      // Если должность не найдена, показываем стандартную иерархию
+      setFilteredHierarchy(positionHierarchy);
+    }
+  }, [selectedPositionId, positionHierarchy]);
 
   // Если данные еще не загружены, показываем загрузку
   if (departments.length === 0 || positions.length === 0) {
@@ -646,10 +703,21 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       
       {/* Отображаем иерархию должностей как горизонтальное дерево */}
       <div className="position-hierarchy">
+        {selectedPositionId && (
+          <div className="position-navigation">
+            <button 
+              className="back-to-main-hierarchy" 
+              onClick={() => setSelectedPositionId(undefined)}
+            >
+              ← Вернуться к общей структуре
+            </button>
+          </div>
+        )}
         <PositionTree
-          nodes={positionHierarchy}
+          nodes={filteredHierarchy.length > 0 ? filteredHierarchy : positionHierarchy.slice(0, 2)}
           allPositions={positions}
           allEmployees={employees}
+          onPositionClick={handlePositionClick}
         />
       </div>
     </div>

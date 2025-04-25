@@ -346,6 +346,14 @@
   border-radius: 6px;
   margin-bottom: 8px;
   text-align: center;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.position-employee-card:hover {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  background-color: #faf5f5;
 }
 
 .position-title-small {
@@ -445,12 +453,31 @@
 /* Стили для иерархии должностей - горизонтальное дерево */
 .position-hierarchy {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: flex-start;
   width: 100%;
   margin: 30px auto;
   padding: 20px;
   overflow: auto;
+}
+
+.position-navigation {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.back-to-main-hierarchy {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.back-to-main-hierarchy:hover {
+  background-color: #e0e0e0;
 }
 
 /* Стилизация ветвей структуры */
@@ -508,10 +535,13 @@
   padding: 10px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .position-card:hover {
   box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+  background-color: #faf5f5;
 }
 
 .position-title {
