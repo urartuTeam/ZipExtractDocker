@@ -503,7 +503,7 @@ export default function Positions() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Нет (верхний уровень)</SelectItem>
+                        <SelectItem value="null">Нет (верхний уровень)</SelectItem>
                         {positionsData?.data.map((position) => (
                           <SelectItem 
                             key={position.position_id} 
@@ -576,7 +576,7 @@ export default function Positions() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Нет (верхний уровень)</SelectItem>
+                        <SelectItem value="null">Нет (верхний уровень)</SelectItem>
                         {positionsData?.data
                           .filter(pos => pos.position_id !== selectedPosition?.position_id) // Исключаем текущую должность
                           .map((position) => (
