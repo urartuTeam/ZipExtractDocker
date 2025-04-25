@@ -61,6 +61,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showAddEmployeeDialog, setShowAddEmployeeDialog] = useState(false);
+  const [showEditProjectDialog, setShowEditProjectDialog] = useState(false);
   
   // Определение, находимся ли мы в админской части
   const isAdminRoute = location.startsWith('/admin');
@@ -73,7 +74,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
 
   // Запрос сотрудников проекта
   const { data: projectEmployeesResponse, isLoading: isLoadingProjectEmployees } = useQuery<{status: string, data: EmployeeProject[]}>({
-    queryKey: ['/api/employeeprojects/project', projectId],
+    queryKey: [`/api/employeeprojects/project/${projectId}`],
     enabled: !!projectId && !isNaN(projectId),
   });
 
@@ -90,6 +91,21 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
     resolver: zodResolver(
       z.object({
         employeeId: z.string().nonempty("Необходимо выбрать сотрудника")
+      })
+    )
+  });
+  
+  // Использовать данные запроса
+  const projectData = projectResponse?.data;
+  
+  // Форма редактирования проекта
+  const editProjectForm = useForm<{ name: string }>({
+    defaultValues: {
+      name: projectData?.name || "",
+    },
+    resolver: zodResolver(
+      z.object({
+        name: z.string().min(1, "Название проекта не может быть пустым")
       })
     )
   });
@@ -115,7 +131,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
         title: "Сотрудник добавлен в проект",
         description: "Сотрудник успешно добавлен в проект",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/employeeprojects/project', projectId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
       setShowAddEmployeeDialog(false);
       addEmployeeForm.reset();
     },
@@ -145,7 +161,39 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
         title: "Сотрудник удален из проекта",
         description: "Сотрудник успешно удален из проекта",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/employeeprojects/project', projectId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Мутация для обновления информации о проекте
+  const updateProject = useMutation({
+    mutationFn: async (values: { name: string }) => {
+      const res = await apiRequest("PUT", `/api/projects/${projectId}`, {
+        name: values.name,
+        department_id: projectData?.department_id || null
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при обновлении информации о проекте");
+      }
+      
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Проект обновлен",
+        description: "Информация о проекте успешно обновлена",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId] });
+      setShowEditProjectDialog(false);
     },
     onError: (error: Error) => {
       toast({
@@ -156,7 +204,6 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
     }
   });
 
-  const project = projectResponse?.data;
   const employeeProjects = projectEmployeesResponse?.data || [];
   const allEmployees = employeesResponse?.data || [];
   
@@ -202,7 +249,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
     );
   }
 
-  if (!project) {
+  if (!projectData) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center mb-6">
@@ -230,6 +277,10 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
   const onSubmitAddEmployee = (values: { employeeId: string }) => {
     addEmployeeToProject.mutate(values);
   };
+  
+  const onSubmitEditProject = (values: { name: string }) => {
+    updateProject.mutate(values);
+  };
 
   return (
     <div className="container mx-auto p-6">
@@ -238,23 +289,38 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Назад к проектам
         </Button>
-        <h1 className="text-2xl font-bold">{project.name}</h1>
+        <h1 className="text-2xl font-bold">{projectData.name}</h1>
       </div>
 
       <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Информация о проекте</CardTitle>
-          <CardDescription>Основные сведения о проекте</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Информация о проекте</CardTitle>
+            <CardDescription>Основные сведения о проекте</CardDescription>
+          </div>
+          <Button 
+            variant="outline"
+            onClick={() => {
+              // Обновляем значения формы перед открытием диалога
+              editProjectForm.reset({
+                name: projectData.name
+              });
+              setShowEditProjectDialog(true);
+            }}
+          >
+            <Pencil className="mr-2 h-4 w-4" />
+            Редактировать
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div>
               <p className="text-sm font-medium text-gray-500">Название проекта:</p>
-              <p className="text-lg">{project.name}</p>
+              <p className="text-lg">{projectData.name}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">ID проекта:</p>
-              <p>#{project.project_id}</p>
+              <p>#{projectData.project_id}</p>
             </div>
           </div>
         </CardContent>
@@ -323,7 +389,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
           <DialogHeader>
             <DialogTitle>Добавить сотрудника в проект</DialogTitle>
             <DialogDescription>
-              Выберите сотрудника для добавления в проект "{project.name}"
+              Выберите сотрудника для добавления в проект "{projectData.name}"
             </DialogDescription>
           </DialogHeader>
           
