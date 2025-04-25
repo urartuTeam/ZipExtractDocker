@@ -634,56 +634,64 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   const buildAdministrationHierarchy = () => {
     // Проверяем, есть ли данные о должностях и отделах
     if (positions.length === 0 || departments.length === 0) {
-      return null;
+      console.error('Нет данных о должностях или отделах');
+      return [];
     }
     
     // Получаем позиции с информацией о департаментах
     const positionsWithDepts = positionsWithDepartmentsResponse?.data || [];
+    console.log('Должности с информацией о отделах:', positionsWithDepts.length);
     
     // Находим отдел "Администрация"
     const adminDepartment = departments.find(dept => dept.name === "Администрация");
     if (!adminDepartment) {
-      return buildPositionHierarchy(); // Резервная логика
+      console.error('Отдел "Администрация" не найден');
+      return [];
     }
     
-    // Находим все должности, привязанные к "Администрации"
-    const adminPositions = positionsWithDepts
-      .filter(pos => pos.departments && pos.departments.some(
-        (d: any) => d.department_id === adminDepartment.department_id
-      ));
+    console.log('Найден отдел "Администрация":', adminDepartment);
     
-    if (adminPositions.length === 0) {
-      return buildPositionHierarchy(); // Резервная логика
+    // Шаг 1: Находим все корневые должности отдела "Администрация" (parent_position_id === null)
+    const adminRootPositions = positionsWithDepts.filter(pos => 
+      pos.parent_position_id === null && 
+      pos.departments && 
+      pos.departments.some((d: any) => d.department_id === adminDepartment.department_id)
+    );
+    
+    console.log('Корневые должности для отдела "Администрация":', 
+      adminRootPositions.map(p => `${p.name} (ID: ${p.position_id})`));
+    
+    if (adminRootPositions.length === 0) {
+      console.error('Не найдены корневые должности для отдела "Администрация"');
+      return [];
     }
     
-    // Создаем узлы для корневых должностей (привязанных к "Администрации")
-    const rootNodes: PositionHierarchyNode[] = adminPositions.map(position => {
+    // Строим иерархию, начиная с корневых должностей
+    const rootNodes: PositionHierarchyNode[] = [];
+    
+    // Для каждой корневой должности строим поддерево
+    adminRootPositions.forEach(rootPosition => {
       // Находим сотрудника на этой должности, если есть
-      const positionEmployee = employees.find(emp => emp.position_id === position.position_id) || null;
+      const positionEmployee = employees.find(emp => emp.position_id === rootPosition.position_id) || null;
       
       // Находим подчиненные должности
-      const subordinatePositions = positions.filter(p => 
-        p.parent_position_id === position.position_id
-      );
+      const subordinatePositions = positions.filter(p => p.parent_position_id === rootPosition.position_id);
       
-      // Для каждой подчиненной должности создаем узел
+      // Для каждой подчиненной должности строим поддерево
       const subordinates: PositionHierarchyNode[] = subordinatePositions.map(subPosition => {
         const subEmployee = employees.find(emp => emp.position_id === subPosition.position_id) || null;
         
-        // Находим подчиненных для подчиненного
-        const grandSubordinates = positions.filter(p => 
-          p.parent_position_id === subPosition.position_id
-        ).map(grandSubPosition => {
-          const grandSubEmployee = employees.find(
-            emp => emp.position_id === grandSubPosition.position_id
-          ) || null;
-          
-          return {
-            position: grandSubPosition,
-            employee: grandSubEmployee,
-            subordinates: [] // Уровень 3, дальше не показываем
-          };
-        });
+        // Находим подчиненных подчиненного (третий уровень)
+        const grandSubordinates = positions.filter(p => p.parent_position_id === subPosition.position_id)
+          .map(grandSubPosition => {
+            const grandSubEmployee = employees.find(emp => emp.position_id === grandSubPosition.position_id) || null;
+            
+            return {
+              position: grandSubPosition,
+              employee: grandSubEmployee,
+              subordinates: [] // На уровне 3 заканчиваем
+            };
+          });
         
         return {
           position: subPosition,
@@ -692,12 +700,14 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         };
       });
       
-      return {
-        position,
+      rootNodes.push({
+        position: rootPosition,
         employee: positionEmployee,
         subordinates
-      };
+      });
     });
+    
+    console.log('Построено', rootNodes.length, 'корневых узлов');
     
     return rootNodes;
   };

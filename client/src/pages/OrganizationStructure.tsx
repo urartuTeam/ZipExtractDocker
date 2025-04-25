@@ -122,27 +122,63 @@ export default function OrganizationStructure() {
   
   // Получаем корневые отделы (без родителя)
   const getRootDepartments = () => {
-    return departments?.filter(dept => dept.parent_department_id === null) || [];
+    console.log('Все отделы:', departments);
+    // В нашей базе данных отделы имеют parent_position_id, а не parent_department_id
+    const rootDepts = departments?.filter(dept => dept.parent_position_id === null) || [];
+    console.log('Корневые отделы:', rootDepts);
+    return rootDepts;
   };
   
   // Получаем дочерние отделы для указанного отдела
   const getChildDepartments = (parentId: number) => {
-    return departments?.filter(dept => dept.parent_department_id === parentId) || [];
+    // В нашей базе данных отделы имеют связь через parent_position_id и позиции
+    // Находим все должности, связанные с указанным отделом
+    const linkedPositions = positionsWithDepartments.filter(pos => 
+      pos.departments && 
+      Array.isArray(pos.departments) && 
+      pos.departments.some((d: any) => d.department_id === parentId)
+    ).map(pos => pos.position_id);
+    
+    console.log(`Должности отдела ID:${parentId}:`, linkedPositions);
+    
+    // Теперь находим отделы, у которых parent_position_id равен одной из должностей в родительском отделе
+    const childDepts = departments?.filter(dept => 
+      dept.parent_position_id !== null && linkedPositions.includes(dept.parent_position_id)
+    ) || [];
+    
+    console.log(`Дочерние отделы для ID:${parentId}:`, childDepts);
+    
+    return childDepts;
   };
   
   // Получаем должности для указанного отдела
   const getPositionsForDepartment = (departmentId: number) => {
     // Используем улучшенный API endpoint с данными о должностях и отделах
+    console.log(`Получение должностей для отдела ID:${departmentId}, имеем ${positionsWithDepartments.length} записей`);
+    
     // Сначала проверяем, есть ли данные из API
     if (positionsWithDepartments.length > 0) {
       // Фильтруем должности, у которых в массиве departments есть нужный department_id
       const linkedPositions = positionsWithDepartments.filter(pos => 
-        pos.departments && pos.departments.some((d: any) => d.department_id === departmentId)
+        pos.departments && 
+        Array.isArray(pos.departments) && 
+        pos.departments.some((d: any) => d.department_id === departmentId)
       );
+      
+      console.log(`Найдено ${linkedPositions.length} должностей, связанных с отделом ID:${departmentId}`);
       
       return linkedPositions.map(position => {
         // Находим конкретную связь для этого отдела
         const deptLink = position.departments.find((d: any) => d.department_id === departmentId);
+        if (!deptLink) {
+          console.error(`Не удалось найти связь для должности ID:${position.position_id} в отделе ID:${departmentId}`);
+          return {
+            position_link_id: 0, // Временный ID
+            position_id: position.position_id,
+            department_id: departmentId,
+            positionName: position.name
+          };
+        }
         return {
           position_link_id: deptLink.position_link_id,
           position_id: position.position_id,
@@ -151,6 +187,7 @@ export default function OrganizationStructure() {
         };
       });
     } else {
+      console.log('Используем резервную логику для получения должностей');
       // Резервная логика - используем старые данные
       const positionLinks = positionDepartments?.filter(pd => pd.department_id === departmentId) || [];
       
@@ -175,6 +212,7 @@ export default function OrganizationStructure() {
   const renderDepartment = (department: Department, level: number = 0) => {
     const isExpanded = expandedDepartments[department.department_id] || false;
     const childDepartments = getChildDepartments(department.department_id);
+    console.log(`Отдел: ${department.name} (ID: ${department.department_id}), дочерние отделы: ${childDepartments.length}`);
     const positions = getPositionsForDepartment(department.department_id);
     
     return (
