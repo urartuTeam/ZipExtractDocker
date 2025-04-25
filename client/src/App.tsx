@@ -50,9 +50,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   // Не показываем Sidebar и Header на странице авторизации и главной странице
-  // А также на страницах проектов для неавторизованных пользователей
-  if (location === '/auth' || location === '/' || 
-      location === '/projects' || location.startsWith('/projects/')) {
+  if (location === '/auth' || location === '/') {
     return <>{children}</>;
   }
 

@@ -320,13 +320,15 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
             <CardTitle>Информация о проекте</CardTitle>
             <CardDescription>Основные сведения о проекте</CardDescription>
           </div>
-          <Button 
-            variant="outline"
-            onClick={() => setShowEditProjectDialog(true)}
-          >
-            <Pencil className="mr-2 h-4 w-4" />
-            Изменить описание
-          </Button>
+          {isAdminRoute && (
+            <Button 
+              variant="outline"
+              onClick={() => setShowEditProjectDialog(true)}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              Изменить описание
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -348,20 +350,24 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
             <CardTitle>Сотрудники проекта</CardTitle>
             <CardDescription>Всего сотрудников: {projectEmployeesWithDetails.length}</CardDescription>
           </div>
-          <Button onClick={() => setShowAddEmployeeDialog(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Добавить сотрудника
-          </Button>
+          {isAdminRoute && (
+            <Button onClick={() => setShowAddEmployeeDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Добавить сотрудника
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           {projectEmployeesWithDetails.length === 0 ? (
             <div className="text-center p-12 border rounded-lg shadow-sm bg-white">
               <h2 className="text-xl font-medium mb-2">Сотрудники не назначены</h2>
               <p className="text-gray-500 mb-4">На данный момент к проекту не привязаны сотрудники.</p>
-              <Button onClick={() => setShowAddEmployeeDialog(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Привязать сотрудника
-              </Button>
+              {isAdminRoute && (
+                <Button onClick={() => setShowAddEmployeeDialog(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Привязать сотрудника
+                </Button>
+              )}
             </div>
           ) : (
             <div className="rounded-md border overflow-x-auto">
@@ -383,17 +389,19 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
                       <TableCell>{ep.employeeDetails?.department_id || "—"}</TableCell>
                       <TableCell>{ep.role || "Участник"}</TableCell>
                       <TableCell>
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => {
-                            if (window.confirm(`Вы уверены, что хотите удалить сотрудника "${ep.employeeDetails?.full_name || 'Неизвестный сотрудник'}" из проекта?`)) {
-                              removeEmployeeFromProject.mutate(ep.employee_id);
-                            }
-                          }}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
+                        {isAdminRoute && (
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => {
+                              if (window.confirm(`Вы уверены, что хотите удалить сотрудника "${ep.employeeDetails?.full_name || 'Неизвестный сотрудник'}" из проекта?`)) {
+                                removeEmployeeFromProject.mutate(ep.employee_id);
+                              }
+                            }}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}
