@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 type Department = {
   department_id: number;
   name: string;
-  parent_department_id: number | null;
+  parent_position_id: number | null;
 }
 
 type Position = {
