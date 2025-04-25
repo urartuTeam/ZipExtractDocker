@@ -442,53 +442,119 @@
   align-items: center;
 }
 
-/* Стили для иерархии должностей */
+/* Стили для иерархии должностей - горизонтальное дерево */
 .position-hierarchy {
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
+  margin: 30px auto;
   padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  overflow: auto;
 }
 
-.position-hierarchy-node {
-  margin-bottom: 15px;
+/* Стилизация ветвей структуры */
+.tree-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tree-node {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.tree-node-container {
+  margin: 0 15px;
   position: relative;
 }
 
-.position-hierarchy-node .position-employee-card {
+/* Горизонтальные и вертикальные линии */
+.tree-branch-connections {
+  display: flex;
+  justify-content: center;
+  position: relative;
+  width: 100%;
+}
+
+.tree-branch-connections:before {
+  content: "";
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  height: 20px;
+  width: 2px;
+  background-color: #a40000;
+}
+
+.tree-branch-line {
+  position: absolute;
+  top: -20px;
+  width: 100%;
+  height: 2px;
+  background-color: #a40000;
+}
+
+/* Стилизация карточек должностей */
+.position-card {
+  width: 220px;
   background-color: white;
   border: 1px solid #e0e0e0;
   border-left: 3px solid #a40000;
   border-radius: 5px;
   padding: 10px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   transition: all 0.2s ease;
 }
 
-.position-hierarchy-node .position-employee-card:hover {
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+.position-card:hover {
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
 }
 
-.position-subordinates {
-  border-left: 2px solid #a40000;
-  margin-left: 20px;
-  padding-left: 20px;
-  margin-top: 10px;
+.position-title {
+  font-weight: bold;
+  color: #333;
+  border-bottom: 1px solid #e0e0e0;
+  padding-bottom: 5px;
+  margin-bottom: 5px;
+}
+
+.employee-name {
+  color: #555;
+}
+
+.position-vacant {
+  color: #888;
+  font-style: italic;
+}
+
+/* Стили для подчиненных в одном блоке */
+.subordinates-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.subordinate-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 10px;
   position: relative;
 }
 
-.position-subordinates:before {
+.subordinate-branch:before {
   content: "";
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 20px;
-  height: 2px;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 20px;
+  width: 2px;
   background-color: #a40000;
 }
 

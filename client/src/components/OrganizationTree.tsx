@@ -183,43 +183,133 @@ type PositionHierarchyNode = {
   subordinates: PositionHierarchyNode[];
 }
 
-// Компонент для отображения иерархии должностей
-const PositionHierarchy = ({ 
-  node, 
-  level = 0,
+// Компонент для отображения горизонтального дерева иерархии должностей
+const PositionTree = ({ 
+  nodes,
   allPositions,
   allEmployees
 }: { 
-  node: PositionHierarchyNode, 
-  level?: number,
+  nodes: PositionHierarchyNode[], 
   allPositions: Position[],
   allEmployees: Employee[]
 }) => {
+  // Выделяем заместителя руководителя и его подчиненных в отдельную ветвь
+  const deputyHeadNode = nodes.find(node => 
+    node.position.name === 'ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА'
+  );
+  
+  // Остальные должности верхнего уровня
+  const otherNodes = nodes.filter(node => 
+    node.position.name !== 'ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА'
+  );
+  
   return (
-    <div className="position-hierarchy-node">
-      <div className="position-employee-card">
-        <div className="position-title-small">{node.position.name}</div>
-        <div className="position-divider-small"></div>
-        {node.employee ? (
-          <div className="position-name-small">{node.employee.full_name}</div>
-        ) : (
-          <div className="position-name-small empty">Вакантная должность</div>
-        )}
-      </div>
-      
-      {node.subordinates.length > 0 && (
-        <div className="position-subordinates">
-          {node.subordinates.map((subNode, index) => (
-            <PositionHierarchy 
-              key={`${subNode.position.position_id}-${index}`}
-              node={subNode}
-              level={level + 1}
-              allPositions={allPositions}
-              allEmployees={allEmployees}
-            />
-          ))}
+    <div className="tree-node">
+      {deputyHeadNode && (
+        <div className="tree-branch">
+          {/* Карточка заместителя руководителя */}
+          <div className="tree-node-container">
+            <div className="position-card">
+              <div className="position-title">{deputyHeadNode.position.name}</div>
+              {deputyHeadNode.employee ? (
+                <div className="employee-name">{deputyHeadNode.employee.full_name}</div>
+              ) : (
+                <div className="position-vacant">Вакантная должность</div>
+              )}
+            </div>
+          </div>
+          
+          {/* Подчиненные заместителя руководителя */}
+          {deputyHeadNode.subordinates.length > 0 && (
+            <div className="subordinates-container">
+              <div className="tree-branch-connections">
+                {/* Горизонтальная линия */}
+                <div className="tree-branch-line" style={{ 
+                  width: `${Math.max(deputyHeadNode.subordinates.length * 240, 100)}px` 
+                }}></div>
+              </div>
+              
+              {/* Отображаем подчиненных */}
+              {deputyHeadNode.subordinates.map((subNode, index) => (
+                <div key={`${subNode.position.position_id}-${index}`} className="subordinate-branch">
+                  <div className="position-card">
+                    <div className="position-title">{subNode.position.name}</div>
+                    {subNode.employee ? (
+                      <div className="employee-name">{subNode.employee.full_name}</div>
+                    ) : (
+                      <div className="position-vacant">Вакантная должность</div>
+                    )}
+                  </div>
+                  
+                  {/* Рекурсивное отображение подчиненных подчиненного, если они есть */}
+                  {subNode.subordinates.length > 0 && (
+                    <div className="subordinates-container">
+                      <div className="tree-branch-connections">
+                        <div className="tree-branch-line" style={{ 
+                          width: `${Math.max(subNode.subordinates.length * 240, 100)}px` 
+                        }}></div>
+                      </div>
+                      
+                      {subNode.subordinates.map((grandChild, grandIndex) => (
+                        <div key={`${grandChild.position.position_id}-${grandIndex}`} className="subordinate-branch">
+                          <div className="position-card">
+                            <div className="position-title">{grandChild.position.name}</div>
+                            {grandChild.employee ? (
+                              <div className="employee-name">{grandChild.employee.full_name}</div>
+                            ) : (
+                              <div className="position-vacant">Вакантная должность</div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
+      
+      {/* Отображаем остальные должности верхнего уровня */}
+      {otherNodes.map((node, index) => (
+        <div key={`${node.position.position_id}-${index}`} className="tree-branch" style={{ marginLeft: '30px' }}>
+          <div className="tree-node-container">
+            <div className="position-card">
+              <div className="position-title">{node.position.name}</div>
+              {node.employee ? (
+                <div className="employee-name">{node.employee.full_name}</div>
+              ) : (
+                <div className="position-vacant">Вакантная должность</div>
+              )}
+            </div>
+          </div>
+          
+          {/* Подчиненные других должностей */}
+          {node.subordinates.length > 0 && (
+            <div className="subordinates-container">
+              <div className="tree-branch-connections">
+                <div className="tree-branch-line" style={{ 
+                  width: `${Math.max(node.subordinates.length * 240, 100)}px` 
+                }}></div>
+              </div>
+              
+              {node.subordinates.map((subNode, subIndex) => (
+                <div key={`${subNode.position.position_id}-${subIndex}`} className="subordinate-branch">
+                  <div className="position-card">
+                    <div className="position-title">{subNode.position.name}</div>
+                    {subNode.employee ? (
+                      <div className="employee-name">{subNode.employee.full_name}</div>
+                    ) : (
+                      <div className="position-vacant">Вакантная должность</div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 };
@@ -561,16 +651,13 @@ const OrganizationTree: React.FC = () => {
         </div>
       )}
       
-      {/* Отображаем иерархию должностей */}
+      {/* Отображаем иерархию должностей как горизонтальное дерево */}
       <div className="position-hierarchy">
-        {positionHierarchy.map((node, index) => (
-          <PositionHierarchy
-            key={`${node.position.position_id}-${index}`}
-            node={node}
-            allPositions={positions}
-            allEmployees={employees}
-          />
-        ))}
+        <PositionTree
+          nodes={positionHierarchy}
+          allPositions={positions}
+          allEmployees={employees}
+        />
       </div>
     </div>
   );
