@@ -79,6 +79,9 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
   const { data: projectResponse, isLoading: isLoadingProject } = useQuery<{status: string, data: Project}>({
     queryKey: ['/api/projects', projectId],
     enabled: !!projectId && !isNaN(projectId),
+    onSuccess: (data) => {
+      console.log("Project data received:", data);
+    }
   });
 
   // Запрос сотрудников проекта
