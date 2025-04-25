@@ -11,7 +11,7 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Project, EmployeeProject, Employee } from '@shared/schema';
+import { Project, EmployeeProject, Employee, Department, Position } from '@shared/schema';
 import { ArrowLeft, Users } from 'lucide-react';
 import { 
   Table, 
@@ -51,11 +51,23 @@ export default function UserProjectDetails({ id: propId }: ProjectDetailsProps) 
     queryKey: ['/api/employees'],
   });
   
+  // Запрос всех должностей
+  const { data: positionsResponse, isLoading: isLoadingPositions } = useQuery<{status: string, data: Position[]}>({
+    queryKey: ['/api/positions'],
+  });
+  
+  // Запрос всех отделов
+  const { data: departmentsResponse, isLoading: isLoadingDepartments } = useQuery<{status: string, data: Department[]}>({
+    queryKey: ['/api/departments'],
+  });
+  
   // Использовать данные запроса
   const projectData = projectResponse?.data;
   
   const employeeProjects = projectEmployeesResponse?.data || [];
   const allEmployees = employeesResponse?.data || [];
+  const allPositions = positionsResponse?.data || [];
+  const allDepartments = departmentsResponse?.data || [];
   
   // Получаем полную информацию о сотрудниках проекта
   const projectEmployeesWithDetails = employeeProjects.map(ep => {
@@ -66,7 +78,7 @@ export default function UserProjectDetails({ id: propId }: ProjectDetailsProps) 
     };
   });
 
-  const isLoading = isLoadingProject || isLoadingProjectEmployees || isLoadingEmployees;
+  const isLoading = isLoadingProject || isLoadingProjectEmployees || isLoadingEmployees || isLoadingPositions || isLoadingDepartments;
 
   if (isLoading) {
     return (

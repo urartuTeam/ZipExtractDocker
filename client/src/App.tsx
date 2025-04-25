@@ -51,8 +51,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     setSidebarOpen(!sidebarOpen);
   };
 
-  // Не показываем Sidebar и Header на странице авторизации и главной странице
-  if (location === '/auth' || location === '/') {
+  // Не показываем Sidebar и Header на странице авторизации, главной странице
+  // и пользовательской странице проектов
+  if (location === '/auth' || location === '/' || location === '/projects' || location.startsWith('/projects/')) {
     return <>{children}</>;
   }
 
