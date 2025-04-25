@@ -229,15 +229,25 @@ const PositionTree = ({
           {/* Карточка первой должности верхнего уровня */}
           <div className="tree-node-container">
             <div 
-              className="position-card"
+              className={`position-card ${firstNode.position.name.includes('(отдел)') ? 'department-card' : ''}`}
               onClick={() => onPositionClick && onPositionClick(firstNode.position.position_id)}
-              style={{ cursor: onPositionClick ? 'pointer' : 'default' }}
+              style={{ 
+                cursor: onPositionClick ? 'pointer' : 'default',
+                backgroundColor: firstNode.position.name.includes('(отдел)') ? '#f0f4ff' : undefined, 
+                borderColor: firstNode.position.name.includes('(отдел)') ? '#4b7bec' : undefined
+              }}
             >
-              <div className="position-title">{firstNode.position.name}</div>
-              {firstNode.employee ? (
-                <div className="employee-name">{firstNode.employee.full_name}</div>
-              ) : (
-                <div className="position-vacant">Вакантная должность</div>
+              <div className="position-title">
+                {firstNode.position.name.includes('(отдел)') 
+                  ? firstNode.position.name.replace(' (отдел)', '') 
+                  : firstNode.position.name}
+              </div>
+              {!firstNode.position.name.includes('(отдел)') && (
+                firstNode.employee ? (
+                  <div className="employee-name">{firstNode.employee.full_name}</div>
+                ) : (
+                  <div className="position-vacant">Вакантная должность</div>
+                )
               )}
               
               {/* Отображение дочерних отделов будет происходить в subordinates-container */}
@@ -397,18 +407,28 @@ const PositionTree = ({
                 }}></div>
               </div>
               
-              {node.subordinates.map((subNode: PositionHierarchyNode, subIndex: number) => (
+              {node.subordinates.filter(sub => sub && sub.position).map((subNode: PositionHierarchyNode, subIndex: number) => (
                 <div key={`${subNode.position.position_id}-${subIndex}`} className="subordinate-branch">
                   <div 
-                    className="position-card"
+                    className={`position-card ${subNode.position.name.includes('(отдел)') ? 'department-card' : ''}`}
                     onClick={() => onPositionClick && onPositionClick(subNode.position.position_id)}
-                    style={{ cursor: onPositionClick ? 'pointer' : 'default' }}
+                    style={{ 
+                      cursor: onPositionClick ? 'pointer' : 'default',
+                      backgroundColor: subNode.position.name.includes('(отдел)') ? '#f0f4ff' : undefined, 
+                      borderColor: subNode.position.name.includes('(отдел)') ? '#4b7bec' : undefined
+                    }}
                   >
-                    <div className="position-title">{subNode.position.name}</div>
-                    {subNode.employee ? (
-                      <div className="employee-name">{subNode.employee.full_name}</div>
-                    ) : (
-                      <div className="position-vacant">Вакантная должность</div>
+                    <div className="position-title">
+                      {subNode.position.name.includes('(отдел)') 
+                        ? subNode.position.name.replace(' (отдел)', '') 
+                        : subNode.position.name}
+                    </div>
+                    {!subNode.position.name.includes('(отдел)') && (
+                      subNode.employee ? (
+                        <div className="employee-name">{subNode.employee.full_name}</div>
+                      ) : (
+                        <div className="position-vacant">Вакантная должность</div>
+                      )
                     )}
                     
                     {/* Отображаем дочерние отделы для должности */}
