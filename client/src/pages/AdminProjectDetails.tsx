@@ -40,7 +40,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Project, EmployeeProject, Employee } from '@shared/schema';
+import { Project, EmployeeProject, Employee, Position, Department } from '@shared/schema';
 import { ArrowLeft, Users, Plus, Edit, Trash, AlertTriangle, Pencil } from 'lucide-react';
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
@@ -250,12 +250,30 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   const employeeProjects = projectEmployeesResponse?.data || [];
   const allEmployees = employeesResponse?.data || [];
   
+  // Запрос всех должностей
+  const { data: positionsResponse, isLoading: isLoadingPositions } = useQuery<{status: string, data: Position[]}>({
+    queryKey: ['/api/positions'],
+  });
+  
+  // Запрос всех отделов
+  const { data: departmentsResponse, isLoading: isLoadingDepartments } = useQuery<{status: string, data: Department[]}>({
+    queryKey: ['/api/departments'],
+  });
+  
+  const allPositions = positionsResponse?.data || [];
+  const allDepartments = departmentsResponse?.data || [];
+  
   // Получаем полную информацию о сотрудниках проекта
   const projectEmployeesWithDetails = employeeProjects.map(ep => {
     const employee = allEmployees.find(e => e.employee_id === ep.employee_id);
+    const position = allPositions.find(p => p.position_id === employee?.position_id);
+    const department = allDepartments.find(d => d.department_id === employee?.department_id);
+    
     return {
       ...ep,
-      employeeDetails: employee
+      employeeDetails: employee,
+      positionName: position?.name || "Неизвестная должность",
+      departmentName: department?.name || "Неизвестный отдел"
     };
   });
 
@@ -264,7 +282,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
     emp => !employeeProjects.some(ep => ep.employee_id === emp.employee_id)
   );
 
-  const isLoading = isLoadingProject || isLoadingProjectEmployees || isLoadingEmployees;
+  const isLoading = isLoadingProject || isLoadingProjectEmployees || isLoadingEmployees || isLoadingPositions || isLoadingDepartments;
 
   // Обработчики форм
   const onSubmitAddEmployee = (values: { employeeId: string }) => {
@@ -276,8 +294,10 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   };
 
   const confirmRemoveEmployee = (employeeId: number) => {
-    setEmployeeToRemove(employeeId);
-    setShowRemoveEmployeeDialog(true);
+    if (typeof employeeId === 'number') {
+      setEmployeeToRemove(employeeId);
+      setShowRemoveEmployeeDialog(true);
+    }
   };
 
   const handleRemoveEmployee = () => {
@@ -423,14 +443,14 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
                   {projectEmployeesWithDetails.map((ep) => (
                     <TableRow key={ep.employee_id}>
                       <TableCell className="font-medium">{ep.employeeDetails?.full_name || "Неизвестный сотрудник"}</TableCell>
-                      <TableCell>{ep.employeeDetails?.position_id || "—"}</TableCell>
-                      <TableCell>{ep.employeeDetails?.department_id || "—"}</TableCell>
+                      <TableCell>{ep.positionName}</TableCell>
+                      <TableCell>{ep.departmentName}</TableCell>
                       <TableCell>{ep.role || "Участник"}</TableCell>
                       <TableCell>
                         <Button 
                           variant="destructive" 
                           size="sm"
-                          onClick={() => confirmRemoveEmployee(ep.employee_id)}
+                          onClick={() => confirmRemoveEmployee(ep.employee_id || 0)}
                         >
                           <Trash className="h-4 w-4" />
                         </Button>

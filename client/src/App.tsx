@@ -32,9 +32,13 @@ function Router() {
       <ProtectedRoute path="/positions" component={Positions} />
       <ProtectedRoute path="/employees" component={Employees} />
       <Route path="/projects" component={UserProjects} />
-      <Route path="/projects/:id" component={UserProjectDetails} />
+      <Route path="/projects/:id">
+        {params => <UserProjectDetails params={params} />}
+      </Route>
       <ProtectedRoute path="/admin/projects" component={AdminProjects} />
-      <ProtectedRoute path="/admin/projects/:id" component={AdminProjectDetails} />
+      <ProtectedRoute path="/admin/projects/:id">
+        {params => <AdminProjectDetails params={params} />}
+      </ProtectedRoute>
       <ProtectedRoute path="/leaves" component={Leaves} />
       <ProtectedRoute path="/organization" component={OrganizationStructure} />
       <Route path="/auth" component={AuthPage} />
