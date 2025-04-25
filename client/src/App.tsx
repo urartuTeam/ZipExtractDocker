@@ -11,8 +11,10 @@ import Home from "./pages/Home";
 import Departments from "./pages/Departments";
 import Positions from "./pages/Positions";
 import Employees from "./pages/Employees";
-import Projects from "./pages/Projects";
-import ProjectDetails from "./pages/ProjectDetails";
+import UserProjects from "./pages/UserProjects";
+import AdminProjects from "./pages/AdminProjects";
+import UserProjectDetails from "./pages/UserProjectDetails";
+import AdminProjectDetails from "./pages/AdminProjectDetails";
 import Leaves from "./pages/Leaves";
 import AuthPage from "./pages/AuthPage";
 import OrganizationStructure from "./pages/OrganizationStructure";
@@ -29,10 +31,10 @@ function Router() {
       <ProtectedRoute path="/departments" component={Departments} />
       <ProtectedRoute path="/positions" component={Positions} />
       <ProtectedRoute path="/employees" component={Employees} />
-      <Route path="/projects" component={Projects} />
-      <Route path="/projects/:id" component={ProjectDetails} />
-      <ProtectedRoute path="/admin/projects" component={Projects} />
-      <ProtectedRoute path="/admin/projects/:id" component={ProjectDetails} />
+      <Route path="/projects" component={UserProjects} />
+      <Route path="/projects/:id" component={UserProjectDetails} />
+      <ProtectedRoute path="/admin/projects" component={AdminProjects} />
+      <ProtectedRoute path="/admin/projects/:id" component={AdminProjectDetails} />
       <ProtectedRoute path="/leaves" component={Leaves} />
       <ProtectedRoute path="/organization" component={OrganizationStructure} />
       <Route path="/auth" component={AuthPage} />

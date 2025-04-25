@@ -37,10 +37,7 @@ export default function UserProjectDetails({ id: propId }: ProjectDetailsProps) 
   // Запрос проекта
   const { data: projectResponse, isLoading: isLoadingProject } = useQuery<{status: string, data: Project}>({
     queryKey: ['/api/projects', projectId],
-    enabled: !!projectId && !isNaN(projectId),
-    onSuccess: (data) => {
-      console.log("Project data received:", data);
-    }
+    enabled: !!projectId && !isNaN(projectId)
   });
 
   // Запрос сотрудников проекта
