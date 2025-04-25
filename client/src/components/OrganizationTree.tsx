@@ -5,20 +5,21 @@ import { useQuery } from "@tanstack/react-query";
 type Department = {
   department_id: number;
   name: string;
-  parent_department_id: number | null;
+  parent_position_id: number | null;
 }
 
 type Position = {
   position_id: number;
   name: string;
   parent_position_id?: number | null;
+  department_id?: number | null;
 }
 
 type Employee = {
   employee_id: number;
   full_name: string;
-  position_id: number;
-  department_id: number;
+  position_id: number | null;
+  department_id: number | null;
   manager_id: number | null; // Добавляем поле manager_id для отслеживания подчиненности
 }
 
@@ -405,9 +406,15 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     allPositions: Position[],
     allEmployees: Employee[]
   ): number => {
-    // Находим непосредственных детей
+    // Находим непосредственных детей - отделы, которые привязаны к должностям в этом отделе
+    const departmentPositions = allPositions.filter(pos => 
+      // Позиции, которые связаны с сотрудниками в этом отделе
+      allEmployees.some(emp => emp.position_id === pos.position_id && emp.department_id === department.department_id)
+    );
+    
+    // Находим отделы, которые привязаны к должностям в этом отделе
     const children = allDepartments.filter(
-      d => d.parent_department_id === department.department_id
+      d => departmentPositions.some(pos => d.parent_position_id === pos.position_id)
     );
     
     // Считаем количество позиций в текущем отделе
@@ -417,7 +424,10 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         emp => emp.position_id === pos.position_id && emp.department_id === department.department_id
       );
       
-      return hasEmployeesInDepartment;
+      // Проверяем, имеет ли позиция прямую связь с отделом
+      const isDirectlyLinkedToThisDepartment = pos.department_id === department.department_id;
+      
+      return hasEmployeesInDepartment || isDirectlyLinkedToThisDepartment;
     }).length;
     
     // Если нет позиций, считаем минимум 1
@@ -443,9 +453,26 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     allEmployees: Employee[],
     totalElements: number
   ): DepartmentNode[] => {
-    const departmentsAtLevel = allDepartments.filter(
-      d => d.parent_department_id === parentId
-    );
+    // Находим отделы либо без родительской должности (корневые), либо с заданной родительской должностью
+    const departmentsAtLevel = parentId === null 
+      ? allDepartments.filter(d => d.parent_position_id === null)
+      : allDepartments.filter(d => {
+          // Находим все позиции в отделе с parentId
+          const departmentPositions = allPositions.filter(pos => {
+            // Позиция непосредственно привязана к отделу
+            const isDirectlyLinkedToThisDepartment = pos.department_id === parentId;
+            
+            // Позиция связана с сотрудником в этом отделе
+            const hasEmployeesInDepartment = allEmployees.some(
+              emp => emp.position_id === pos.position_id && emp.department_id === parentId
+            );
+            
+            return isDirectlyLinkedToThisDepartment || hasEmployeesInDepartment;
+          });
+          
+          // Отдел привязан к одной из должностей в родительском отделе
+          return departmentPositions.some(pos => d.parent_position_id === pos.position_id);
+        });
     
     // Вычисляем childCount для каждого отдела
     const departmentsWithCounts = departmentsAtLevel.map(dept => {
@@ -536,7 +563,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     
     // Строим иерархию на основе parent_position_id
     positions.forEach(position => {
-      if (position.parent_position_id) {
+      if (position.parent_position_id !== null && position.parent_position_id !== undefined) {
         // Находим родительскую должность
         const parentNode = positionNodes[position.parent_position_id];
         // Находим узел текущей должности
@@ -552,10 +579,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Дополнительно учитываем manager_id для сотрудников без parent_position_id
     // Это резервная логика, если parent_position_id не указан
     employees.forEach(employee => {
-      if (employee.manager_id) {
+      // Проверяем, что у сотрудника есть позиция и менеджер
+      if (employee.manager_id !== null && employee.position_id !== null) {
         // Находим менеджера
         const manager = employees.find(emp => emp.employee_id === employee.manager_id);
-        if (manager) {
+        if (manager && manager.position_id !== null) {
           // Находим узел должности сотрудника
           const employeeNode = positionNodes[employee.position_id];
           // Находим узел должности менеджера
@@ -570,7 +598,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           if (employeeNode && managerNode && !isAlreadySubordinate) {
             // Добавляем должность сотрудника как подчиненную к должности менеджера
             // только если еще не была добавлена через parent_position_id
-            if (!managerNode.subordinates.some(sub => sub.position.position_id === employeeNode.position.position_id)) {
+            if (!managerNode.subordinates.some((sub: PositionHierarchyNode) => 
+                sub.position.position_id === employeeNode.position.position_id)) {
               managerNode.subordinates.push(employeeNode);
             }
           }
@@ -622,8 +651,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Строим дерево, когда данные загружены
   useEffect(() => {
     if (departments.length > 0 && positions.length > 0) {
-      // Находим корневые отделы (без родителя)
-      const rootDepartments = departments.filter(d => d.parent_department_id === null);
+      // Находим корневые отделы (без родительской должности)
+      const rootDepartments = departments.filter(d => d.parent_position_id === null);
       
       // Вычисляем общее количество элементов для масштабирования
       const totalElements = rootDepartments.reduce(
