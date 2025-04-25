@@ -62,6 +62,7 @@ interface Position {
   name: string;
   departments?: DepartmentLink[];
   parent_position_id?: number | null;
+  department_id?: number | null;
 }
 
 interface Employee {
@@ -73,6 +74,7 @@ interface Employee {
 const positionFormSchema = z.object({
   name: z.string().min(2, "Название должно содержать минимум 2 символа").max(100, "Название не должно превышать 100 символов"),
   parent_position_id: z.number().nullable().optional(),
+  department_id: z.number().nullable().optional(),
 });
 
 type PositionFormValues = z.infer<typeof positionFormSchema>;
@@ -93,6 +95,7 @@ export default function Positions() {
     defaultValues: {
       name: "",
       parent_position_id: null,
+      department_id: null,
     },
   });
 
@@ -102,6 +105,7 @@ export default function Positions() {
     defaultValues: {
       name: "",
       parent_position_id: null,
+      department_id: null,
     },
   });
 
@@ -287,6 +291,7 @@ export default function Positions() {
     editForm.reset({
       name: position.name,
       parent_position_id: position.parent_position_id || null,
+      department_id: position.department_id || null,
     });
     setIsEditDialogOpen(true);
   };
@@ -522,6 +527,40 @@ export default function Positions() {
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="department_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Отдел</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value === "null" ? null : parseInt(value));
+                      }}
+                      value={field.value?.toString() || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите отдел" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="null">Не привязывать к отделу</SelectItem>
+                        {departmentsData?.data.map((department) => (
+                          <SelectItem 
+                            key={department.department_id} 
+                            value={department.department_id.toString()}
+                          >
+                            {department.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <DialogFooter>
                 <Button 
@@ -592,6 +631,40 @@ export default function Positions() {
                             </SelectItem>
                           ))
                         }
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="department_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Отдел</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value === "null" ? null : parseInt(value));
+                      }}
+                      value={field.value?.toString() || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите отдел" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="null">Не привязывать к отделу</SelectItem>
+                        {departmentsData?.data.map((department) => (
+                          <SelectItem 
+                            key={department.department_id} 
+                            value={department.department_id.toString()}
+                          >
+                            {department.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />

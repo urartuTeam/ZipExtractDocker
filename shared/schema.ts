@@ -12,23 +12,28 @@ export const users = pgTable("users", {
   created_at: timestamp("created_at").defaultNow(),
 });
 
-// Отделы
-export const departments = pgTable("departments", {
-  department_id: serial("department_id").primaryKey(),
-  name: text("name").notNull(),
-  parent_department_id: integer("parent_department_id"),
-});
-
 // Должности
 export const positions = pgTable("positions", {
   position_id: serial("position_id").primaryKey(),
   name: text("name").notNull(),
-  department_id: integer("department_id").references(() => departments.department_id),
   staff_units: integer("staff_units").default(0),
   current_count: integer("current_count").default(0),
   vacancies: integer("vacancies").default(0),
-  parent_position_id: integer("parent_position_id").references(() => positions.position_id),
+  parent_position_id: integer("parent_position_id"),
   sort: integer("sort").default(0),
+});
+
+// Для создания self-reference на position.position_id
+export const positionReferences = pgTable("_dummy_position_references", {
+  id: serial("id").primaryKey(),
+  position_id: integer("position_id").references(() => positions.position_id),
+});
+
+// Отделы
+export const departments = pgTable("departments", {
+  department_id: serial("department_id").primaryKey(),
+  name: text("name").notNull(),
+  parent_position_id: integer("parent_position_id").references(() => positions.position_id),
 });
 
 // Связь между должностями и отделами
@@ -77,12 +82,10 @@ export const leaves = pgTable("leaves", {
 
 // Отношения
 export const departmentsRelations = relations(departments, ({ one, many }) => ({
-  parentDepartment: one(departments, {
-    fields: [departments.parent_department_id],
-    references: [departments.department_id],
-    relationName: "parent_department"
+  parentPosition: one(positions, {
+    fields: [departments.parent_position_id],
+    references: [positions.position_id],
   }),
-  childDepartments: many(departments, { relationName: "parent_department" }),
   positions: many(position_department, { relationName: "department_positions" }),
   employees: many(employees),
   projects: many(projects),
@@ -94,7 +97,7 @@ export const positionsRelations = relations(positions, ({ many, one }) => ({
   parentPosition: one(positions, {
     fields: [positions.parent_position_id],
     references: [positions.position_id],
-    relationName: "parent_position"
+    relationName: "parent_position",
   }),
   childPositions: many(positions, { relationName: "parent_position" }),
 }));
@@ -103,12 +106,12 @@ export const position_departmentRelations = relations(position_department, ({ on
   position: one(positions, {
     fields: [position_department.position_id],
     references: [positions.position_id],
-    relationName: "position_departments"
+    relationName: "position_departments",
   }),
   department: one(departments, {
     fields: [position_department.department_id],
     references: [departments.department_id],
-    relationName: "department_positions"
+    relationName: "department_positions",
   }),
 }));
 
@@ -124,7 +127,7 @@ export const employeesRelations = relations(employees, ({ one, many }) => ({
   manager: one(employees, {
     fields: [employees.manager_id],
     references: [employees.employee_id],
-    relationName: "manager_employee"
+    relationName: "manager_employee",
   }),
   subordinates: many(employees, { relationName: "manager_employee" }),
   leaves: many(leaves),
