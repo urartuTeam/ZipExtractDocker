@@ -404,11 +404,14 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
 
 // Основной компонент страницы проектов (список)
 export default function Projects() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddProjectDialog, setShowAddProjectDialog] = useState(false);
+  
+  // Определяем, находимся ли мы в админке
+  const isAdmin = location.startsWith('/admin');
 
   // Форма добавления проекта
   const projectFormSchema = z.object({
@@ -519,14 +522,86 @@ export default function Projects() {
         />
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Список проектов</CardTitle>
-          <CardDescription>
-            Всего проектов: {projects.length || 0}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      {isAdmin ? (
+        // Отображение для админки (таблица)
+        <Card>
+          <CardHeader>
+            <CardTitle>Список проектов</CardTitle>
+            <CardDescription>
+              Всего проектов: {projects.length || 0}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="text-lg text-gray-500">Загрузка данных...</div>
+              </div>
+            ) : projects.length === 0 ? (
+              <div className="text-center p-12 border rounded-lg shadow-sm bg-white">
+                <h2 className="text-xl font-medium mb-2">Список проектов пуст</h2>
+                <p className="text-gray-500 mb-4">На данный момент проекты не созданы.</p>
+                <Button onClick={() => setShowAddProjectDialog(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Создать проект
+                </Button>
+              </div>
+            ) : (
+              <div className="rounded-md border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[60px]">ID</TableHead>
+                      <TableHead>Название</TableHead>
+                      <TableHead>Описание</TableHead>
+                      <TableHead>Сотрудники</TableHead>
+                      <TableHead className="w-[100px]">Действия</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredProjects.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center h-24">
+                          Проекты не найдены
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredProjects.map((project) => (
+                        <TableRow key={project.project_id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/admin/projects/${project.project_id}`)}>
+                          <TableCell>{project.project_id}</TableCell>
+                          <TableCell className="font-medium">{project.name}</TableCell>
+                          <TableCell>{project.description || "—"}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <Users className="h-4 w-4 mr-2 text-gray-500" />
+                              <span>{getEmployeeCount(project.project_id)}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/admin/projects/${project.project_id}`);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        // Отображение для основной страницы (карточки)
+        <div>
           {isLoading ? (
             <div className="flex justify-center items-center h-64">
               <div className="text-lg text-gray-500">Загрузка данных...</div>
@@ -541,57 +616,29 @@ export default function Projects() {
               </Button>
             </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[60px]">ID</TableHead>
-                    <TableHead>Название</TableHead>
-                    <TableHead>Сотрудники</TableHead>
-                    <TableHead className="w-[100px]">Действия</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredProjects.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center h-24">
-                        Проекты не найдены
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredProjects.map((project) => (
-                      <TableRow key={project.project_id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/admin/projects/${project.project_id}`)}>
-                        <TableCell>{project.project_id}</TableCell>
-                        <TableCell className="font-medium">{project.name}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center">
-                            <Users className="h-4 w-4 mr-2 text-gray-500" />
-                            <span>{getEmployeeCount(project.project_id)}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`/admin/projects/${project.project_id}`);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProjects.map((project) => (
+                <Card key={project.project_id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate(`/projects/${project.project_id}`)}>
+                  <CardHeader>
+                    <CardTitle>{project.name}</CardTitle>
+                    <CardDescription>
+                      <div className="flex items-center mt-2">
+                        <Users className="h-4 w-4 mr-2 text-gray-500" />
+                        <span>{getEmployeeCount(project.project_id)} сотрудников</span>
+                      </div>
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="line-clamp-3 text-gray-600">
+                      {project.description || "Нет описания"}
+                    </p>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
       <Dialog open={showAddProjectDialog} onOpenChange={setShowAddProjectDialog}>
         <DialogContent>
@@ -618,7 +665,19 @@ export default function Projects() {
                 )}
               />
               
-
+              <FormField
+                control={projectForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Описание проекта</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Введите описание проекта" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <DialogFooter>
                 <Button 
