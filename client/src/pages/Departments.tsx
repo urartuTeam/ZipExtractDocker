@@ -326,14 +326,13 @@ export default function Departments() {
                                 variant="destructive" 
                                 size="sm" 
                                 onClick={() => handleDelete(department)}
-                                disabled={hasEmployees || hasChildDepartments}
                                 title={
                                   hasEmployees && hasChildDepartments 
-                                    ? "Невозможно удалить: имеются сотрудники и дочерние отделы" 
+                                    ? "В отделе имеются сотрудники и дочерние отделы" 
                                     : hasEmployees 
-                                    ? "Невозможно удалить: имеются сотрудники в этом отделе" 
+                                    ? "В отделе имеются сотрудники" 
                                     : hasChildDepartments 
-                                    ? "Невозможно удалить: имеются дочерние отделы" 
+                                    ? "В отделе имеются дочерние отделы" 
                                     : ""
                                 }
                               >
@@ -509,7 +508,6 @@ export default function Departments() {
             <AlertDialogAction 
               onClick={confirmDelete}
               className="bg-red-500 hover:bg-red-600"
-              disabled={deleteDepartment.isPending}
             >
               {deleteDepartment.isPending ? "Удаление..." : "Удалить"}
             </AlertDialogAction>
