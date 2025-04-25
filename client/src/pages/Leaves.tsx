@@ -736,7 +736,6 @@ export default function Leaves() {
             <AlertDialogAction 
               onClick={confirmDelete}
               className="bg-red-500 hover:bg-red-600"
-              disabled={deleteLeave.isPending}
             >
               {deleteLeave.isPending ? "Удаление..." : "Удалить"}
             </AlertDialogAction>
