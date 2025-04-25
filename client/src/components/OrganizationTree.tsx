@@ -184,31 +184,12 @@ const DepartmentWithChildren = ({
   );
 };
 
-// Типы для построения комбинированной иерархии позиций и отделов
-// Тип узла дерева может быть либо должностью, либо отделом
-type HierarchyNodeType = 'position' | 'department';
-
-// Базовый интерфейс для узла иерархии
-interface BaseHierarchyNode {
-  type: HierarchyNodeType;
-  id: number;
-  name: string;
-}
-
-// Для позиций в иерархии
-interface PositionHierarchyNode extends BaseHierarchyNode {
-  type: 'position';
+// Тип для построения иерархии позиций
+type PositionHierarchyNode = {
   position: Position;
   employee: Employee | null;
-  subordinates: (PositionHierarchyNode | DepartmentHierarchyNode)[];
-}
-
-// Для отделов в иерархии
-interface DepartmentHierarchyNode extends BaseHierarchyNode {
-  type: 'department';
-  department: Department;
-  positions: PositionHierarchyNode[];
-  subordinates: (PositionHierarchyNode | DepartmentHierarchyNode)[];
+  subordinates: PositionHierarchyNode[];
+  childDepartments?: Department[]; // Дочерние отделы, связанные с этой должностью
 }
 
 // Компонент для отображения горизонтального дерева иерархии должностей
@@ -248,7 +229,17 @@ const PositionTree = ({
                 <div className="position-vacant">Вакантная должность</div>
               )}
               
-
+              {/* Отображаем дочерние отделы для должности */}
+              {firstNode.childDepartments && firstNode.childDepartments.length > 0 && (
+                <div className="child-departments">
+                  <div className="child-departments-title">Подчиненные отделы:</div>
+                  {firstNode.childDepartments.map((dept) => (
+                    <div key={dept.department_id} className="child-department-name">
+                      {dept.name}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
           
@@ -767,81 +758,27 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         emp.department_id === adminDepartment.department_id
       ) || null;
       
-      // Базовый узел должности
-      positionMap[position.position_id] = {
-        position,
-        employee,
-        subordinates: []
-      };
-    });
-    
-    // Список корневых должностей (пока пустой)
-    const rootNodes: PositionHierarchyNode[] = [];
-    
-    // Добавим логику для создания узлов дочерних отделов для должностей
-    adminPositions.forEach(position => {
-      // Находим дочерние отделы для должности
+      // Находим дочерние отделы, связанные с этой должностью
       const childDepartments = departments.filter(dept => 
         dept.parent_position_id === position.position_id
       );
       
-      // Если у должности есть дочерние отделы, добавляем их как подчиненные элементы
+      positionMap[position.position_id] = {
+        position,
+        employee,
+        subordinates: [],
+        childDepartments: childDepartments.length > 0 ? childDepartments : undefined
+      };
+      
+      // Выводим для отладки информацию о дочерних отделах
       if (childDepartments.length > 0) {
         console.log(`Должность "${position.name}" (ID: ${position.position_id}) имеет дочерние отделы:`, 
-          childDepartments.map(dept => `${dept.name} (ID: ${dept.department_id})`)
-        );
-        
-        // Для каждого дочернего отдела
-        childDepartments.forEach(department => {
-          // Находим должности этого отдела
-          const deptPositions = positions.filter(pos => {
-            return employees.some(emp => 
-              emp.position_id === pos.position_id && 
-              emp.department_id === department.department_id
-            );
-          });
-          
-          // Создаем карточки должностей отдела
-          const positionCards = deptPositions.map(pos => {
-            // Находим сотрудника на этой должности в этом отделе
-            const emp = employees.find(e => 
-              e.position_id === pos.position_id && 
-              e.department_id === department.department_id
-            ) || null;
-            
-            // Возвращаем объект позиции с сотрудником
-            return {
-              position: pos,
-              employee: emp,
-              subordinates: []
-            };
-          });
-          
-          // Создаем структуру для отображения отдела со списком должностей
-          const departmentNode: DepartmentNode = {
-            ...department,
-            positions: deptPositions,
-            children: [],
-            width: 100,
-            childCount: deptPositions.length
-          };
-          
-          // Добавляем отдел как "должность" в иерархии для отображения
-          const departmentPositionNode: PositionHierarchyNode = {
-            position: {
-              position_id: department.department_id * 1000, // Используем уникальный ID
-              name: department.name,
-              department_id: department.department_id
-            },
-            employee: null, // У отдела нет сотрудника
-            subordinates: positionCards // Подчиненные - это должности отдела
-          };
-          
-          // Добавляем узел отдела как подчиненный элемент к должности-родителю
-          positionMap[position.position_id].subordinates.push(departmentPositionNode);
-        });
+          childDepartments.map(dept => `${dept.name} (ID: ${dept.department_id})`));
       }
     });
+    
+    // Список корневых должностей (пока пустой)
+    const rootNodes: PositionHierarchyNode[] = [];
     
     // Распределяем должности в иерархии на основе parent_position_id
     adminPositions.forEach(position => {
@@ -852,14 +789,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         rootNodes.push(currentNode);
       } else if (positionMap[position.parent_position_id]) {
         // Это подчиненная должность, у которой родительская должность находится в этом отделе
-        // Проверяем, не добавили ли мы уже эту должность как часть отдела
-        const alreadyAdded = positionMap[position.parent_position_id].subordinates.some(node => 
-          node.position && node.position.position_id === position.position_id
-        );
-        
-        if (!alreadyAdded) {
-          positionMap[position.parent_position_id].subordinates.push(currentNode);
-        }
+        positionMap[position.parent_position_id].subordinates.push(currentNode);
       } else {
         // Родитель не найден в этом отделе, считаем должность корневой
         rootNodes.push(currentNode);
