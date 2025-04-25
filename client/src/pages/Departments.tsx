@@ -73,7 +73,7 @@ export default function Departments() {
     resolver: zodResolver(departmentFormSchema),
     defaultValues: {
       name: "",
-      parent_department_id: null,
+      parent_position_id: null,
     },
   });
 
@@ -82,7 +82,7 @@ export default function Departments() {
     resolver: zodResolver(departmentFormSchema),
     defaultValues: {
       name: "",
-      parent_department_id: null,
+      parent_position_id: null,
     },
   });
 
@@ -180,9 +180,14 @@ export default function Departments() {
   const { data: employeesData } = useQuery<{ status: string, data: any[] }>({
     queryKey: ['/api/employees'],
   });
+  
+  // Запрос на получение должностей
+  const { data: positionsData } = useQuery<{ status: string, data: any[] }>({
+    queryKey: ['/api/positions'],
+  });
 
   // Настройка автоматического обновления данных каждые 5 секунд
-  useDataRefresh(['/api/departments', '/api/employees']);
+  useDataRefresh(['/api/departments', '/api/employees', '/api/positions']);
 
   // Фильтрация отделов на основе поискового запроса
   const filteredDepartments = departmentsData?.data.filter(dept => 
@@ -203,10 +208,10 @@ export default function Departments() {
     setSelectedDepartment(department);
     editForm.reset({
       name: department.name,
-      parent_department_id: department.parent_department_id ? 
-        department.parent_department_id.toString() : 
+      parent_position_id: department.parent_position_id ? 
+        department.parent_position_id.toString() : 
         "null",
-    });
+    } as any);
     setIsEditDialogOpen(true);
   };
 
@@ -235,7 +240,7 @@ export default function Departments() {
     if (!departmentsData?.data) return false;
     
     return departmentsData.data.some(
-      (dept) => dept.parent_department_id === departmentId
+      (dept) => dept.parent_position_id === departmentId
     );
   };
 
@@ -278,7 +283,7 @@ export default function Departments() {
                   <TableRow>
                     <TableHead className="w-[80px]">ID</TableHead>
                     <TableHead>Название</TableHead>
-                    <TableHead>Родительский отдел</TableHead>
+                    <TableHead>Родительская должность</TableHead>
                     <TableHead className="w-[150px]">Действия</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -291,9 +296,9 @@ export default function Departments() {
                     </TableRow>
                   ) : (
                     filteredDepartments.map((department) => {
-                      // Найдем имя родительского отдела
-                      const parentDepartment = department.parent_department_id 
-                        ? departmentsData?.data.find(d => d.department_id === department.parent_department_id)
+                      // Найдем имя родительской должности
+                      const parentPosition = department.parent_position_id 
+                        ? positionsData?.data.find(p => p.position_id === department.parent_position_id)
                         : null;
 
                       // Проверка зависимостей для предупреждения
@@ -305,7 +310,7 @@ export default function Departments() {
                           <TableCell>{department.department_id}</TableCell>
                           <TableCell className="font-medium">{department.name}</TableCell>
                           <TableCell>
-                            {parentDepartment ? parentDepartment.name : '—'}
+                            {parentPosition ? parentPosition.name : '—'}
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
@@ -374,27 +379,27 @@ export default function Departments() {
               
               <FormField
                 control={form.control}
-                name="parent_department_id"
+                name="parent_position_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Родительский отдел</FormLabel>
+                    <FormLabel>Родительская должность</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value?.toString() || "null"}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Выберите родительский отдел" />
+                          <SelectValue placeholder="Выберите родительскую должность" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="null">Нет (корневой отдел)</SelectItem>
-                        {departmentsData?.data.map((dept) => (
+                        {positionsData?.data.map((pos) => (
                           <SelectItem 
-                            key={dept.department_id} 
-                            value={dept.department_id.toString()}
+                            key={pos.position_id} 
+                            value={pos.position_id.toString()}
                           >
-                            {dept.name}
+                            {pos.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -445,32 +450,29 @@ export default function Departments() {
               
               <FormField
                 control={editForm.control}
-                name="parent_department_id"
+                name="parent_position_id"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Родительский отдел</FormLabel>
+                    <FormLabel>Родительская должность</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value?.toString() || "null"}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Выберите родительский отдел" />
+                          <SelectValue placeholder="Выберите родительскую должность" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="null">Нет (корневой отдел)</SelectItem>
-                        {departmentsData?.data
-                          .filter(dept => dept.department_id !== selectedDepartment?.department_id) // Исключаем текущий отдел
-                          .map((dept) => (
-                            <SelectItem 
-                              key={dept.department_id} 
-                              value={dept.department_id.toString()}
-                            >
-                              {dept.name}
-                            </SelectItem>
-                          ))
-                        }
+                        {positionsData?.data.map((pos) => (
+                          <SelectItem 
+                            key={pos.position_id} 
+                            value={pos.position_id.toString()}
+                          >
+                            {pos.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
