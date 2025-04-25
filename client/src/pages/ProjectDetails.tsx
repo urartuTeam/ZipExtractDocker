@@ -57,10 +57,13 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
   const params = useParams();
   const idFromParams = params?.id || propId;
   const projectId = parseInt(idFromParams as string);
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showAddEmployeeDialog, setShowAddEmployeeDialog] = useState(false);
+  
+  // Определение, находимся ли мы в админской части
+  const isAdminRoute = location.startsWith('/admin');
 
   // Запрос проекта
   const { data: projectResponse, isLoading: isLoadingProject } = useQuery<{status: string, data: Project}>({
@@ -177,7 +180,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center mb-6">
-          <Button variant="outline" size="sm" className="mr-4" onClick={() => navigate('/admin/projects')}>
+          <Button variant="outline" size="sm" className="mr-4" onClick={() => navigate(isAdminRoute ? '/admin/projects' : '/projects')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Назад к проектам
           </Button>
@@ -203,7 +206,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center mb-6">
-          <Button variant="outline" size="sm" className="mr-4" onClick={() => navigate('/admin/projects')}>
+          <Button variant="outline" size="sm" className="mr-4" onClick={() => navigate(isAdminRoute ? '/admin/projects' : '/projects')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Назад к проектам
           </Button>
@@ -214,7 +217,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
             <div className="text-center p-12">
               <h2 className="text-xl font-medium mb-2">Проект не найден</h2>
               <p className="text-gray-500 mb-4">Проект с ID {projectId} не существует.</p>
-              <Button onClick={() => navigate('/admin/projects')}>
+              <Button onClick={() => navigate(isAdminRoute ? '/admin/projects' : '/projects')}>
                 Вернуться к списку проектов
               </Button>
             </div>
@@ -231,7 +234,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center mb-6">
-        <Button variant="outline" size="sm" className="mr-4" onClick={() => navigate('/admin/projects')}>
+        <Button variant="outline" size="sm" className="mr-4" onClick={() => navigate(isAdminRoute ? '/admin/projects' : '/projects')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Назад к проектам
         </Button>
