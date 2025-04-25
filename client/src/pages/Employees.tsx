@@ -429,8 +429,7 @@ export default function Employees() {
                                 variant="destructive" 
                                 size="sm"
                                 onClick={() => handleDelete(employee)}
-                                disabled={!canDelete}
-                                title={!canDelete ? "Невозможно удалить: сотрудник является руководителем" : ""}
+                                title={!canDelete ? "Сотрудник является руководителем" : ""}
                               >
                                 Удалить
                               </Button>
@@ -808,7 +807,6 @@ export default function Employees() {
             <AlertDialogAction 
               onClick={confirmDelete}
               className="bg-red-500 hover:bg-red-600"
-              disabled={deleteEmployee.isPending}
             >
               {deleteEmployee.isPending ? "Удаление..." : "Удалить"}
             </AlertDialogAction>

@@ -450,8 +450,7 @@ export default function Positions() {
                                 variant="destructive" 
                                 size="sm" 
                                 onClick={() => handleDelete(position)}
-                                disabled={usedByEmployees}
-                                title={usedByEmployees ? "Невозможно удалить: должность назначена сотрудникам" : ""}
+                                title={usedByEmployees ? "Должность назначена сотрудникам" : ""}
                               >
                                 Удалить
                               </Button>
@@ -700,7 +699,6 @@ export default function Positions() {
             <AlertDialogAction 
               onClick={confirmDelete}
               className="bg-red-500 hover:bg-red-600"
-              disabled={deletePosition.isPending}
             >
               {deletePosition.isPending ? "Удаление..." : "Удалить"}
             </AlertDialogAction>
