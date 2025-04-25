@@ -35,13 +35,18 @@ export default function Header({ toggleSidebar, activeTab }: HeaderProps) {
     logoutMutation.mutate();
   };
 
+  // Проверяем, находимся ли мы на странице проектов для обычных пользователей
+  const isProjectsPage = activeTab === '/projects' || activeTab.startsWith('/projects/');
+
   return (
     <header className="w-full border-b border-neutral-200">
       <div className="flex items-center justify-between header-with-image px-6">
         <div className="flex items-center">
-          <button onClick={toggleSidebar} className="text-white focus:outline-none mr-4">
-            <Menu className="h-6 w-6" />
-          </button>
+          {!isProjectsPage && (
+            <button onClick={toggleSidebar} className="text-white focus:outline-none mr-4">
+              <Menu className="h-6 w-6" />
+            </button>
+          )}
           {/* Убираем заголовок */}
         </div>
         <div className="flex items-center space-x-4">
