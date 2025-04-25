@@ -1,0 +1,138 @@
+app-1       | 2:10:37 PM [express] GET /api/positions 500 in 13ms :: {"status":"error","message":"Failed to fetch …
+app-1       | Error fetching departments: error: column "parent_position_id" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+app-1       |     at async DatabaseStorage.getAllDepartments (file:///app/dist/index.js:243:12)
+app-1       |     at async file:///app/dist/index.js:643:28 {
+app-1       |   length: 118,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '33',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
+app-1       | }
+app-1       | 2:10:37 PM [express] GET /api/departments 500 in 16ms :: {"status":"error","message":"Failed to fetc…
+app-1       | Error fetching departments: error: column "parent_position_id" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+app-1       |     at async DatabaseStorage.getAllDepartments (file:///app/dist/index.js:243:12)
+app-1       |     at async file:///app/dist/index.js:643:28 {
+app-1       |   length: 118,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '33',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
+app-1       | }
+app-1       | 2:10:37 PM [express] GET /api/departments 500 in 24ms :: {"status":"error","message":"Failed to fetc…
+app-1       | Error fetching positions: error: column "parent_position_id" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+app-1       |     at async DatabaseStorage.getAllPositions (file:///app/dist/index.js:263:12)
+app-1       |     at async file:///app/dist/index.js:715:26 {
+app-1       |   length: 118,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '76',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
+app-1       | }
+app-1       | 2:10:37 PM [express] GET /api/positions 500 in 23ms :: {"status":"error","message":"Failed to fetch …
+app-1       | Error fetching departments: error: column "parent_position_id" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+app-1       |     at async DatabaseStorage.getAllDepartments (file:///app/dist/index.js:243:12)
+app-1       |     at async file:///app/dist/index.js:643:28 {
+app-1       |   length: 118,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '33',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
+app-1       | }
+app-1       | 2:10:37 PM [express] GET /api/departments 500 in 16ms :: {"status":"error","message":"Failed to fetc…
+app-1       | Error fetching departments: error: column "parent_position_id" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+app-1       |     at async DatabaseStorage.getAllDepartments (file:///app/dist/index.js:243:12)
+app-1       |     at async file:///app/dist/index.js:643:28 {
+app-1       |   length: 118,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '33',
+app-1       |   internalPosition: undefined,
+app-1       |   internalQuery: undefined,
+app-1       |   where: undefined,
+app-1       |   schema: undefined,
+app-1       |   table: undefined,
+app-1       |   column: undefined,
+app-1       |   dataType: undefined,
+app-1       |   constraint: undefined,
+app-1       |   file: 'parse_relation.c',
+app-1       |   line: '3665',
+app-1       |   routine: 'errorMissingColumn'
+app-1       | }
+app-1       | 2:10:37 PM [express] GET /api/departments 500 in 17ms :: {"status":"error","message":"Failed to fetc…
+app-1       | Error fetching positions: error: column "parent_position_id" does not exist
+app-1       |     at /app/node_modules/pg-pool/index.js:45:11
+app-1       |     at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+app-1       |     at async file:///app/node_modules/drizzle-orm/node-postgres/session.js:83:22
+app-1       |     at async DatabaseStorage.getAllPositions (file:///app/dist/index.js:263:12)
+app-1       |     at async file:///app/dist/index.js:715:26 {
+app-1       |   length: 118,
+app-1       |   severity: 'ERROR',
+app-1       |   code: '42703',
+app-1       |   detail: undefined,
+app-1       |   hint: undefined,
+app-1       |   position: '76',
