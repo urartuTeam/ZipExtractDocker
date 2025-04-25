@@ -343,6 +343,18 @@ const PositionTree = ({
                     ) : (
                       <div className="position-vacant">Вакантная должность</div>
                     )}
+                    
+                    {/* Отображаем дочерние отделы для должности */}
+                    {subNode.childDepartments && subNode.childDepartments.length > 0 && (
+                      <div className="child-departments">
+                        <div className="child-departments-title">Подчиненные отделы:</div>
+                        {subNode.childDepartments.map((dept) => (
+                          <div key={dept.department_id} className="child-department-name">
+                            {dept.name}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -710,11 +722,23 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         emp.department_id === adminDepartment.department_id
       ) || null;
       
+      // Находим дочерние отделы, связанные с этой должностью
+      const childDepartments = departments.filter(dept => 
+        dept.parent_position_id === position.position_id
+      );
+      
       positionMap[position.position_id] = {
         position,
         employee,
-        subordinates: []
+        subordinates: [],
+        childDepartments: childDepartments.length > 0 ? childDepartments : undefined
       };
+      
+      // Выводим для отладки информацию о дочерних отделах
+      if (childDepartments.length > 0) {
+        console.log(`Должность "${position.name}" (ID: ${position.position_id}) имеет дочерние отделы:`, 
+          childDepartments.map(dept => `${dept.name} (ID: ${dept.department_id})`));
+      }
     });
     
     // Список корневых должностей (пока пустой)
