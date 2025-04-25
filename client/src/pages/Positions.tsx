@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useDataRefresh } from "@/hooks/use-data-refresh";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -262,6 +263,9 @@ export default function Positions() {
   const { data: employeesData } = useQuery<{ status: string, data: Employee[] }>({
     queryKey: ['/api/employees'],
   });
+
+  // Настройка автоматического обновления данных каждые 5 секунд
+  useDataRefresh(['/api/positions', '/api/positions/with-departments', '/api/departments', '/api/employees']);
 
   // Фильтрация должностей на основе поискового запроса
   const filteredPositions = positionsData?.data.filter(pos => 
