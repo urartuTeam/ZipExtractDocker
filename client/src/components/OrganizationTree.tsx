@@ -192,30 +192,12 @@ const DepartmentWithChildren = ({
   );
 };
 
-// Типы для связанных узлов в иерархии
-type HierarchyNodeType = 'position' | 'department';
-
-// Базовый тип для узла иерархии
-type BaseHierarchyNode = {
-  type: HierarchyNodeType;
-  id: number;
-  name: string;
-};
-
-// Узел-должность
+// Тип для построения иерархии позиций
 type PositionHierarchyNode = {
-  type: 'position';
   position: Position;
   employee: Employee | null;
-  subordinates: (PositionHierarchyNode | DepartmentHierarchyNode)[];
-};
-
-// Узел-отдел
-type DepartmentHierarchyNode = {
-  type: 'department';
-  department: Department;
-  positions: Position[];
-  subordinates: (PositionHierarchyNode | DepartmentHierarchyNode)[];
+  subordinates: PositionHierarchyNode[];
+  childDepartments?: Department[]; // Дочерние отделы, связанные с этой должностью
 };
 
 // Компонент для отображения горизонтального дерева иерархии должностей
@@ -230,16 +212,19 @@ const PositionTree = ({
   allEmployees: Employee[],
   onPositionClick?: (positionId: number) => void
 }) => {
-  // Берем первую должность для основной ветви (если есть),
-  // а остальные должности для дополнительных ветвей
-  const firstNode = nodes.length > 0 ? nodes[0] : null;
+  // Проверяем, есть ли хотя бы одна действительная должность
+  // Фильтрация необходима, т.к. иногда могут приходить неверные данные
+  const validNodes = nodes.filter(node => node && node.position);
+  
+  // Берем первую должность для основной ветви (если есть)
+  const firstNode = validNodes.length > 0 ? validNodes[0] : null;
   
   // Остальные должности верхнего уровня
-  const otherNodes = nodes.length > 0 ? nodes.slice(1) : [];
+  const otherNodes = validNodes.length > 0 ? validNodes.slice(1) : [];
   
   return (
     <div className="tree-node">
-      {firstNode && (
+      {firstNode && firstNode.position && (
         <div className="tree-branch">
           {/* Карточка первой должности верхнего уровня */}
           <div className="tree-node-container">
@@ -270,18 +255,28 @@ const PositionTree = ({
               </div>
               
               {/* Отображаем подчиненных */}
-              {firstNode.subordinates.map((subNode: PositionHierarchyNode, index: number) => (
+              {firstNode.subordinates.filter(sub => sub && sub.position).map((subNode: PositionHierarchyNode, index: number) => (
                 <div key={`${subNode.position.position_id}-${index}`} className="subordinate-branch">
                   <div 
-                    className="position-card"
+                    className={`position-card ${subNode.position.name.includes('(отдел)') ? 'department-card' : ''}`}
                     onClick={() => onPositionClick && onPositionClick(subNode.position.position_id)}
-                    style={{ cursor: onPositionClick ? 'pointer' : 'default' }}
+                    style={{ 
+                      cursor: onPositionClick ? 'pointer' : 'default',
+                      backgroundColor: subNode.position.name.includes('(отдел)') ? '#f0f4ff' : undefined, 
+                      borderColor: subNode.position.name.includes('(отдел)') ? '#4b7bec' : undefined
+                    }}
                   >
-                    <div className="position-title">{subNode.position.name}</div>
-                    {subNode.employee ? (
-                      <div className="employee-name">{subNode.employee.full_name}</div>
-                    ) : (
-                      <div className="position-vacant">Вакантная должность</div>
+                    <div className="position-title">
+                      {subNode.position.name.includes('(отдел)') 
+                        ? subNode.position.name.replace(' (отдел)', '') 
+                        : subNode.position.name}
+                    </div>
+                    {!subNode.position.name.includes('(отдел)') && (
+                      subNode.employee ? (
+                        <div className="employee-name">{subNode.employee.full_name}</div>
+                      ) : (
+                        <div className="position-vacant">Вакантная должность</div>
+                      )
                     )}
                     
                     {/* Отображаем дочерние отделы для должности */}
@@ -306,18 +301,28 @@ const PositionTree = ({
                         }}></div>
                       </div>
                       
-                      {subNode.subordinates.map((grandChild: PositionHierarchyNode, grandIndex: number) => (
+                      {subNode.subordinates.filter(sub => sub && sub.position).map((grandChild: PositionHierarchyNode, grandIndex: number) => (
                         <div key={`${grandChild.position.position_id}-${grandIndex}`} className="subordinate-branch">
                           <div 
-                            className="position-card"
+                            className={`position-card ${grandChild.position.name.includes('(отдел)') ? 'department-card' : ''}`}
                             onClick={() => onPositionClick && onPositionClick(grandChild.position.position_id)}
-                            style={{ cursor: onPositionClick ? 'pointer' : 'default' }}
+                            style={{ 
+                              cursor: onPositionClick ? 'pointer' : 'default',
+                              backgroundColor: grandChild.position.name.includes('(отдел)') ? '#f0f4ff' : undefined, 
+                              borderColor: grandChild.position.name.includes('(отдел)') ? '#4b7bec' : undefined
+                            }}
                           >
-                            <div className="position-title">{grandChild.position.name}</div>
-                            {grandChild.employee ? (
-                              <div className="employee-name">{grandChild.employee.full_name}</div>
-                            ) : (
-                              <div className="position-vacant">Вакантная должность</div>
+                            <div className="position-title">
+                              {grandChild.position.name.includes('(отдел)') 
+                                ? grandChild.position.name.replace(' (отдел)', '') 
+                                : grandChild.position.name}
+                            </div>
+                            {!grandChild.position.name.includes('(отдел)') && (
+                              grandChild.employee ? (
+                                <div className="employee-name">{grandChild.employee.full_name}</div>
+                              ) : (
+                                <div className="position-vacant">Вакантная должность</div>
+                              )
                             )}
                             
                             {/* Отображаем дочерние отделы для должности */}
@@ -348,15 +353,25 @@ const PositionTree = ({
         <div key={`${node.position.position_id}-${index}`} className="tree-branch" style={{ marginLeft: '30px' }}>
           <div className="tree-node-container">
             <div 
-              className="position-card"
+              className={`position-card ${node.position.name.includes('(отдел)') ? 'department-card' : ''}`}
               onClick={() => onPositionClick && onPositionClick(node.position.position_id)}
-              style={{ cursor: onPositionClick ? 'pointer' : 'default' }}
+              style={{ 
+                cursor: onPositionClick ? 'pointer' : 'default',
+                backgroundColor: node.position.name.includes('(отдел)') ? '#f0f4ff' : undefined, 
+                borderColor: node.position.name.includes('(отдел)') ? '#4b7bec' : undefined
+              }}
             >
-              <div className="position-title">{node.position.name}</div>
-              {node.employee ? (
-                <div className="employee-name">{node.employee.full_name}</div>
-              ) : (
-                <div className="position-vacant">Вакантная должность</div>
+              <div className="position-title">
+                {node.position.name.includes('(отдел)') 
+                  ? node.position.name.replace(' (отдел)', '') 
+                  : node.position.name}
+              </div>
+              {!node.position.name.includes('(отдел)') && (
+                node.employee ? (
+                  <div className="employee-name">{node.employee.full_name}</div>
+                ) : (
+                  <div className="position-vacant">Вакантная должность</div>
+                )
               )}
               
               {/* Отображаем дочерние отделы для должности */}
@@ -774,14 +789,12 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         emp.department_id === adminDepartment.department_id
       ) || null;
       
-      // Создаем новый узел-должность с использованием новых типов
+      // Создаем новый узел-должность
       positionMap[position.position_id] = {
-        type: 'position',
-        id: position.position_id,
-        name: position.name,
         position,
         employee,
-        subordinates: []
+        subordinates: [],
+        childDepartments: []
       };
       
       // Находим дочерние отделы, связанные с этой должностью
@@ -804,14 +817,20 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
             );
           });
           
-          // Создаем узел-отдел
-          const departmentNode: DepartmentHierarchyNode = {
-            type: 'department',
-            id: department.department_id,
-            name: department.name,
-            department,
-            positions: deptPositions,
-            subordinates: []
+          // Создаем псевдо-должность для отдела
+          const deptAsPosition: Position = {
+            position_id: department.department_id * 1000, // Уникальный ID
+            name: department.name + " (отдел)",
+            parent_position_id: position.position_id,
+            department_id: department.department_id
+          };
+          
+          // Создаем узел для отдела в виде должности
+          const departmentNode: PositionHierarchyNode = {
+            position: deptAsPosition,
+            employee: null, // У отдела нет сотрудника
+            subordinates: [],
+            childDepartments: [] // Нет дочерних отделов у этого узла
           };
           
           // Добавляем отдел как подчиненный элемент к должности-родителю
