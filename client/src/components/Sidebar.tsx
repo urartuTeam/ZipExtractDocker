@@ -1,6 +1,7 @@
 import React from 'react';
 import { useLocation } from 'wouter';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/use-auth';
 
 interface NavItemProps {
   path: string;
@@ -41,6 +42,7 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const [location, setLocation] = useLocation();
+  const { logoutMutation } = useAuth();
 
   const navItems = [
     {
@@ -106,10 +108,14 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
     }
   };
 
+  const handleLogout = () => {
+    logoutMutation.mutate();
+  };
+
   return (
     <div 
       className={cn(
-        'fixed z-30 inset-y-0 left-0 w-64 transition duration-300 transform bg-white border-r border-neutral-200 lg:static lg:inset-0',
+        'fixed z-30 inset-y-0 left-0 w-64 transition duration-300 transform bg-white border-r border-neutral-200 lg:static lg:inset-0 flex flex-col',
         isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       )}
     >
@@ -126,7 +132,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
           </svg>
         </button>
       </div>
-      <nav className="mt-5 px-3">
+      <nav className="mt-5 px-3 flex-grow">
         <div className="space-y-1">
           {navItems.map((item) => (
             <NavItem 
@@ -140,6 +146,35 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
           ))}
         </div>
       </nav>
+      
+      {/* Нижняя часть боковой панели */}
+      <div className="px-3 py-4 border-t border-neutral-200 mt-auto">
+        <div className="space-y-2">
+          <a 
+            onClick={() => navigate('/')}
+            className="group flex items-center px-3 py-2 text-base font-medium rounded-md cursor-pointer text-neutral-500 hover:bg-neutral-100"
+          >
+            <div className="mr-3 h-6 w-6 text-neutral-400 group-hover:text-neutral-500">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+              </svg>
+            </div>
+            На главную
+          </a>
+          
+          <a 
+            onClick={handleLogout}
+            className="group flex items-center px-3 py-2 text-base font-medium rounded-md cursor-pointer text-neutral-500 hover:bg-neutral-100"
+          >
+            <div className="mr-3 h-6 w-6 text-neutral-400 group-hover:text-neutral-500">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+            </div>
+            Выйти
+          </a>
+        </div>
+      </div>
     </div>
   );
 }

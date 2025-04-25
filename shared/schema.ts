@@ -28,6 +28,7 @@ export const positions = pgTable("positions", {
   current_count: integer("current_count").default(0),
   vacancies: integer("vacancies").default(0),
   parent_position_id: integer("parent_position_id").references(() => positions.position_id),
+  sort: integer("sort").default(0),
 });
 
 // Связь между должностями и отделами
