@@ -71,8 +71,12 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
     enabled: !!projectId && !isNaN(projectId)
   });
 
-  // Запрос сотрудников проекта
-  const { data: projectEmployeesResponse, isLoading: isLoadingProjectEmployees } = useQuery<{status: string, data: EmployeeProject[]}>({
+  // Запрос данных проекта и его сотрудников
+  const { data: projectEmployeesResponse, isLoading: isLoadingProjectEmployees } = useQuery<{status: string, data: {
+    title: string;
+    description: string;
+    employees: EmployeeProject[];
+  }}>({
     queryKey: [`/api/employeeprojects/project/${projectId}`],
     enabled: !!projectId && !isNaN(projectId),
   });
@@ -96,6 +100,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   
   // Использовать данные запроса
   const projectData = projectResponse?.data;
+  const projectDetails = projectEmployeesResponse?.data || { title: '', description: '', employees: [] };
   
   // Форма редактирования проекта
   const editProjectForm = useForm<{ name: string, description: string }>({
@@ -114,12 +119,16 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   // Обновление формы при изменении данных проекта
   useEffect(() => {
     if (projectData) {
+      // Используем данные из projectDetails, если они есть, иначе из projectData
+      const projectName = projectDetails.title || projectData.name;
+      const projectDescription = projectDetails.description || projectData.description || "";
+      
       editProjectForm.reset({
-        name: projectData.name,
-        description: projectData.description || "",
+        name: projectName,
+        description: projectDescription,
       });
     }
-  }, [projectData, editProjectForm]);
+  }, [projectData, projectDetails, editProjectForm]);
 
   // Мутация для добавления сотрудника в проект
   const addEmployeeToProject = useMutation({
@@ -247,7 +256,6 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
     }
   });
 
-  const employeeProjects = projectEmployeesResponse?.data || [];
   const allEmployees = employeesResponse?.data || [];
   
   // Запрос всех должностей
@@ -264,7 +272,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   const allDepartments = departmentsResponse?.data || [];
   
   // Получаем полную информацию о сотрудниках проекта
-  const projectEmployeesWithDetails = employeeProjects.map(ep => {
+  const projectEmployeesWithDetails = projectDetails.employees.map((ep: EmployeeProject) => {
     const employee = allEmployees.find(e => e.employee_id === ep.employee_id);
     const position = allPositions.find(p => p.position_id === employee?.position_id);
     const department = allDepartments.find(d => d.department_id === employee?.department_id);
@@ -279,7 +287,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
 
   // Фильтруем сотрудников, которые еще не добавлены в проект
   const availableEmployees = allEmployees.filter(
-    emp => !employeeProjects.some(ep => ep.employee_id === emp.employee_id)
+    emp => !projectDetails.employees.some((ep: EmployeeProject) => ep.employee_id === emp.employee_id)
   );
 
   const isLoading = isLoadingProject || isLoadingProjectEmployees || isLoadingEmployees || isLoadingPositions || isLoadingDepartments;
@@ -365,7 +373,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
             <ArrowLeft className="mr-2 h-4 w-4" />
             Назад к проектам
           </Button>
-          <h1 className="text-2xl font-bold">{projectData.name}</h1>
+          <h1 className="text-2xl font-bold">{projectDetails.title || projectData.name}</h1>
         </div>
         <div className="mt-3 sm:mt-0 flex space-x-2">
           <Button 
