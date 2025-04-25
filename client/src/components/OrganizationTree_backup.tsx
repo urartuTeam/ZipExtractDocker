@@ -596,6 +596,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     return rootNodes;
   };
   
+
+  
   // Функция для построения структуры на основе данных о должностях
   const buildAdministrationHierarchy = () => {
     // Проверяем, есть ли данные о должностях
@@ -668,11 +670,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Находим выбранную должность в иерархии
     let selectedNode: PositionHierarchyNode | null = null;
     for (const node of positionHierarchy) {
-      const found = findPositionNodeById([node], selectedPositionId);
-      if (found) {
-        selectedNode = found;
-        break;
-      }
+      selectedNode = findPositionNodeById([node], selectedPositionId);
+      if (selectedNode) break;
     }
 
     // Если должность найдена, создаем новую иерархию с этой должностью в корне
