@@ -4,6 +4,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Dialog, 
   DialogContent, 
@@ -360,6 +367,7 @@ export default function Positions() {
                   <TableRow>
                     <TableHead className="w-[80px]">ID</TableHead>
                     <TableHead>Название</TableHead>
+                    <TableHead>Родительская должность</TableHead>
                     <TableHead>Отдел</TableHead>
                     <TableHead className="w-[150px]">Действия</TableHead>
                   </TableRow>
@@ -367,7 +375,7 @@ export default function Positions() {
                 <TableBody>
                   {filteredPositions.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center h-24">
+                      <TableCell colSpan={5} className="text-center h-24">
                         Должности не найдены
                       </TableCell>
                     </TableRow>
@@ -379,6 +387,14 @@ export default function Positions() {
                         <TableRow key={position.position_id}>
                           <TableCell>{position.position_id}</TableCell>
                           <TableCell className="font-medium">{position.name}</TableCell>
+                          <TableCell>
+                            {position.parent_position_id ? (
+                              positionsData?.data.find(p => p.position_id === position.parent_position_id)?.name || 
+                              <span className="text-gray-500">ID: {position.parent_position_id}</span>
+                            ) : (
+                              <span className="text-gray-500">Нет</span>
+                            )}
+                          </TableCell>
                           <TableCell>
                             {position.departments && position.departments.length > 0 ? (
                               <div className="flex flex-col gap-1">
@@ -469,6 +485,40 @@ export default function Positions() {
                 )}
               />
               
+              <FormField
+                control={form.control}
+                name="parent_position_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Родительская должность</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value ? parseInt(value) : null);
+                      }}
+                      value={field.value?.toString() || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите родительскую должность" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Нет (верхний уровень)</SelectItem>
+                        {positionsData?.data.map((position) => (
+                          <SelectItem 
+                            key={position.position_id} 
+                            value={position.position_id.toString()}
+                          >
+                            {position.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
               <DialogFooter>
                 <Button 
                   type="submit" 
@@ -503,6 +553,43 @@ export default function Positions() {
                     <FormControl>
                       <Input placeholder="Введите название должности" {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editForm.control}
+                name="parent_position_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Родительская должность</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value ? parseInt(value) : null);
+                      }}
+                      value={field.value?.toString() || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите родительскую должность" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">Нет (верхний уровень)</SelectItem>
+                        {positionsData?.data
+                          .filter(pos => pos.position_id !== selectedPosition?.position_id) // Исключаем текущую должность
+                          .map((position) => (
+                            <SelectItem 
+                              key={position.position_id} 
+                              value={position.position_id.toString()}
+                            >
+                              {position.name}
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

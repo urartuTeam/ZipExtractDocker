@@ -220,7 +220,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Получаем должности с информацией о связанных отделах
+  // Получаем должности с информацией о связанных отделах и родительских должностях
   app.get('/api/positions/with-departments', async (req: Request, res: Response) => {
     try {
       const positions = await storage.getAllPositions();
@@ -242,6 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         });
         
+        // Добавляем информацию о родительской должности, если она есть
         return {
           ...position,
           departments: linkedDepartments
