@@ -270,7 +270,7 @@ const PositionTree = ({
       )}
       
       {/* Отображаем остальные должности верхнего уровня */}
-      {otherNodes.map((node, index) => (
+      {otherNodes.map((node: PositionHierarchyNode, index: number) => (
         <div key={`${node.position.position_id}-${index}`} className="tree-branch" style={{ marginLeft: '30px' }}>
           <div className="tree-node-container">
             <div className="position-card">
@@ -292,7 +292,7 @@ const PositionTree = ({
                 }}></div>
               </div>
               
-              {node.subordinates.map((subNode, subIndex) => (
+              {node.subordinates.map((subNode: PositionHierarchyNode, subIndex: number) => (
                 <div key={`${subNode.position.position_id}-${subIndex}`} className="subordinate-branch">
                   <div className="position-card">
                     <div className="position-title">{subNode.position.name}</div>
