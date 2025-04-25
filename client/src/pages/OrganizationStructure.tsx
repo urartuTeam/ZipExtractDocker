@@ -86,13 +86,25 @@ export default function OrganizationStructure() {
     queryKey: ['/api/positiondepartments'],
   });
   
+  // Получаем данные о должностях с отделами (улучшенный API endpoint)
+  const {
+    data: positionsWithDepartmentsResponse,
+    isLoading: isLoadingPositionsWithDepartments,
+    error: positionsWithDepartmentsError
+  } = useQuery<{status: string, data: any[]}>({
+    queryKey: ['/api/positions/with-departments'],
+  });
+  
   const departments = departmentsResponse?.data || [];
   const positions = positionsResponse?.data || [];
   const employees = employeesResponse?.data || [];
   const positionDepartments = positionDepartmentsResponse?.data || [];
+  const positionsWithDepartments = positionsWithDepartmentsResponse?.data || [];
   
-  const isLoading = isLoadingDepartments || isLoadingPositions || isLoadingEmployees || isLoadingPositionDepartments;
-  const error = departmentsError || positionsError || employeesError || positionDepartmentsError;
+  const isLoading = isLoadingDepartments || isLoadingPositions || isLoadingEmployees || 
+                    isLoadingPositionDepartments || isLoadingPositionsWithDepartments;
+  const error = departmentsError || positionsError || employeesError || 
+                positionDepartmentsError || positionsWithDepartmentsError;
   
   const toggleDepartment = (departmentId: number) => {
     setExpandedDepartments(prev => ({
@@ -120,15 +132,36 @@ export default function OrganizationStructure() {
   
   // Получаем должности для указанного отдела
   const getPositionsForDepartment = (departmentId: number) => {
-    const positionLinks = positionDepartments?.filter(pd => pd.department_id === departmentId) || [];
-    
-    return positionLinks.map(link => {
-      const position = positions?.find(p => p.position_id === link.position_id);
-      return {
-        ...link,
-        positionName: position?.name || 'Неизвестная должность'
-      };
-    });
+    // Используем улучшенный API endpoint с данными о должностях и отделах
+    // Сначала проверяем, есть ли данные из API
+    if (positionsWithDepartments.length > 0) {
+      // Фильтруем должности, у которых в массиве departments есть нужный department_id
+      const linkedPositions = positionsWithDepartments.filter(pos => 
+        pos.departments && pos.departments.some((d: any) => d.department_id === departmentId)
+      );
+      
+      return linkedPositions.map(position => {
+        // Находим конкретную связь для этого отдела
+        const deptLink = position.departments.find((d: any) => d.department_id === departmentId);
+        return {
+          position_link_id: deptLink.position_link_id,
+          position_id: position.position_id,
+          department_id: departmentId,
+          positionName: position.name
+        };
+      });
+    } else {
+      // Резервная логика - используем старые данные
+      const positionLinks = positionDepartments?.filter(pd => pd.department_id === departmentId) || [];
+      
+      return positionLinks.map(link => {
+        const position = positions?.find(p => p.position_id === link.position_id);
+        return {
+          ...link,
+          positionName: position?.name || 'Неизвестная должность'
+        };
+      });
+    }
   };
   
   // Получаем сотрудников для указанной должности в указанном отделе

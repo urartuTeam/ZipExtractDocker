@@ -378,6 +378,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Состояние для хранения отфильтрованной иерархии должностей, когда выбрана конкретная должность
   const [filteredHierarchy, setFilteredHierarchy] = useState<PositionHierarchyNode[]>([]);
   
+  // Состояние для хранения информации о должностях с отделами
+  const { data: positionsWithDepartmentsResponse } = useQuery<{status: string, data: any[]}>({
+    queryKey: ['/api/positions/with-departments'],
+  });
+  
   // Рекурсивно ищем узел должности по ID
   const findPositionNodeById = (
     nodes: PositionHierarchyNode[], 
@@ -627,14 +632,74 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   
   // Функция для построения структуры на основе данных о должностях
   const buildAdministrationHierarchy = () => {
-    // Проверяем, есть ли данные о должностях
-    if (positions.length === 0) {
+    // Проверяем, есть ли данные о должностях и отделах
+    if (positions.length === 0 || departments.length === 0) {
       return null;
     }
     
-    // Используем стандартную функцию для построения иерархии должностей
-    // на основе parent_position_id
-    return buildPositionHierarchy();
+    // Получаем позиции с информацией о департаментах
+    const positionsWithDepts = positionsWithDepartmentsResponse?.data || [];
+    
+    // Находим отдел "Администрация"
+    const adminDepartment = departments.find(dept => dept.name === "Администрация");
+    if (!adminDepartment) {
+      return buildPositionHierarchy(); // Резервная логика
+    }
+    
+    // Находим все должности, привязанные к "Администрации"
+    const adminPositions = positionsWithDepts
+      .filter(pos => pos.departments && pos.departments.some(
+        (d: any) => d.department_id === adminDepartment.department_id
+      ));
+    
+    if (adminPositions.length === 0) {
+      return buildPositionHierarchy(); // Резервная логика
+    }
+    
+    // Создаем узлы для корневых должностей (привязанных к "Администрации")
+    const rootNodes: PositionHierarchyNode[] = adminPositions.map(position => {
+      // Находим сотрудника на этой должности, если есть
+      const positionEmployee = employees.find(emp => emp.position_id === position.position_id) || null;
+      
+      // Находим подчиненные должности
+      const subordinatePositions = positions.filter(p => 
+        p.parent_position_id === position.position_id
+      );
+      
+      // Для каждой подчиненной должности создаем узел
+      const subordinates: PositionHierarchyNode[] = subordinatePositions.map(subPosition => {
+        const subEmployee = employees.find(emp => emp.position_id === subPosition.position_id) || null;
+        
+        // Находим подчиненных для подчиненного
+        const grandSubordinates = positions.filter(p => 
+          p.parent_position_id === subPosition.position_id
+        ).map(grandSubPosition => {
+          const grandSubEmployee = employees.find(
+            emp => emp.position_id === grandSubPosition.position_id
+          ) || null;
+          
+          return {
+            position: grandSubPosition,
+            employee: grandSubEmployee,
+            subordinates: [] // Уровень 3, дальше не показываем
+          };
+        });
+        
+        return {
+          position: subPosition,
+          employee: subEmployee,
+          subordinates: grandSubordinates
+        };
+      });
+      
+      return {
+        position,
+        employee: positionEmployee,
+        subordinates
+      };
+    });
+    
+    return rootNodes;
   };
 
   // Обработчик клика по должности
