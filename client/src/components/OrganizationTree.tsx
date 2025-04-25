@@ -744,24 +744,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Фильтруем иерархию при изменении выбранной должности
   useEffect(() => {
     if (!selectedPositionId || positionHierarchy.length === 0) {
-      // Если нет выбранной должности, показываем иерархию начиная с должности "ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА"
-      if (positionHierarchy.length > 0) {
-        // Находим узел с должностью "ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА" (position_id = 1)
-        const deputyHeadNode = positionHierarchy.find(node => 
-          node.position.position_id === 1
-        );
-        
-        if (deputyHeadNode) {
-          // Используем узел ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА как начальную точку
-          setFilteredHierarchy([deputyHeadNode]);
-        } else {
-          // Если по какой-то причине не найден узел с ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА,
-          // используем стандартную логику с корневыми узлами
-          setFilteredHierarchy(positionHierarchy);
-        }
-      } else {
-        setFilteredHierarchy([]);
-      }
+      // Если нет выбранной должности, показываем все должности отдела "Администрация"
+      // Это будут корневые узлы, полученные из функции buildAdministrationHierarchy
+      setFilteredHierarchy(positionHierarchy);
       return;
     }
 

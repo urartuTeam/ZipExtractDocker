@@ -48,6 +48,7 @@ interface Department {
   department_id: number;
   name: string;
   parent_position_id: number | null;
+  parent_department_id: number | null;
 }
 
 // Схема валидации для формы
@@ -240,7 +241,7 @@ export default function Departments() {
     if (!departmentsData?.data) return false;
     
     return departmentsData.data.some(
-      (dept) => dept.parent_position_id === departmentId
+      (dept) => dept.parent_department_id === departmentId
     );
   };
 
