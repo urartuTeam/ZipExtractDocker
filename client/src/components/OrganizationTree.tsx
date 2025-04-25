@@ -660,11 +660,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     
     console.log('Найден отдел "Администрация":', adminDepartment);
     
-    // Получаем все должности в системе
-    const allPositions = positions;
-    
     // Шаг 1: Находим все должности отдела "Администрация"
-    const adminPositions = allPositions.filter(pos => {
+    const adminPositions = positions.filter(pos => {
       // Проверяем, есть ли у должности привязка к отделу "Администрация"
       // через сотрудников, назначенных на эту должность в этом отделе
       return employees.some(emp => 
@@ -676,76 +673,77 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     console.log('Должности отдела "Администрация":', 
       adminPositions.map(p => `${p.name} (ID: ${p.position_id})`));
     
-    // Шаг 2: Находим корневые должности (у которых родитель null или родителя нет в этом отделе)
-    const adminRootPositions = adminPositions.filter(pos => {
-      // Корневые должности - это те, у которых parent_position_id === null
-      if (pos.parent_position_id === null || pos.parent_position_id === undefined) {
-        return true;
-      }
+    // Создаем мапу с должностями по ID для быстрого доступа
+    const positionMap: Record<number, PositionHierarchyNode> = {};
+    
+    // Инициализация узлов для всех должностей администрации
+    adminPositions.forEach(position => {
+      const employee = employees.find(emp => 
+        emp.position_id === position.position_id && 
+        emp.department_id === adminDepartment.department_id
+      ) || null;
       
-      // Или те, у которых родительская должность не представлена в отделе "Администрация"
-      return !adminPositions.some(parentPos => parentPos.position_id === pos.parent_position_id);
+      positionMap[position.position_id] = {
+        position,
+        employee,
+        subordinates: []
+      };
     });
     
-    console.log('Корневые должности для отдела "Администрация":', 
-      adminRootPositions.map(p => `${p.name} (ID: ${p.position_id})`));
-    
-    if (adminRootPositions.length === 0) {
-      console.log('Корневые должности не найдены; Используем все должности в качестве корневых:', adminPositions);
-      // Если не найдены корневые должности, используем все должности отдела
-      return adminPositions.map(position => {
-        const positionEmployee = employees.find(emp => 
-          emp.position_id === position.position_id && 
-          emp.department_id === adminDepartment.department_id
-        ) || null;
-        
-        return {
-          position,
-          employee: positionEmployee,
-          subordinates: []
-        };
-      });
-    }
-    
-    // Строим иерархию, начиная с корневых должностей
+    // Список корневых должностей (пока пустой)
     const rootNodes: PositionHierarchyNode[] = [];
     
-    // Для каждой корневой должности строим поддерево
-    adminRootPositions.forEach(rootPosition => {
-      // Находим сотрудника на этой должности, если есть
-      const positionEmployee = employees.find(emp => emp.position_id === rootPosition.position_id) || null;
+    // Распределяем должности в иерархии на основе parent_position_id
+    adminPositions.forEach(position => {
+      const currentNode = positionMap[position.position_id];
       
-      // Находим подчиненные должности
-      const subordinatePositions = positions.filter(p => p.parent_position_id === rootPosition.position_id);
+      if (position.parent_position_id === null || position.parent_position_id === undefined) {
+        // Это корневая должность
+        rootNodes.push(currentNode);
+      } else if (positionMap[position.parent_position_id]) {
+        // Это подчиненная должность, у которой родительская должность находится в этом отделе
+        positionMap[position.parent_position_id].subordinates.push(currentNode);
+      } else {
+        // Родитель не найден в этом отделе, считаем должность корневой
+        rootNodes.push(currentNode);
+      }
+    });
+    
+    // Корректировка иерархии с учетом фактического состояния базы данных
+    // (особенность: Генеральный директор подчиняется ЗАМЕСТИТЕЛЮ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА)
+    // Проверяем, существует ли сотрудник на должности "Генеральный директор" (ID: 5)
+    const genDirectorPos = adminPositions.find(p => p.position_id === 5);
+    
+    if (genDirectorPos && positionMap[5] && positionMap[1]) {
+      // Если Генеральный директор есть в списке должностей и маппинге
+      // и есть ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА (ID: 1)
       
-      // Для каждой подчиненной должности строим поддерево
-      const subordinates: PositionHierarchyNode[] = subordinatePositions.map(subPosition => {
-        const subEmployee = employees.find(emp => emp.position_id === subPosition.position_id) || null;
+      // Проверяем, является ли позиция ID 5 уже корневой
+      const genDirectorIndex = rootNodes.findIndex(node => node.position.position_id === 5);
+      if (genDirectorIndex !== -1) {
+        // Убираем из корневых
+        const genDirectorNode = rootNodes.splice(genDirectorIndex, 1)[0];
         
-        // Находим подчиненных подчиненного (третий уровень)
-        const grandSubordinates = positions.filter(p => p.parent_position_id === subPosition.position_id)
-          .map(grandSubPosition => {
-            const grandSubEmployee = employees.find(emp => emp.position_id === grandSubPosition.position_id) || null;
-            
-            return {
-              position: grandSubPosition,
-              employee: grandSubEmployee,
-              subordinates: [] // На уровне 3 заканчиваем
-            };
-          });
+        // Добавляем его как подчиненного к ЗАМЕСТИТЕЛЮ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА
+        positionMap[1].subordinates.push(genDirectorNode);
+      }
+    }
+    
+    // Добавляем заместителей гендиректора как его подчиненных, а не как отдельные корневые узлы
+    const deputyPositions = adminPositions.filter(p => 
+      p.parent_position_id === 5 && [7, 8, 9, 10].includes(p.position_id)
+    );
+    
+    // Для каждого заместителя проверяем, находится ли он в корне
+    deputyPositions.forEach(deputyPos => {
+      const deputyIndex = rootNodes.findIndex(node => node.position.position_id === deputyPos.position_id);
+      if (deputyIndex !== -1 && positionMap[5]) {
+        // Убираем из корневых
+        const deputyNode = rootNodes.splice(deputyIndex, 1)[0];
         
-        return {
-          position: subPosition,
-          employee: subEmployee,
-          subordinates: grandSubordinates
-        };
-      });
-      
-      rootNodes.push({
-        position: rootPosition,
-        employee: positionEmployee,
-        subordinates
-      });
+        // Добавляем как подчиненного гендиректору
+        positionMap[5].subordinates.push(deputyNode);
+      }
     });
     
     console.log('Построено', rootNodes.length, 'корневых узлов');
