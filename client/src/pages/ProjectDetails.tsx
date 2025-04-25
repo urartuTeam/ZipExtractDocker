@@ -100,13 +100,15 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
   const projectData = projectResponse?.data;
   
   // Форма редактирования проекта
-  const editProjectForm = useForm<{ name: string }>({
+  const editProjectForm = useForm<{ name: string, description: string }>({
     defaultValues: {
       name: projectData?.name || "",
+      description: projectData?.description || "",
     },
     resolver: zodResolver(
       z.object({
-        name: z.string().min(1, "Название проекта не может быть пустым")
+        name: z.string().min(1, "Название проекта не может быть пустым"),
+        description: z.string().optional(),
       })
     )
   });
@@ -175,9 +177,10 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
   
   // Мутация для обновления информации о проекте
   const updateProject = useMutation({
-    mutationFn: async (values: { name: string }) => {
+    mutationFn: async (values: { name: string, description: string }) => {
       const res = await apiRequest("PUT", `/api/projects/${projectId}`, {
         name: values.name,
+        description: values.description,
         department_id: projectData?.department_id || null
       });
       
@@ -279,7 +282,7 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
     addEmployeeToProject.mutate(values);
   };
   
-  const onSubmitEditProject = (values: { name: string }) => {
+  const onSubmitEditProject = (values: { name: string, description: string }) => {
     updateProject.mutate(values);
   };
 
@@ -304,13 +307,14 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
             onClick={() => {
               // Обновляем значения формы перед открытием диалога
               editProjectForm.reset({
-                name: projectData.name
+                name: projectData.name,
+                description: projectData.description || ""
               });
               setShowEditProjectDialog(true);
             }}
           >
             <Pencil className="mr-2 h-4 w-4" />
-            Редактировать
+            Изменить описание
           </Button>
         </CardHeader>
         <CardContent>
@@ -320,8 +324,8 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
               <p className="text-lg">{projectData.name}</p>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">ID проекта:</p>
-              <p>#{projectData.project_id}</p>
+              <p className="text-sm font-medium text-gray-500">Описание:</p>
+              <p className="text-base">{projectData.description || "Описание отсутствует"}</p>
             </div>
           </div>
         </CardContent>
@@ -371,7 +375,11 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
                         <Button 
                           variant="destructive" 
                           size="sm"
-                          onClick={() => removeEmployeeFromProject.mutate(ep.employee_id)}
+                          onClick={() => {
+                            if (window.confirm(`Вы уверены, что хотите удалить сотрудника "${ep.employeeDetails?.full_name || 'Неизвестный сотрудник'}" из проекта?`)) {
+                              removeEmployeeFromProject.mutate(ep.employee_id);
+                            }
+                          }}
                         >
                           <Trash className="h-4 w-4" />
                         </Button>
@@ -469,6 +477,20 @@ const ProjectDetails: React.FC<ProjectDetailsProps> = ({ id: propId }) => {
                     <FormLabel>Название проекта</FormLabel>
                     <FormControl>
                       <Input placeholder="Введите название проекта" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editProjectForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Описание проекта</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Введите описание проекта" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
