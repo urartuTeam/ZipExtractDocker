@@ -412,13 +412,15 @@ export default function Projects() {
 
   // Форма добавления проекта
   const projectFormSchema = z.object({
-    name: z.string().min(2, "Название должно содержать минимум 2 символа")
+    name: z.string().min(2, "Название должно содержать минимум 2 символа"),
+    description: z.string().optional()
   });
 
   const projectForm = useForm<z.infer<typeof projectFormSchema>>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      name: ""
+      name: "",
+      description: ""
     }
   });
 
