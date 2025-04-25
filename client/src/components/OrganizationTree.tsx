@@ -367,7 +367,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     queryKey: ['/api/positions'],
     enabled: !positionsData, // Не выполнять запрос, если данные переданы через пропсы
   });
-  const positions = positionsResponse?.data || [];
+  const positions = positionsData || positionsResponse?.data || [];
 
   const { data: employeesResponse } = useQuery<{status: string, data: Employee[]}>({
     queryKey: ['/api/employees'],
@@ -661,14 +661,28 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     console.log('Найден отдел "Администрация":', adminDepartment);
     
     // Шаг 1: Находим все должности отдела "Администрация"
-    const adminPositions = positions.filter(pos => {
-      // Проверяем, есть ли у должности привязка к отделу "Администрация"
-      // через сотрудников, назначенных на эту должность в этом отделе
-      return employees.some(emp => 
-        emp.position_id === pos.position_id && 
-        emp.department_id === adminDepartment.department_id
-      );
-    });
+    let adminPositions = [];
+    
+    // Сначала проверим positions с отделами (из /api/positions/with-departments)
+    if (positionsWithDepartments && positionsWithDepartments.length > 0) {
+      adminPositions = positionsWithDepartments.filter(pos => {
+        // Проверяем, есть ли у должности привязка к отделу "Администрация"
+        return pos.departments && Array.isArray(pos.departments) && 
+          pos.departments.some((d: any) => d.department_id === adminDepartment.department_id);
+      });
+    }
+    
+    // Если мы не нашли должности через positionsWithDepartments, используем резервную логику
+    if (adminPositions.length === 0) {
+      adminPositions = positions.filter(pos => {
+        // Проверяем, есть ли у должности привязка к отделу "Администрация"
+        // через сотрудников, назначенных на эту должность в этом отделе
+        return employees.some(emp => 
+          emp.position_id === pos.position_id && 
+          emp.department_id === adminDepartment.department_id
+        );
+      });
+    }
     
     console.log('Должности отдела "Администрация":', 
       adminPositions.map(p => `${p.name} (ID: ${p.position_id})`));
@@ -764,7 +778,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // Строим дерево, когда данные загружены
   useEffect(() => {
-    if (departments.length > 0 && positions.length > 0) {
+    if (departments.length > 0 && (positions.length > 0 || positionsWithDepartments.length > 0)) {
       // Находим корневые отделы (без родительской должности)
       const rootDepartments = departments.filter(d => d.parent_position_id === null);
       
@@ -788,7 +802,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         setPositionHierarchy(hierarchy);
       }
     }
-  }, [departments, positions, employees]);
+  }, [departments, positions, employees, positionsWithDepartments]);
   
   // Фильтруем иерархию при изменении выбранной должности
   useEffect(() => {
@@ -830,7 +844,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   }, [selectedPositionId, positionHierarchy]);
 
   // Если данные еще не загружены, показываем загрузку
-  if (departments.length === 0 || positions.length === 0) {
+  if (departments.length === 0 || (positions.length === 0 && positionsWithDepartments.length === 0)) {
     return <div className="loading-message">Загрузка организационной структуры...</div>;
   }
 
