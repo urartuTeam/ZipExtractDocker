@@ -42,7 +42,8 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const [location, setLocation] = useLocation();
-  const { logoutMutation } = useAuth();
+  const { logoutMutation, user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   const navItems = [
     {
