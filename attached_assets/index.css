@@ -74,29 +74,30 @@
 .top-position {
   width: 100%;
   max-width: 500px;
-  background-color: #f8f0f0;
-  border: 2px solid #a40000;
+  background-color: rgb(171 13 13);
+  border: 2px solid rgb(171 13 13);
   padding: 15px;
-  border-radius: 8px;
-  text-align: center;
+  border-radius: 3px;
+  text-align: left;
   margin-bottom: 15px;
+  color: #fff;
 }
 
 .top-position-title {
   font-weight: 700;
-  font-size: 1.5rem;
-  color: #a40000;
+  font-size: 14px;
+  color: #fff;
 }
 
 .position-divider {
-  width: 60%;
-  height: 2px;
-  background-color: #a40000;
+  width: 100%;
+  height: 1px;
+  background-color: #fff;
   margin: 10px auto;
 }
 
 .top-position-name {
-  font-size: 1.2rem;
+  font-size: 14px;
   font-weight: 500;
 }
 
@@ -380,122 +381,9 @@
   border-left: 2px solid #a40000;
 }
 
-/* Новые стили для динамического организационного дерева */
-.department-node {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 20px;
-  position: relative;
-  padding: 10px;
-}
-
-.department-node .department-card {
-  width: 100%;
-  max-width: calc(100% - 20px);
-  margin-bottom: 10px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.department-children {
-  width: 100%;
-  position: relative;
-  padding-top: 30px;
-}
-
-.department-children:before {
-  content: "";
-  position: absolute;
-  top: 15px;
-  left: 50%;
-  width: 2px;
-  height: 15px;
-  background-color: #a40000;
-}
-
-.child-departments {
-  display: flex;
-  flex-wrap: wrap;
-  width: 100%;
-  position: relative;
-}
-
-.child-departments:before {
-  content: "";
-  position: absolute;
-  top: -5px;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background-color: #a40000;
-}
-
-.position-name-small.empty {
-  color: #888;
-  font-style: italic;
-}
-
-.org-tree-view {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Стили для иерархии должностей */
-.position-hierarchy {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-}
-
-.position-hierarchy-node {
-  margin-bottom: 15px;
-  position: relative;
-}
-
-.position-hierarchy-node .position-employee-card {
-  background-color: white;
-  border: 1px solid #e0e0e0;
-  border-left: 3px solid #a40000;
-  border-radius: 5px;
-  padding: 10px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-  transition: all 0.2s ease;
-}
-
-.position-hierarchy-node .position-employee-card:hover {
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-.position-subordinates {
-  border-left: 2px solid #a40000;
-  margin-left: 20px;
-  padding-left: 20px;
-  margin-top: 10px;
-  position: relative;
-}
-
-.position-subordinates:before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 20px;
-  height: 2px;
-  background-color: #a40000;
-}
-
 /* Стили для хедера с картинкой */
 .header-with-image {
-  background-color: #a40000;
-  background-image: url('header-bg.png');
+  background-image: url('/header-bg.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
