@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, Plus, User } from 'lucide-react';
 
 // Типы данных для организационной структуры
 type Department = {
@@ -21,8 +20,13 @@ type Employee = {
   department_id: number;
 }
 
-// Для отслеживания развернутых узлов
-type ExpandedNodes = Record<number, boolean>;
+// Структура ветви организации
+type OrgBranch = {
+  department: Department;
+  positions: Position[];
+  employees: Employee[];
+  children: OrgBranch[];
+}
 
 // Карточка должности с сотрудниками
 const PositionCard = ({ 
@@ -33,169 +37,160 @@ const PositionCard = ({
   employees: Employee[] 
 }) => {
   return (
-    <div className="position-item">
-      <div className="position-name">
-        <span>{position.name}</span>
-      </div>
-      <div className="employee-list">
-        {employees.length > 0 ? (
-          employees.map(employee => (
-            <div key={employee.employee_id} className="employee-item">
-              <User className="employee-icon" size={14} />
-              <span>{employee.full_name}</span>
-            </div>
-          ))
-        ) : (
-          <div className="employee-item vacant">
-            <span>Вакантная должность</span>
+    <div className="position-card">
+      <div className="position-title">{position.name}</div>
+      <div className="position-divider"></div>
+      {employees.length > 0 ? (
+        employees.map(employee => (
+          <div key={employee.employee_id} className="position-name">
+            {employee.full_name}
           </div>
-        )}
-      </div>
+        ))
+      ) : (
+        <div className="position-name empty">Вакантная должность</div>
+      )}
     </div>
   );
 };
 
-// Компонент отдела
-const DepartmentNode = ({ 
-  department,
-  positions,
-  employees,
-  departments,
-  allPositions,
-  allEmployees,
-  positionDepartments,
-  expandedNodes,
-  setExpandedNodes,
-  level = 0,
-  maxInitialLevel = 3  // Максимальный уровень для начального отображения
+// Компонент отдела с должностями
+const DepartmentBox = ({ 
+  department, 
+  positions, 
+  employees 
 }: { 
-  department: Department,
-  positions: Position[],
-  employees: Employee[],
-  departments: Department[],
-  allPositions: Position[],
-  allEmployees: Employee[],
-  positionDepartments: { position_link_id: number, position_id: number, department_id: number }[],
-  expandedNodes: ExpandedNodes,
-  setExpandedNodes: React.Dispatch<React.SetStateAction<ExpandedNodes>>,
-  level?: number,
-  maxInitialLevel?: number
+  department: Department, 
+  positions: Position[], 
+  employees: Employee[]
 }) => {
-  // По умолчанию разворачиваем только первые уровни
-  const isInitiallyExpanded = level < maxInitialLevel;
-  
-  // Проверяем, развернут ли текущий узел
-  const isExpanded = expandedNodes[department.department_id] !== undefined 
-    ? expandedNodes[department.department_id] 
-    : isInitiallyExpanded;
-
-  // Фильтруем сотрудников текущего отдела
   const departmentEmployees = employees.filter(
     emp => emp.department_id === department.department_id
-  );
-  
-  // Получаем дочерние отделы
-  const childDepartments = departments.filter(
-    dept => dept.parent_department_id === department.department_id
-  );
-  
-  // Получаем позиции для текущего отдела
-  const departmentPositionIds = positionDepartments
-    .filter(link => link.department_id === department.department_id)
-    .map(link => link.position_id);
-  
-  const departmentPositions = allPositions.filter(
-    pos => departmentPositionIds.includes(pos.position_id)
   );
   
   // Группируем сотрудников по должностям
   const positionEmployees = new Map<number, Employee[]>();
   
   // Инициализируем Map пустыми массивами для всех позиций
-  departmentPositions.forEach(pos => {
+  positions.forEach(pos => {
     positionEmployees.set(pos.position_id, []);
   });
   
   // Заполняем Map сотрудниками
   departmentEmployees.forEach(emp => {
-    const empList = positionEmployees.get(emp.position_id) || [];
-    empList.push(emp);
-    positionEmployees.set(emp.position_id, empList);
+    const employees = positionEmployees.get(emp.position_id) || [];
+    employees.push(emp);
+    positionEmployees.set(emp.position_id, employees);
   });
   
-  // Функция для переключения состояния развернутости узла
-  const toggleExpand = () => {
-    setExpandedNodes(prev => ({
-      ...prev,
-      [department.department_id]: !isExpanded
-    }));
-  };
+  return (
+    <div className="department-box">
+      <div className="department-title">{department.name}</div>
+      
+      <div className="positions-container">
+        {positions.map(position => (
+          <PositionCard 
+            key={position.position_id}
+            position={position}
+            employees={positionEmployees.get(position.position_id) || []}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Компонент для рекурсивного отображения отделов
+const DepartmentBranch = ({ 
+  departments, 
+  allPositions,
+  allEmployees,
+  parentId = null,
+  level = 0
+}: { 
+  departments: Department[],
+  allPositions: Position[],
+  allEmployees: Employee[],
+  parentId?: number | null,
+  level?: number
+}) => {
+  // Загрузка связей должность-отдел
+  const { data: positionDepartmentsResponse } = useQuery<{
+    status: string, 
+    data: { position_link_id: number, position_id: number, department_id: number }[]
+  }>({
+    queryKey: ['/api/positiondepartments'],
+  });
+  const positionDepartments = positionDepartmentsResponse?.data || [];
+  
+  // Отделы на текущем уровне
+  const currentLevelDepartments = departments.filter(
+    dept => dept.parent_department_id === parentId
+  );
+  
+  if (currentLevelDepartments.length === 0) {
+    return null;
+  }
   
   return (
-    <div className={`org-node level-${level}`}>
-      <div 
-        className={`org-node-header ${childDepartments.length > 0 ? 'has-children' : ''}`}
-        onClick={toggleExpand}
-      >
-        {childDepartments.length > 0 ? (
-          <span className="expand-icon">
-            {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          </span>
-        ) : (
-          <span className="expand-icon placeholder">
-            <Plus size={16} className="invisible" />
-          </span>
-        )}
-        <span className="department-name">{department.name}</span>
-      </div>
-      
-      {/* Если узел развернут, показываем должности и дочерние отделы */}
-      {isExpanded && (
-        <div className="org-node-content">
-          {/* Должности в отделе */}
-          {departmentPositions.length > 0 && (
-            <div className="org-positions-list">
-              {departmentPositions.map(position => (
-                <PositionCard 
-                  key={position.position_id}
-                  position={position}
-                  employees={positionEmployees.get(position.position_id) || []}
-                />
-              ))}
-            </div>
-          )}
+    <div className={`department-level level-${level}`}>
+      <div className="department-row">
+        {currentLevelDepartments.map(department => {
+          // Получаем позиции, привязанные к этому отделу через связи position_department
+          const departmentPositionIds = positionDepartments
+            .filter(link => link.department_id === department.department_id)
+            .map(link => link.position_id);
           
-          {/* Дочерние отделы */}
-          {childDepartments.length > 0 && (
-            <div className="org-children-list">
-              {childDepartments.map(childDept => (
-                <DepartmentNode
-                  key={childDept.department_id}
-                  department={childDept}
-                  positions={departmentPositions}
-                  employees={departmentEmployees}
-                  departments={departments}
-                  allPositions={allPositions}
-                  allEmployees={allEmployees}
-                  positionDepartments={positionDepartments}
-                  expandedNodes={expandedNodes}
-                  setExpandedNodes={setExpandedNodes}
-                  level={level + 1}
-                  maxInitialLevel={maxInitialLevel}
-                />
-              ))}
+          // Находим соответствующие объекты Position
+          const departmentPositions = allPositions.filter(
+            pos => departmentPositionIds.includes(pos.position_id)
+          );
+          
+          // Дочерние отделы для текущего отдела
+          const childDepartments = departments.filter(
+            dept => dept.parent_department_id === department.department_id
+          );
+          
+          // Рассчитываем ширину отдела в зависимости от количества дочерних элементов
+          // Минимальная ширина 300px, остальное пропорционально
+          const minWidth = 300;
+          const childWidth = childDepartments.length * minWidth;
+          const width = Math.max(minWidth, childWidth);
+          
+          return (
+            <div 
+              key={department.department_id} 
+              className="department-branch"
+              style={{ 
+                minWidth: `${minWidth}px`,
+                width: childDepartments.length > 0 ? `${width}px` : `${minWidth}px`
+              }}
+            >
+              <DepartmentBox 
+                department={department} 
+                positions={departmentPositions}
+                employees={allEmployees}
+              />
+              
+              {childDepartments.length > 0 && (
+                <div className="department-children">
+                  <DepartmentBranch 
+                    departments={departments}
+                    allPositions={allPositions}
+                    allEmployees={allEmployees}
+                    parentId={department.department_id}
+                    level={level + 1}
+                  />
+                </div>
+              )}
             </div>
-          )}
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 };
 
 const OrganizationTree: React.FC = () => {
-  // Состояние для отслеживания развернутых узлов
-  const [expandedNodes, setExpandedNodes] = useState<ExpandedNodes>({});
-  
   // Загрузка данных из API
   const { data: departmentsResponse, isLoading: isDepartmentsLoading } = useQuery<{status: string, data: Department[]}>({
     queryKey: ['/api/departments'],
@@ -211,41 +206,20 @@ const OrganizationTree: React.FC = () => {
     queryKey: ['/api/employees'],
   });
   const employees = employeesResponse?.data || [];
-  
-  // Загрузка связей должность-отдел
-  const { data: positionDepartmentsResponse, isLoading: isPositionDepartmentsLoading } = useQuery<{
-    status: string, 
-    data: { position_link_id: number, position_id: number, department_id: number }[]
-  }>({
-    queryKey: ['/api/positiondepartments'],
-  });
-  const positionDepartments = positionDepartmentsResponse?.data || [];
 
   // Если данные еще не загружены, показываем загрузку
-  if (isDepartmentsLoading || isPositionsLoading || isEmployeesLoading || isPositionDepartmentsLoading) {
+  if (isDepartmentsLoading || isPositionsLoading || isEmployeesLoading) {
     return <div className="loading-message">Загрузка организационной структуры...</div>;
   }
 
-  // Находим корневые отделы (без родителя)
-  const rootDepartments = departments.filter(dept => dept.parent_department_id === null);
-
   return (
     <div className="org-tree-container">
-      <div className="org-tree-wrapper">
-        {rootDepartments.map(department => (
-          <DepartmentNode
-            key={department.department_id}
-            department={department}
-            positions={positions}
-            employees={employees}
-            departments={departments}
-            allPositions={positions}
-            allEmployees={employees}
-            positionDepartments={positionDepartments}
-            expandedNodes={expandedNodes}
-            setExpandedNodes={setExpandedNodes}
-          />
-        ))}
+      <div className="org-tree-view">
+        <DepartmentBranch 
+          departments={departments}
+          allPositions={positions}
+          allEmployees={employees}
+        />
       </div>
     </div>
   );
