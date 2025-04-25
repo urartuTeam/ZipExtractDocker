@@ -12,6 +12,7 @@ import Departments from "./pages/Departments";
 import Positions from "./pages/Positions";
 import Employees from "./pages/Employees";
 import Projects from "./pages/Projects";
+import ProjectDetails from "./pages/ProjectDetails";
 import Leaves from "./pages/Leaves";
 import AuthPage from "./pages/AuthPage";
 import OrganizationStructure from "./pages/OrganizationStructure";
@@ -28,7 +29,8 @@ function Router() {
       <ProtectedRoute path="/departments" component={Departments} />
       <ProtectedRoute path="/positions" component={Positions} />
       <ProtectedRoute path="/employees" component={Employees} />
-      <ProtectedRoute path="/projects" component={Projects} />
+      <Route path="/projects" component={Projects} />
+      <Route path="/projects/:id" component={ProjectDetails} />
       <ProtectedRoute path="/leaves" component={Leaves} />
       <ProtectedRoute path="/organization" component={OrganizationStructure} />
       <Route path="/auth" component={AuthPage} />
@@ -46,7 +48,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   };
 
   // Не показываем Sidebar и Header на странице авторизации и главной странице
-  if (location === '/auth' || location === '/') {
+  // А также на страницах проектов для неавторизованных пользователей
+  if (location === '/auth' || location === '/' || 
+      location === '/projects' || location.startsWith('/projects/')) {
     return <>{children}</>;
   }
 

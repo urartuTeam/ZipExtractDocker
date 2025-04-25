@@ -104,16 +104,18 @@ export default function Home() {
             <div className="text-sm text-gray-500">Всего сотрудников в системе</div>
           </div>
           
-          <div className="bg-white p-4 rounded-md shadow-sm">
-            <div className="flex justify-between items-center mb-2">
-              <h3 className="font-medium text-lg">Проекты</h3>
-              <svg className="h-5 w-5 text-[#a40000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-              </svg>
+          <Link href="/projects">
+            <div className="bg-white p-4 rounded-md shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="font-medium text-lg">Проекты</h3>
+                <svg className="h-5 w-5 text-[#a40000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              </div>
+              <div className="text-2xl font-bold">{projects.length}</div>
+              <div className="text-sm text-gray-500">Активных проектов</div>
             </div>
-            <div className="text-2xl font-bold">{projects.length}</div>
-            <div className="text-sm text-gray-500">Активных проектов</div>
-          </div>
+          </Link>
         </div>
       </div>
     </div>
