@@ -229,17 +229,7 @@ const PositionTree = ({
                 <div className="position-vacant">Вакантная должность</div>
               )}
               
-              {/* Отображаем дочерние отделы для должности */}
-              {firstNode.childDepartments && firstNode.childDepartments.length > 0 && (
-                <div className="child-departments">
-                  <div className="child-departments-title">Подчиненные отделы:</div>
-                  {firstNode.childDepartments.map((dept) => (
-                    <div key={dept.department_id} className="child-department-name">
-                      {dept.name}
-                    </div>
-                  ))}
-                </div>
-              )}
+              {/* Теперь дочерние отделы отображаются как самостоятельные элементы дерева */}
             </div>
           </div>
           
