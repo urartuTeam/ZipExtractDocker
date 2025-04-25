@@ -680,14 +680,16 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   useEffect(() => {
     if (!selectedPositionId || positionHierarchy.length === 0) {
       // Если нет выбранной должности или иерархия еще не построена, 
-      // показываем первые два уровня
+      // показываем только второй уровень иерархии, пропуская верхний уровень (Администрация)
       if (positionHierarchy.length > 0) {
-        const limitedHierarchy = positionHierarchy.map(node => ({
-          ...node,
-          subordinates: node.subordinates.slice(0, 5), // Ограничиваем до 5 подчиненных для каждого корневого узла
-        })).slice(0, 2); // Ограничиваем до 2 корневых узлов
-        
-        setFilteredHierarchy(limitedHierarchy);
+        // Пропускаем первый уровень (Администрация) и берем только следующие 2 уровня
+        // Извлекаем подчиненные из первого (верхнего) узла, но не отображаем сам верхний узел
+        if (positionHierarchy[0] && positionHierarchy[0].subordinates) {
+          const secondLevelNodes = positionHierarchy[0].subordinates;
+          setFilteredHierarchy(secondLevelNodes);
+        } else {
+          setFilteredHierarchy([]);
+        }
       } else {
         setFilteredHierarchy([]);
       }
@@ -704,18 +706,23 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       }
     }
 
-    // Если должность найдена, создаем новую иерархию с этой должностью в корне
+    // Если должность найдена, показываем только её непосредственных подчиненных 1-го уровня
     if (selectedNode) {
-      // Создаем копию узла, чтобы избежать мутаций оригинальной иерархии
+      // Показываем только выбранную должность и её непосредственных подчиненных
       const filteredNode = {
         ...selectedNode,
         subordinates: [...selectedNode.subordinates], // Получаем всех непосредственных подчиненных
       };
       
+      // Показываем только выбранный узел - его подчиненные видны внутри него
       setFilteredHierarchy([filteredNode]);
     } else {
-      // Если должность не найдена, показываем стандартную иерархию
-      setFilteredHierarchy(positionHierarchy);
+      // Если должность не найдена, показываем только второй уровень иерархии
+      if (positionHierarchy[0] && positionHierarchy[0].subordinates) {
+        setFilteredHierarchy(positionHierarchy[0].subordinates);
+      } else {
+        setFilteredHierarchy([]);
+      }
     }
   }, [selectedPositionId, positionHierarchy]);
 
@@ -729,11 +736,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   
   return (
     <div className="org-tree-container">
-      {administrationDept && (
-        <div className="department-card" style={{ maxWidth: '100%', margin: '0 auto 20px' }}>
-          <div className="department-title">{administrationDept.name}</div>
-        </div>
-      )}
+      {/* Убрали отображение отдела Администрация */}
       
       {/* Отображаем иерархию должностей как горизонтальное дерево */}
       <div className="position-hierarchy">
@@ -748,7 +751,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           </div>
         )}
         <PositionTree
-          nodes={filteredHierarchy.length > 0 ? filteredHierarchy : positionHierarchy.slice(0, 2)}
+          nodes={filteredHierarchy}
           allPositions={positions}
           allEmployees={employees}
           onPositionClick={handlePositionClick}
