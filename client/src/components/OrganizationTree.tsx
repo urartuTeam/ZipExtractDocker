@@ -638,10 +638,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       return [];
     }
     
-    // Получаем позиции с информацией о департаментах
-    const positionsWithDepts = positionsWithDepartmentsResponse?.data || [];
-    console.log('Должности с информацией о отделах:', positionsWithDepts.length);
-    
     // Находим отдел "Администрация"
     const adminDepartment = departments.find(dept => dept.name === "Администрация");
     if (!adminDepartment) {
@@ -651,19 +647,51 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     
     console.log('Найден отдел "Администрация":', adminDepartment);
     
-    // Шаг 1: Находим все корневые должности отдела "Администрация" (parent_position_id === null)
-    const adminRootPositions = positionsWithDepts.filter(pos => 
-      pos.parent_position_id === null && 
-      pos.departments && 
-      pos.departments.some((d: any) => d.department_id === adminDepartment.department_id)
-    );
+    // Получаем все должности в системе
+    const allPositions = positions;
+    
+    // Шаг 1: Находим все должности отдела "Администрация"
+    const adminPositions = allPositions.filter(pos => {
+      // Проверяем, есть ли у должности привязка к отделу "Администрация"
+      // через сотрудников, назначенных на эту должность в этом отделе
+      return employees.some(emp => 
+        emp.position_id === pos.position_id && 
+        emp.department_id === adminDepartment.department_id
+      );
+    });
+    
+    console.log('Должности отдела "Администрация":', 
+      adminPositions.map(p => `${p.name} (ID: ${p.position_id})`));
+    
+    // Шаг 2: Находим корневые должности (у которых родитель null или родителя нет в этом отделе)
+    const adminRootPositions = adminPositions.filter(pos => {
+      // Корневые должности - это те, у которых parent_position_id === null
+      if (pos.parent_position_id === null || pos.parent_position_id === undefined) {
+        return true;
+      }
+      
+      // Или те, у которых родительская должность не представлена в отделе "Администрация"
+      return !adminPositions.some(parentPos => parentPos.position_id === pos.parent_position_id);
+    });
     
     console.log('Корневые должности для отдела "Администрация":', 
       adminRootPositions.map(p => `${p.name} (ID: ${p.position_id})`));
     
     if (adminRootPositions.length === 0) {
-      console.error('Не найдены корневые должности для отдела "Администрация"');
-      return [];
+      console.log('Корневые должности не найдены; Используем все должности в качестве корневых:', adminPositions);
+      // Если не найдены корневые должности, используем все должности отдела
+      return adminPositions.map(position => {
+        const positionEmployee = employees.find(emp => 
+          emp.position_id === position.position_id && 
+          emp.department_id === adminDepartment.department_id
+        ) || null;
+        
+        return {
+          position,
+          employee: positionEmployee,
+          subordinates: []
+        };
+      });
     }
     
     // Строим иерархию, начиная с корневых должностей

@@ -241,6 +241,11 @@ export default function OrganizationStructure() {
                   department.department_id
                 );
                 
+                // Находим подчиненные отделы для этой должности
+                const positionChildDepartments = departments?.filter(dept => 
+                  dept.parent_position_id === positionLink.position_id
+                ) || [];
+                
                 return (
                   <div key={positionDeptKey} className="mb-2">
                     <div 
@@ -260,16 +265,35 @@ export default function OrganizationStructure() {
                         {/* Сотрудники на должности */}
                         {positionEmployees.length > 0 ? (
                           positionEmployees.map(employee => (
-                            <div 
-                              key={employee.employee_id} 
-                              className="flex items-center p-2 hover:bg-neutral-100 rounded-md"
-                            >
-                              <User className="h-5 w-5 mr-2 text-green-500" />
-                              <span>{employee.full_name}</span>
+                            <div key={employee.employee_id}>
+                              <div 
+                                className="flex items-center p-2 hover:bg-neutral-100 rounded-md"
+                              >
+                                <User className="h-5 w-5 mr-2 text-green-500" />
+                                <span>{employee.full_name}</span>
+                              </div>
+                              
+                              {/* Подчиненные отделы сотрудника */}
+                              {positionChildDepartments.length > 0 && (
+                                <div className="ml-6 border-l-2 border-neutral-200 pl-4 py-2">
+                                  <div className="font-medium mb-2 pl-2">Подчиненные отделы:</div>
+                                  {positionChildDepartments.map(childDept => renderDepartment(childDept, level + 1))}
+                                </div>
+                              )}
                             </div>
                           ))
                         ) : (
-                          <div className="text-neutral-500 italic pl-7">Нет сотрудников на этой должности</div>
+                          <div className="text-neutral-500 italic pl-7">
+                            Нет сотрудников на этой должности
+                            
+                            {/* Даже если нет сотрудников, показываем подчиненные отделы */}
+                            {positionChildDepartments.length > 0 && (
+                              <div className="mt-4">
+                                <div className="font-medium mb-2 pl-2">Подчиненные отделы:</div>
+                                {positionChildDepartments.map(childDept => renderDepartment(childDept, level + 1))}
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     )}
@@ -278,14 +302,6 @@ export default function OrganizationStructure() {
               })
             ) : (
               <div className="text-neutral-500 italic pl-7">Нет должностей в этом отделе</div>
-            )}
-            
-            {/* Дочерние отделы */}
-            {childDepartments.length > 0 && (
-              <div className="mt-4">
-                <div className="font-medium mb-2 pl-2">Подчиненные отделы:</div>
-                {childDepartments.map(childDept => renderDepartment(childDept, level + 1))}
-              </div>
             )}
           </div>
         )}
