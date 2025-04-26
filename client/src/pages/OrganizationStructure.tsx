@@ -133,7 +133,7 @@ export default function OrganizationStructure() {
   
   // Получаем дочерние отделы для указанного отдела
   const getChildDepartments = (parentId: number) => {
-    // В нашей базе данных отделы имеют связь через parent_position_id и позиции
+    // В нашей базе данных отделы имеют связь через parent_department_id
     // Находим все должности, связанные с указанным отделом
     const linkedPositions = positionsWithDepartments.filter(pos => 
       pos.departments && 
@@ -268,8 +268,10 @@ export default function OrganizationStructure() {
     const positionEmployees = getEmployeesForPositionInDepartment(position.position_id, departmentId);
     
     // Находим подчиненные отделы для этой должности
+    // Теперь мы используем связь через должность-отдел
     const positionChildDepartments = departments?.filter(dept => 
-      dept.parent_position_id === position.position_id
+      dept.parent_department_id === departmentId && 
+      employees.some(emp => emp.position_id === position.position_id && emp.employee_id === dept.parent_department_id)
     ) || [];
     
     return (

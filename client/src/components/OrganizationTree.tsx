@@ -585,7 +585,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   ): DepartmentNode[] => {
     // Находим отделы либо без родительской должности (корневые), либо с заданной родительской должностью
     const departmentsAtLevel = parentId === null 
-      ? allDepartments.filter(d => d.parent_position_id === null)
+      ? allDepartments.filter(d => d.parent_department_id === null)
       : allDepartments.filter(d => {
           // Находим все позиции в отделе с parentId
           const departmentPositions = allPositions.filter(pos => {
@@ -600,8 +600,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
             return isDirectlyLinkedToThisDepartment || hasEmployeesInDepartment;
           });
           
-          // Отдел привязан к одной из должностей в родительском отделе
-          return departmentPositions.some(pos => d.parent_position_id === pos.position_id);
+          // Отдел привязан к родительскому отделу
+          return d.parent_department_id === parentId;
         });
     
     // Вычисляем childCount для каждого отдела
@@ -819,7 +819,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       
       // Находим дочерние отделы, связанные с этой должностью
       const childDepartments = departments.filter(dept => 
-        dept.parent_position_id === position.position_id
+        dept.parent_department_id === adminDepartment.department_id
       );
       
       // Выводим для отладки информацию о дочерних отделах
@@ -935,7 +935,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   useEffect(() => {
     if (departments.length > 0 && (positions.length > 0 || positionsWithDepartments.length > 0)) {
       // Находим корневые отделы (без родительской должности)
-      const rootDepartments = departments.filter(d => d.parent_position_id === null);
+      const rootDepartments = departments.filter(d => d.parent_department_id === null);
       
       // Вычисляем общее количество элементов для масштабирования
       const totalElements = rootDepartments.reduce(
