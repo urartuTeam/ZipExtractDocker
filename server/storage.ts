@@ -123,7 +123,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllDepartments(): Promise<Department[]> {
-    return await db.select().from(departments);
+    return await db.select().from(departments).where(eq(departments.deleted, false)).orderBy(departments.department_id);
   }
 
   async createDepartment(insertDepartment: InsertDepartment): Promise<Department> {
@@ -144,11 +144,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteDepartment(id: number): Promise<boolean> {
-    const [deleted] = await db
-      .delete(departments)
+    const [updated] = await db
+      .update(departments)
+      .set({ 
+        deleted: true, 
+        deleted_at: new Date() 
+      })
       .where(eq(departments.department_id, id))
       .returning({ id: departments.department_id });
-    return !!deleted;
+    return !!updated;
   }
 
   // Методы для работы с должностями
