@@ -899,39 +899,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       }
     }
     
-    // Проверяем существование должности "Начальник управления" (ID: 6)
-    const headOfDepartmentPos = adminPositions.find(p => p.position_id === 6);
-    
-    if (headOfDepartmentPos && positionMap[6]) {
-      // Находим отделы, для которых parent_position_id = 6
-      const managedDepartments = departments.filter(d => d.parent_position_id === 6);
-      
-      console.log(`Проверяем отделы для Начальника управления (ID: 6):`, 
-        managedDepartments.map(dept => `${dept.name} (ID: ${dept.department_id})`));
-      
-      // Для каждого отдела создаем узел и добавляем как подчиненный к начальнику управления
-      managedDepartments.forEach(department => {
-        // Создаем псевдо-должность для отдела
-        const deptAsPosition: Position = {
-          position_id: department.department_id * 1000, // Уникальный ID
-          name: department.name + " (отдел)",
-          parent_position_id: 6,
-          department_id: department.department_id
-        };
-        
-        // Создаем узел для отдела
-        const departmentNode: PositionHierarchyNode = {
-          position: deptAsPosition,
-          employee: null, // У отдела нет сотрудника
-          subordinates: [],
-          childDepartments: []
-        };
-        
-        // Добавляем отдел как подчиненный к начальнику управления
-        positionMap[6].subordinates.push(departmentNode);
-      });
-    }
-    
     // Добавляем заместителей гендиректора как его подчиненных, а не как отдельные корневые узлы
     const deputyPositions = adminPositions.filter(p => 
       p.parent_position_id === 5 && [7, 8, 9, 10].includes(p.position_id)
