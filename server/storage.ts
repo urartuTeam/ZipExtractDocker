@@ -127,11 +127,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDepartment(insertDepartment: InsertDepartment): Promise<Department> {
-    const [department] = await db
-      .insert(departments)
-      .values(insertDepartment)
-      .returning();
-    return department;
+    try {
+      // Находим максимальный department_id в таблице
+      const allDepartments = await db.select().from(departments);
+      const maxId = allDepartments.reduce((max, dept) => Math.max(max, dept.department_id), 0);
+      const nextId = maxId + 1;
+      
+      console.log(`Creating department with ID: ${nextId}, current max ID is ${maxId}`);
+      
+      // Вставляем с явно указанным department_id
+      const [department] = await db
+        .insert(departments)
+        .values({
+          ...insertDepartment,
+          department_id: nextId
+        })
+        .returning();
+      return department;
+    } catch (error) {
+      console.error("Error in createDepartment:", error);
+      throw error;
+    }
   }
 
   async updateDepartment(id: number, departmentData: Partial<InsertDepartment>): Promise<Department | undefined> {
