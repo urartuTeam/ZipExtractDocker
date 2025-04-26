@@ -162,9 +162,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPosition(insertPosition: InsertPosition): Promise<Position> {
+    // Находим максимальный position_id в таблице
+    const result = await db.execute(sql`SELECT MAX(position_id) as max_id FROM positions`);
+    const maxId = result.rows[0]?.max_id || 0;
+    const nextId = maxId + 1;
+    
+    // Вставляем с явно указанным position_id
     const [position] = await db
       .insert(positions)
-      .values(insertPosition)
+      .values({
+        ...insertPosition,
+        position_id: nextId
+      })
       .returning();
     return position;
   }
