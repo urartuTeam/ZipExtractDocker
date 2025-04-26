@@ -17,6 +17,9 @@ type Department = {
   department_id: number;
   name: string;
   parent_department_id: number | null;
+  parent_position_id: number | null;
+  deleted: boolean;
+  deleted_at: string | null;
 }
 
 type Position = {
@@ -122,18 +125,42 @@ export default function OrganizationStructure() {
     }));
   };
   
-  // Получаем корневые отделы (без родителя)
+  // Определяем, является ли отдел корневым (не имеет вышестоящего отдела или должности)
+  const isRootDepartment = (dept: Department) => {
+    // Отдел является корневым, если у него нет parent_department_id
+    // ИЛИ нет parent_position_id (для случая с Начальником управления - позиция не привязана к отделу)
+    return dept.parent_department_id === null && dept.parent_position_id === null;
+  };
+
+  // Получаем корневые отделы (только Администрация)
   const getRootDepartments = () => {
     console.log('Все отделы:', departments);
-    // В нашей базе данных отделы имеют parent_department_id
-    const rootDepts = departments?.filter(dept => dept.parent_department_id === null) || [];
+    
+    // В нашей структуре корневым является только отдел "Администрация"
+    const adminDept = departments?.find(dept => dept.name === "Администрация");
+    const rootDepts = adminDept ? [adminDept] : [];
+    
     console.log('Корневые отделы:', rootDepts);
     return rootDepts;
   };
   
-  // Получаем дочерние отделы для указанного отдела по parent_department_id
+  // Получаем дочерние отделы для указанного отдела по parent_position_id в отделе
   const getChildDepartmentsByParentId = (parentId: number) => {
-    return departments?.filter(dept => dept.parent_department_id === parentId) || [];
+    console.log(`Получаем дочерние отделы для ID:${parentId}`);
+    
+    // Находим все позиции в данном отделе
+    const departmentPositions = positions.filter(pos => pos.department_id === parentId);
+    console.log(`Позиции в отделе ID:${parentId}:`, departmentPositions.map(p => p.position_id));
+    
+    // Находим отделы, которые подчиняются этим позициям через parent_position_id
+    const childDepartments = departments.filter(dept => 
+      departmentPositions.some(pos => dept.parent_position_id === pos.position_id)
+    );
+    
+    console.log(`Дочерние отделы для отдела ID:${parentId} через parent_position_id:`, 
+      childDepartments.map(d => `${d.name} (ID: ${d.department_id}, Parent Position: ${d.parent_position_id})`));
+    
+    return childDepartments;
   };
   
   // Получаем дочерние отделы для указанного отдела
@@ -430,13 +457,41 @@ export default function OrganizationStructure() {
   
   const rootDepartments = getRootDepartments();
   
+  // Получаем все дочерние отделы, включая отделы, подчиняющиеся должностям в данном отделе
+  const getAllChildDepartments = (parentDepartmentId: number) => {
+    // Получаем прямых дочерних отделов по parent_department_id
+    const directChildDeps = departments?.filter(
+      dept => dept.parent_department_id === parentDepartmentId
+    ) || [];
+    
+    // Получаем должность "Начальник управления" из отдела "Администрация"
+    const managerPosition = positions.find(pos => 
+      pos.name === "Начальник управления" && pos.department_id === parentDepartmentId
+    );
+    
+    if (!managerPosition) {
+      return directChildDeps;
+    }
+    
+    // Получаем отделы, которые подчиняются этой должности через parent_position_id
+    const positionChildDeps = departments.filter(dept => 
+      dept.parent_position_id === managerPosition.position_id
+    );
+    
+    console.log(`Дочерние отделы для отдела ${parentDepartmentId} через должность ${managerPosition.position_id}:`, 
+      positionChildDeps.map(d => `${d.name} (ID: ${d.department_id})`));
+    
+    // Объединяем все дочерние отделы
+    return [...directChildDeps, ...positionChildDeps];
+  };
+  
   // Рекурсивно рендерит отделы и их дочерние отделы
   const renderDepartmentTree = (department: Department, level: number = 0) => {
     // Отображаем сам отдел
     const renderedDepartment = renderDepartment(department, level);
     
-    // Получаем дочерние отделы по parent_department_id
-    const childDepartments = getChildDepartmentsByParentId(department.department_id);
+    // Получаем все дочерние отделы (как по parent_department_id, так и по parent_position_id)
+    const childDepartments = getAllChildDepartments(department.department_id);
     
     if (childDepartments.length === 0) {
       return renderedDepartment;
