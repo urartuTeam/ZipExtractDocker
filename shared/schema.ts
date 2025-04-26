@@ -34,6 +34,7 @@ export const departments = pgTable("departments", {
   department_id: serial("department_id").primaryKey(),
   name: text("name").notNull(),
   parent_department_id: integer("parent_department_id"),
+  parent_position_id: integer("parent_position_id"),
 });
 
 // Связь между должностями и отделами
@@ -89,6 +90,11 @@ export const departmentsRelations = relations(departments, ({ one, many }) => ({
     relationName: "parent_department",
   }),
   childDepartments: many(departments, { relationName: "parent_department" }),
+  parentPosition: one(positions, {
+    fields: [departments.parent_position_id],
+    references: [positions.position_id],
+    relationName: "parent_position_department",
+  }),
   positions: many(position_department, { relationName: "department_positions" }),
   employees: many(employees),
   projects: many(projects),
