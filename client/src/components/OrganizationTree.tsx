@@ -542,9 +542,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       allEmployees.some(emp => emp.position_id === pos.position_id && emp.department_id === department.department_id)
     );
     
-    // Находим отделы, которые привязаны к должностям в этом отделе
+    // Находим отделы, которые привязаны к этому отделу
     const children = allDepartments.filter(
-      d => departmentPositions.some(pos => d.parent_position_id === pos.position_id)
+      d => d.parent_department_id === department.department_id
     );
     
     // Считаем количество позиций в текущем отделе

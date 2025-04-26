@@ -187,6 +187,8 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getPositionSubordinates(positionId: number): Promise<Position[]> {
+    // Используем parent_position_id для должностей, так как эта колонка сохраняется
+    // Для отделов был изменён parent_position_id на parent_department_id
     return await db.select().from(positions).where(eq(positions.parent_position_id, positionId));
   }
 
