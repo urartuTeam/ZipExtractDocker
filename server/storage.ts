@@ -118,12 +118,17 @@ export class DatabaseStorage implements IStorage {
 
   // Методы для работы с отделами
   async getDepartment(id: number): Promise<Department | undefined> {
-    const [department] = await db.select().from(departments).where(eq(departments.department_id, id));
+    const [department] = await db.select().from(departments).where(
+      and(
+        eq(departments.department_id, id),
+        eq(departments.deleted, false)
+      )
+    );
     return department || undefined;
   }
 
   async getAllDepartments(): Promise<Department[]> {
-    return await db.select().from(departments).orderBy(departments.department_id);
+    return await db.select().from(departments).where(eq(departments.deleted, false)).orderBy(departments.department_id);
   }
 
   async createDepartment(insertDepartment: InsertDepartment): Promise<Department> {
@@ -144,21 +149,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteDepartment(id: number): Promise<boolean> {
-    const [deleted] = await db
-      .delete(departments)
+    const [updated] = await db
+      .update(departments)
+      .set({ 
+        deleted: true, 
+        deleted_at: new Date() 
+      })
       .where(eq(departments.department_id, id))
       .returning({ id: departments.department_id });
-    return !!deleted;
+    return !!updated;
   }
 
   // Методы для работы с должностями
   async getPosition(id: number): Promise<Position | undefined> {
-    const [position] = await db.select().from(positions).where(eq(positions.position_id, id));
+    const [position] = await db.select().from(positions).where(
+      and(
+        eq(positions.position_id, id),
+        eq(positions.deleted, false)
+      )
+    );
     return position || undefined;
   }
 
   async getAllPositions(): Promise<Position[]> {
-    return await db.select().from(positions);
+    return await db.select().from(positions).where(eq(positions.deleted, false));
   }
 
   async createPosition(insertPosition: InsertPosition): Promise<Position> {
@@ -179,11 +193,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePosition(id: number): Promise<boolean> {
-    const [deleted] = await db
-      .delete(positions)
+    const [updated] = await db
+      .update(positions)
+      .set({ 
+        deleted: true, 
+        deleted_at: new Date() 
+      })
       .where(eq(positions.position_id, id))
       .returning({ id: positions.position_id });
-    return !!deleted;
+    return !!updated;
   }
   
   async getPositionSubordinates(positionId: number): Promise<Position[]> {
@@ -194,12 +212,17 @@ export class DatabaseStorage implements IStorage {
 
   // Методы для работы со связью должностей и отделов
   async getPositionDepartment(id: number): Promise<PositionDepartment | undefined> {
-    const [positionDepartment] = await db.select().from(position_department).where(eq(position_department.position_link_id, id));
+    const [positionDepartment] = await db.select().from(position_department).where(
+      and(
+        eq(position_department.position_link_id, id),
+        eq(position_department.deleted, false)
+      )
+    );
     return positionDepartment || undefined;
   }
 
   async getAllPositionDepartments(): Promise<PositionDepartment[]> {
-    return await db.select().from(position_department);
+    return await db.select().from(position_department).where(eq(position_department.deleted, false));
   }
 
   async createPositionDepartment(insertPositionDepartment: InsertPositionDepartment): Promise<PositionDepartment> {
@@ -229,12 +252,17 @@ export class DatabaseStorage implements IStorage {
 
   // Методы для работы с сотрудниками
   async getEmployee(id: number): Promise<Employee | undefined> {
-    const [employee] = await db.select().from(employees).where(eq(employees.employee_id, id));
+    const [employee] = await db.select().from(employees).where(
+      and(
+        eq(employees.employee_id, id),
+        eq(employees.deleted, false)
+      )
+    );
     return employee || undefined;
   }
 
   async getAllEmployees(): Promise<Employee[]> {
-    return await db.select().from(employees);
+    return await db.select().from(employees).where(eq(employees.deleted, false));
   }
 
   async createEmployee(insertEmployee: InsertEmployee): Promise<Employee> {
@@ -255,21 +283,30 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteEmployee(id: number): Promise<boolean> {
-    const [deleted] = await db
-      .delete(employees)
+    const [updated] = await db
+      .update(employees)
+      .set({ 
+        deleted: true, 
+        deleted_at: new Date() 
+      })
       .where(eq(employees.employee_id, id))
       .returning({ id: employees.employee_id });
-    return !!deleted;
+    return !!updated;
   }
 
   // Методы для работы с проектами
   async getProject(id: number): Promise<Project | undefined> {
-    const [project] = await db.select().from(projects).where(eq(projects.project_id, id));
+    const [project] = await db.select().from(projects).where(
+      and(
+        eq(projects.project_id, id),
+        eq(projects.deleted, false)
+      )
+    );
     return project || undefined;
   }
 
   async getAllProjects(): Promise<Project[]> {
-    return await db.select().from(projects);
+    return await db.select().from(projects).where(eq(projects.deleted, false));
   }
 
   async createProject(insertProject: InsertProject): Promise<Project> {
@@ -290,11 +327,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteProject(id: number): Promise<boolean> {
-    const [deleted] = await db
-      .delete(projects)
+    const [updated] = await db
+      .update(projects)
+      .set({ 
+        deleted: true, 
+        deleted_at: new Date() 
+      })
       .where(eq(projects.project_id, id))
       .returning({ id: projects.project_id });
-    return !!deleted;
+    return !!updated;
   }
 
   // Методы для работы со связью сотрудников и проектов
