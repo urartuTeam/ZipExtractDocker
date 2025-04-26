@@ -131,6 +131,11 @@ export default function OrganizationStructure() {
     return rootDepts;
   };
   
+  // Получаем дочерние отделы для указанного отдела по parent_department_id
+  const getChildDepartmentsByParentId = (parentId: number) => {
+    return departments?.filter(dept => dept.parent_department_id === parentId) || [];
+  };
+  
   // Получаем дочерние отделы для указанного отдела
   const getChildDepartments = (parentId: number) => {
     // В нашей базе данных отделы имеют связь через parent_department_id
@@ -425,6 +430,31 @@ export default function OrganizationStructure() {
   
   const rootDepartments = getRootDepartments();
   
+  // Рекурсивно рендерит отделы и их дочерние отделы
+  const renderDepartmentTree = (department: Department, level: number = 0) => {
+    // Отображаем сам отдел
+    const renderedDepartment = renderDepartment(department, level);
+    
+    // Получаем дочерние отделы по parent_department_id
+    const childDepartments = getChildDepartmentsByParentId(department.department_id);
+    
+    if (childDepartments.length === 0) {
+      return renderedDepartment;
+    }
+    
+    // Если есть дочерние отделы, добавляем их под данным отделом
+    return (
+      <React.Fragment key={`dept-tree-${department.department_id}`}>
+        {renderedDepartment}
+        {expandedDepartments[department.department_id] && (
+          <div className="ml-8">
+            {childDepartments.map(childDept => renderDepartmentTree(childDept, level + 1))}
+          </div>
+        )}
+      </React.Fragment>
+    );
+  };
+  
   return (
     <div className="p-4">
       <Card>
@@ -436,7 +466,7 @@ export default function OrganizationStructure() {
         </CardHeader>
         <CardContent>
           {rootDepartments.length > 0 ? (
-            rootDepartments.map(department => renderDepartment(department))
+            rootDepartments.map(department => renderDepartmentTree(department))
           ) : (
             <div className="text-center py-6 text-neutral-500">
               <Building className="h-12 w-12 mx-auto mb-2 text-neutral-300" />
