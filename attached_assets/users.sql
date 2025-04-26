@@ -1,2 +1,1 @@
-insert into public.users (id, username, password, email, first_name, last_name, role, active, created_at, updated_at)
-values  (1, 'admin', '$2b$10$d8GUxBoVDfI0yL3P9FcUE.CUILhd3hn4/oN3vD00xRuLAT9iC1mLq', 'admin@test.ru', 'Admin', 'Cyfrolab', 'employee', true, '2025-04-23 12:10:51.608227', '2025-04-23 12:10:51.608227');
+INSERT INTO public.users (id, username, email, password, created_at) VALUES (1, 'admin', 'admin@example.com', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', '2025-04-24 07:52:25.855195');

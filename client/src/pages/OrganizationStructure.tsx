@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 type Department = {
   department_id: number;
   name: string;
-  parent_position_id: number | null;
+  parent_department_id: number | null;
 }
 
 type Position = {
@@ -125,8 +125,8 @@ export default function OrganizationStructure() {
   // Получаем корневые отделы (без родителя)
   const getRootDepartments = () => {
     console.log('Все отделы:', departments);
-    // В нашей базе данных отделы имеют parent_position_id, а не parent_department_id
-    const rootDepts = departments?.filter(dept => dept.parent_position_id === null) || [];
+    // В нашей базе данных отделы имеют parent_department_id
+    const rootDepts = departments?.filter(dept => dept.parent_department_id === null) || [];
     console.log('Корневые отделы:', rootDepts);
     return rootDepts;
   };
@@ -143,9 +143,9 @@ export default function OrganizationStructure() {
     
     console.log(`Должности отдела ID:${parentId}:`, linkedPositions);
     
-    // Теперь находим отделы, у которых parent_position_id равен одной из должностей в родительском отделе
+    // Теперь находим отделы, у которых parent_department_id равен указанному parentId
     const childDepts = departments?.filter(dept => 
-      dept.parent_position_id !== null && linkedPositions.includes(dept.parent_position_id)
+      dept.parent_department_id === parentId
     ) || [];
     
     console.log(`Дочерние отделы для ID:${parentId}:`, childDepts);

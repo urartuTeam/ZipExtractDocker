@@ -1,12 +1,5 @@
-insert into public.employeeprojects (employee_id, project_id, role)
-values  (25, 7, 'Ведущий аналитик'),
-        (26, 6, 'Главный специалист'),
-        (27, 7, 'Руководитель проекта'),
-        (28, 7, 'Главный аналитик'),
-        (32, 9, 'Руководитель проекта'),
-        (36, 8, 'Руководитель проекта'),
-        (44, 10, 'Руководитель проекта'),
-        (45, 10, 'Руководитель проекта'),
-        (60, 6, 'Руководитель проекта'),
-        (61, 6, 'Руководитель проекта'),
-        (81, 8, 'Руководитель проекта');
+INSERT INTO public.employeeprojects (employee_id, project_id, role) VALUES (1, 1, 'Руководитель проекта');
+INSERT INTO public.employeeprojects (employee_id, project_id, role) VALUES (2, 1, 'Архитектор системы');
+INSERT INTO public.employeeprojects (employee_id, project_id, role) VALUES (3, 1, 'Технический директор');
+INSERT INTO public.employeeprojects (employee_id, project_id, role) VALUES (4, 2, 'Руководитель проекта');
+INSERT INTO public.employeeprojects (employee_id, project_id, role) VALUES (3, 3, 'Руководитель проекта');

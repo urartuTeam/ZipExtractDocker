@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 type Department = {
   department_id: number;
   name: string;
-  parent_position_id: number | null;
+  parent_department_id: number | null;
 }
 
 type Position = {
