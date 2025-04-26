@@ -7,7 +7,9 @@ CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(255) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
 );
 
 -- Данные для таблицы users
@@ -19,7 +21,9 @@ CREATE TABLE IF NOT EXISTS departments (
     department_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     parent_department_id INTEGER REFERENCES departments(department_id),
-    parent_position_id INTEGER
+    parent_position_id INTEGER,
+    deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
 );
 
 -- Данные для таблицы departments
@@ -37,7 +41,9 @@ CREATE TABLE IF NOT EXISTS positions (
     vacancies INTEGER,
     parent_position_id INTEGER,
     sort INTEGER,
-    department_id INTEGER
+    department_id INTEGER,
+    deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
 );
 
 -- Данные для таблицы positions
@@ -61,7 +67,9 @@ CREATE TABLE IF NOT EXISTS employees (
     phone VARCHAR(255),
     email VARCHAR(255),
     manager_id INTEGER REFERENCES employees(employee_id),
-    department_id INTEGER REFERENCES departments(department_id)
+    department_id INTEGER REFERENCES departments(department_id),
+    deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
 );
 
 -- Данные для таблицы employees
@@ -76,7 +84,9 @@ CREATE TABLE IF NOT EXISTS projects (
     project_id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    department_id INTEGER REFERENCES departments(department_id)
+    department_id INTEGER REFERENCES departments(department_id),
+    deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
 );
 
 -- Данные для таблицы projects
@@ -90,7 +100,9 @@ CREATE TABLE IF NOT EXISTS employeeprojects (
     employee_id INTEGER REFERENCES employees(employee_id),
     project_id INTEGER REFERENCES projects(project_id),
     role VARCHAR(255),
-    PRIMARY KEY (employee_id, project_id)
+    PRIMARY KEY (employee_id, project_id),
+    deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
 );
 
 -- Данные для таблицы employeeprojects
@@ -106,7 +118,9 @@ CREATE TABLE IF NOT EXISTS position_department (
     position_link_id SERIAL PRIMARY KEY,
     position_id INTEGER REFERENCES positions(position_id),
     department_id INTEGER REFERENCES departments(department_id),
-    sort INTEGER
+    sort INTEGER,
+    deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
 );
 
 -- Данные для таблицы position_department
@@ -122,16 +136,21 @@ INSERT INTO position_department (position_link_id, position_id, department_id, s
 (9, 9, 1, 0),
 (10, 10, 1, 0);
 
+-- ТАБЛИЦА: leaves
 CREATE TABLE IF NOT EXISTS leaves (
     leave_id SERIAL PRIMARY KEY,
     employee_id INTEGER REFERENCES employees(employee_id),
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
     reason VARCHAR(255),
-    status VARCHAR(50)
+    status VARCHAR(50),
+    deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
 );
 
 -- Дополнительная таблица для хранения первичных ключей
 CREATE TABLE IF NOT EXISTS _dummy_position_references (
-    id SERIAL PRIMARY KEY
+    id SERIAL PRIMARY KEY,
+    deleted BOOLEAN DEFAULT FALSE,
+    deleted_at TIMESTAMP
 );
