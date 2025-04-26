@@ -14,7 +14,7 @@ export const users = pgTable("users", {
 
 // Должности
 export const positions = pgTable("positions", {
-  position_id: integer("position_id").notNull(),
+  position_id: serial("position_id").notNull(),
   name: text("name").notNull(),
   staff_units: integer("staff_units").default(0),
   current_count: integer("current_count").default(0),
@@ -34,7 +34,7 @@ export const positionReferences = pgTable("_dummy_position_references", {
 
 // Отделы
 export const departments = pgTable("departments", {
-  department_id: integer("department_id").notNull(),
+  department_id: serial("department_id").notNull(),
   name: text("name").notNull(),
   parent_position_id: integer("parent_position_id").references(() => positions.position_id),
 }, (table) => ({
@@ -44,7 +44,7 @@ export const departments = pgTable("departments", {
 
 // Связь между должностями и отделами
 export const position_department = pgTable("position_department", {
-  position_link_id: integer("position_link_id").notNull(),
+  position_link_id: serial("position_link_id").notNull(),
   position_id: integer("position_id").references(() => positions.position_id),
   department_id: integer("department_id").references(() => departments.department_id),
   sort: integer("sort").default(0),

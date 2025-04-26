@@ -128,20 +128,9 @@ export class DatabaseStorage implements IStorage {
 
   async createDepartment(insertDepartment: InsertDepartment): Promise<Department> {
     try {
-      // Находим максимальный department_id в таблице
-      const allDepartments = await db.select().from(departments);
-      const maxId = allDepartments.reduce((max, dept) => Math.max(max, dept.department_id), 0);
-      const nextId = maxId + 1;
-      
-      console.log(`Creating department with ID: ${nextId}, current max ID is ${maxId}`);
-      
-      // Вставляем с явно указанным department_id
       const [department] = await db
         .insert(departments)
-        .values({
-          ...insertDepartment,
-          department_id: nextId
-        })
+        .values(insertDepartment)
         .returning();
       return department;
     } catch (error) {
@@ -179,20 +168,9 @@ export class DatabaseStorage implements IStorage {
 
   async createPosition(insertPosition: InsertPosition): Promise<Position> {
     try {
-      // Находим максимальный position_id в таблице
-      const allPositions = await db.select().from(positions);
-      const maxId = allPositions.reduce((max, pos) => Math.max(max, pos.position_id), 0);
-      const nextId = maxId + 1;
-      
-      console.log(`Creating position with ID: ${nextId}, current max ID is ${maxId}`);
-      
-      // Вставляем с явно указанным position_id
       const [position] = await db
         .insert(positions)
-        .values({
-          ...insertPosition,
-          position_id: nextId
-        })
+        .values(insertPosition)
         .returning();
       return position;
     } catch (error) {
@@ -234,20 +212,9 @@ export class DatabaseStorage implements IStorage {
 
   async createPositionDepartment(insertPositionDepartment: InsertPositionDepartment): Promise<PositionDepartment> {
     try {
-      // Находим максимальный position_link_id в таблице
-      const allLinks = await db.select().from(position_department);
-      const maxId = allLinks.reduce((max, link) => Math.max(max, link.position_link_id), 0);
-      const nextId = maxId + 1;
-      
-      console.log(`Creating position-department link with ID: ${nextId}, current max ID is ${maxId}`);
-      
-      // Вставляем с явно указанным position_link_id
       const [positionDepartment] = await db
         .insert(position_department)
-        .values({
-          ...insertPositionDepartment,
-          position_link_id: nextId
-        })
+        .values(insertPositionDepartment)
         .returning();
       return positionDepartment;
     } catch (error) {
