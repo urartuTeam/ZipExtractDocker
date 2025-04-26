@@ -82,6 +82,8 @@ export const employeeprojects = pgTable("employeeprojects", {
   employee_id: integer("employee_id").references(() => employees.employee_id),
   project_id: integer("project_id").references(() => projects.project_id),
   role: text("role").notNull(),
+  deleted: boolean("deleted").default(false),
+  deleted_at: timestamp("deleted_at"),
 }, (table) => ({
   pk: primaryKey({ columns: [table.employee_id, table.project_id] }),
 }));
@@ -93,6 +95,8 @@ export const leaves = pgTable("leaves", {
   start_date: date("start_date").notNull(),
   end_date: date("end_date"),
   type: text("type").notNull(),
+  deleted: boolean("deleted").default(false),
+  deleted_at: timestamp("deleted_at"),
 });
 
 // Отношения

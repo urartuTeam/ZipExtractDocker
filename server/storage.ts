@@ -243,11 +243,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePositionDepartment(id: number): Promise<boolean> {
-    const [deleted] = await db
-      .delete(position_department)
+    const [updated] = await db
+      .update(position_department)
+      .set({ 
+        deleted: true, 
+        deleted_at: new Date() 
+      })
       .where(eq(position_department.position_link_id, id))
       .returning({ id: position_department.position_link_id });
-    return !!deleted;
+    return !!updated;
   }
 
   // Методы для работы с сотрудниками
@@ -343,22 +347,33 @@ export class DatabaseStorage implements IStorage {
     const [employeeProject] = await db.select().from(employeeprojects).where(
       and(
         eq(employeeprojects.employee_id, employeeId),
-        eq(employeeprojects.project_id, projectId)
+        eq(employeeprojects.project_id, projectId),
+        eq(employeeprojects.deleted, false)
       )
     );
     return employeeProject || undefined;
   }
 
   async getAllEmployeeProjects(): Promise<EmployeeProject[]> {
-    return await db.select().from(employeeprojects);
+    return await db.select().from(employeeprojects).where(eq(employeeprojects.deleted, false));
   }
 
   async getEmployeeProjectsByEmployee(employeeId: number): Promise<EmployeeProject[]> {
-    return await db.select().from(employeeprojects).where(eq(employeeprojects.employee_id, employeeId));
+    return await db.select().from(employeeprojects).where(
+      and(
+        eq(employeeprojects.employee_id, employeeId),
+        eq(employeeprojects.deleted, false)
+      )
+    );
   }
 
   async getEmployeeProjectsByProject(projectId: number): Promise<EmployeeProject[]> {
-    return await db.select().from(employeeprojects).where(eq(employeeprojects.project_id, projectId));
+    return await db.select().from(employeeprojects).where(
+      and(
+        eq(employeeprojects.project_id, projectId),
+        eq(employeeprojects.deleted, false)
+      )
+    );
   }
 
   async createEmployeeProject(insertEmployeeProject: InsertEmployeeProject): Promise<EmployeeProject> {
@@ -384,8 +399,13 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteEmployeeProject(employeeId: number, projectId: number): Promise<boolean> {
-    const [deleted] = await db
-      .delete(employeeprojects)
+    // Для таблицы связи нужно добавить колонки deleted и deleted_at в БД
+    const [updated] = await db
+      .update(employeeprojects)
+      .set({ 
+        deleted: true, 
+        deleted_at: new Date() 
+      })
       .where(
         and(
           eq(employeeprojects.employee_id, employeeId),
@@ -393,21 +413,31 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .returning();
-    return !!deleted;
+    return !!updated;
   }
 
   // Методы для работы с отпусками
   async getLeave(id: number): Promise<Leave | undefined> {
-    const [leave] = await db.select().from(leaves).where(eq(leaves.leave_id, id));
+    const [leave] = await db.select().from(leaves).where(
+      and(
+        eq(leaves.leave_id, id),
+        eq(leaves.deleted, false)
+      )
+    );
     return leave || undefined;
   }
 
   async getAllLeaves(): Promise<Leave[]> {
-    return await db.select().from(leaves);
+    return await db.select().from(leaves).where(eq(leaves.deleted, false));
   }
 
   async getLeavesByEmployee(employeeId: number): Promise<Leave[]> {
-    return await db.select().from(leaves).where(eq(leaves.employee_id, employeeId));
+    return await db.select().from(leaves).where(
+      and(
+        eq(leaves.employee_id, employeeId),
+        eq(leaves.deleted, false)
+      )
+    );
   }
 
   async createLeave(insertLeave: InsertLeave): Promise<Leave> {
@@ -428,11 +458,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteLeave(id: number): Promise<boolean> {
-    const [deleted] = await db
-      .delete(leaves)
+    const [updated] = await db
+      .update(leaves)
+      .set({ 
+        deleted: true, 
+        deleted_at: new Date() 
+      })
       .where(eq(leaves.leave_id, id))
       .returning({ id: leaves.leave_id });
-    return !!deleted;
+    return !!updated;
   }
 }
 
