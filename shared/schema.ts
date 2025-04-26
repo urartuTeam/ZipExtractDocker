@@ -10,6 +10,8 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   created_at: timestamp("created_at").defaultNow(),
+  deleted: boolean("deleted").default(false),
+  deleted_at: timestamp("deleted_at"),
 });
 
 // Должности
@@ -22,6 +24,8 @@ export const positions = pgTable("positions", {
   vacancies: integer("vacancies").default(0),
   parent_position_id: integer("parent_position_id"),
   sort: integer("sort").default(0),
+  deleted: boolean("deleted").default(false),
+  deleted_at: timestamp("deleted_at"),
 });
 
 // Для создания self-reference на position.position_id
@@ -36,6 +40,8 @@ export const departments = pgTable("departments", {
   name: text("name").notNull(),
   parent_department_id: integer("parent_department_id"),
   parent_position_id: integer("parent_position_id"),
+  deleted: boolean("deleted").default(false),
+  deleted_at: timestamp("deleted_at"),
 });
 
 // Связь между должностями и отделами
@@ -44,6 +50,8 @@ export const position_department = pgTable("position_department", {
   position_id: integer("position_id").references(() => positions.position_id),
   department_id: integer("department_id").references(() => departments.department_id),
   sort: integer("sort").default(0),
+  deleted: boolean("deleted").default(false),
+  deleted_at: timestamp("deleted_at"),
 });
 
 // Сотрудники
@@ -55,6 +63,8 @@ export const employees = pgTable("employees", {
   email: text("email"),
   manager_id: integer("manager_id"),
   department_id: integer("department_id").references(() => departments.department_id),
+  deleted: boolean("deleted").default(false),
+  deleted_at: timestamp("deleted_at"),
 });
 
 // Проекты
@@ -63,6 +73,8 @@ export const projects = pgTable("projects", {
   name: text("name").notNull(),
   description: text("description"),
   department_id: integer("department_id").references(() => departments.department_id),
+  deleted: boolean("deleted").default(false),
+  deleted_at: timestamp("deleted_at"),
 });
 
 // Связь сотрудников и проектов
