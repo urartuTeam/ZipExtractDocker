@@ -10,7 +10,7 @@ import {
   type Leave, type InsertLeave
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // Пользователи
@@ -127,16 +127,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDepartment(insertDepartment: InsertDepartment): Promise<Department> {
-    try {
-      const [department] = await db
-        .insert(departments)
-        .values(insertDepartment)
-        .returning();
-      return department;
-    } catch (error) {
-      console.error("Error in createDepartment:", error);
-      throw error;
-    }
+    const [department] = await db
+      .insert(departments)
+      .values(insertDepartment)
+      .returning();
+    return department;
   }
 
   async updateDepartment(id: number, departmentData: Partial<InsertDepartment>): Promise<Department | undefined> {
@@ -167,16 +162,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPosition(insertPosition: InsertPosition): Promise<Position> {
-    try {
-      const [position] = await db
-        .insert(positions)
-        .values(insertPosition)
-        .returning();
-      return position;
-    } catch (error) {
-      console.error("Error in createPosition:", error);
-      throw error;
-    }
+    const [position] = await db
+      .insert(positions)
+      .values(insertPosition)
+      .returning();
+    return position;
   }
 
   async updatePosition(id: number, positionData: Partial<InsertPosition>): Promise<Position | undefined> {
@@ -211,16 +201,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPositionDepartment(insertPositionDepartment: InsertPositionDepartment): Promise<PositionDepartment> {
-    try {
-      const [positionDepartment] = await db
-        .insert(position_department)
-        .values(insertPositionDepartment)
-        .returning();
-      return positionDepartment;
-    } catch (error) {
-      console.error("Error in createPositionDepartment:", error);
-      throw error;
-    }
+    const [positionDepartment] = await db
+      .insert(position_department)
+      .values(insertPositionDepartment)
+      .returning();
+    return positionDepartment;
   }
 
   async updatePositionDepartment(id: number, positionDepartmentData: Partial<InsertPositionDepartment>): Promise<PositionDepartment | undefined> {

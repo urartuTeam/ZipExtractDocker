@@ -17,158 +17,129 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Data for Name: positions; Type: TABLE DATA; Schema: public; Owner: neondb_owner
+-- Data for Name: departments; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.positions (position_id, name, staff_units, current_count, vacancies, parent_position_id, sort) FROM stdin;
-1	Генеральный директор	1	1	0	\N	1
-2	Директор по IT	1	1	0	1	2
-3	Начальник отдела разработки	1	1	0	2	3
-4	Старший разработчик	2	1	1	3	4
-5	Разработчик	3	2	1	4	5
-6	тестовая должность	0	0	0	1	0
-7	тестовая должность	0	0	0	2	0
-\.
+INSERT INTO public.departments VALUES (1, 'Администрация', NULL, NULL);
+INSERT INTO public.departments VALUES (2, 'Управление цифровизации и градостроительных данных', 1, NULL);
+INSERT INTO public.departments VALUES (3, 'Управление цифрового развития', 1, NULL);
 
 
 --
--- Data for Name: _dummy_position_references; Type: TABLE DATA; Schema: public; Owner: neondb_owner
+-- Data for Name: positions; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public._dummy_position_references (id, position_id) FROM stdin;
-\.
-
-
---
--- Data for Name: departments; Type: TABLE DATA; Schema: public; Owner: neondb_owner
---
-
-COPY public.departments (department_id, name, parent_position_id) FROM stdin;
-1	ИТ Департамент	2
-2	Отдел разработки	3
-3	тестовая должность	1
-4	Начальник управления	\N
-\.
+INSERT INTO public.positions VALUES (1, 'ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА', 1, 1, 1, 0, NULL, 1);
+INSERT INTO public.positions VALUES (2, 'Главный эксперт', NULL, 0, 0, 0, NULL, 2);
+INSERT INTO public.positions VALUES (3, 'Главный специалист', NULL, 0, 0, 0, NULL, 3);
+INSERT INTO public.positions VALUES (5, 'Генеральный директор', NULL, 0, 0, 0, 1, 5);
+INSERT INTO public.positions VALUES (6, 'Начальник управления', NULL, 0, 0, 0, 1, 6);
+INSERT INTO public.positions VALUES (4, 'Исполнительный директор', NULL, 0, 0, 0, 5, 4);
+INSERT INTO public.positions VALUES (7, 'Заместитель генерального директора по координации реализации планов ОИВ', NULL, 0, 0, 0, 5, 7);
+INSERT INTO public.positions VALUES (8, 'Заместитель генерального директора по координации аналитики', NULL, 0, 0, 0, 5, 8);
+INSERT INTO public.positions VALUES (9, 'Заместитель генерального директора по координации разработки', NULL, 0, 0, 0, 5, 9);
+INSERT INTO public.positions VALUES (10, 'Директор по развитию', 1, 1, 0, 1, 5, 10);
 
 
 --
--- Data for Name: employees; Type: TABLE DATA; Schema: public; Owner: neondb_owner
+-- Data for Name: employees; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.employees (employee_id, full_name, position_id, phone, email, manager_id, department_id) FROM stdin;
-1	Иванов Иван	1	+7999111222	ivanov@example.com	\N	\N
-2	Петров Петр	2	+7999222333	petrov@example.com	1	1
-3	Сидоров Сидор	3	+7999333444	sidorov@example.com	2	1
-4	Смирнов Виктор	4	+7999444555	smirnov@example.com	3	2
-5	Соколов Андрей	5	+7999555666	sokolov@example.com	4	2
-\.
+INSERT INTO public.employees VALUES (1, 'Степанова Дарья Владимировна', 1, '+7 (111) 111-11-11', 'mail@example.com', NULL, 1);
+INSERT INTO public.employees VALUES (2, 'Герц Владимир Андреевич', 6, NULL, NULL, 1, 1);
+INSERT INTO public.employees VALUES (3, 'Терновский Андрей Викторович', 9, NULL, NULL, NULL, 1);
+INSERT INTO public.employees VALUES (4, 'Подгорный Александр Владимирович', 4, NULL, NULL, NULL, 1);
+INSERT INTO public.employees VALUES (5, 'Иванов Иван Иванович', 10, '+7 (222) 222-22-22', 'ivanov@example.com', 1, 1);
 
 
 --
--- Data for Name: projects; Type: TABLE DATA; Schema: public; Owner: neondb_owner
+-- Data for Name: projects; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.projects (project_id, name, description, department_id) FROM stdin;
-1	Система управления организацией	Внутренняя система для учета персонала и организационной структуры	1
-2	Мобильное приложение	Разработка мобильного приложения для клиентов	2
-\.
-
-
---
--- Data for Name: employeeprojects; Type: TABLE DATA; Schema: public; Owner: neondb_owner
---
-
-COPY public.employeeprojects (employee_id, project_id, role) FROM stdin;
-3	1	Руководитель проекта
-4	1	Архитектор
-5	1	Разработчик
-4	2	Технический лидер
-5	2	Разработчик
-\.
+INSERT INTO public.projects VALUES (1, 'Городской портал цифровизации', 2);
+INSERT INTO public.projects VALUES (2, 'Система аналитики градостроительных данных', 2);
+INSERT INTO public.projects VALUES (3, 'Разработка API градостроительных данных', 3);
 
 
 --
--- Data for Name: leaves; Type: TABLE DATA; Schema: public; Owner: neondb_owner
+-- Data for Name: employeeprojects; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.leaves (leave_id, employee_id, start_date, end_date, type) FROM stdin;
-\.
-
-
---
--- Data for Name: position_department; Type: TABLE DATA; Schema: public; Owner: neondb_owner
---
-
-COPY public.position_department (position_link_id, position_id, department_id, sort) FROM stdin;
-1	3	1	1
-2	4	2	1
-3	5	2	2
-\.
+INSERT INTO public.employeeprojects VALUES (1, 1, 'Руководитель проекта');
+INSERT INTO public.employeeprojects VALUES (2, 1, 'Архитектор системы');
+INSERT INTO public.employeeprojects VALUES (3, 1, 'Технический директор');
+INSERT INTO public.employeeprojects VALUES (4, 2, 'Руководитель проекта');
+INSERT INTO public.employeeprojects VALUES (5, 2, 'Аналитик');
+INSERT INTO public.employeeprojects VALUES (3, 3, 'Руководитель проекта');
+INSERT INTO public.employeeprojects VALUES (5, 3, 'Разработчик API');
 
 
 --
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: neondb_owner
+-- Data for Name: leaves; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-COPY public.users (id, username, email, password, created_at) FROM stdin;
-4	admin	admin@example.com	8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918	2025-04-26 10:00:54.561031
-\.
 
 
 --
--- Name: _dummy_position_references_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
+-- Data for Name: position_department; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public._dummy_position_references_id_seq', 1, false);
-
-
---
--- Name: departments_department_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
---
-
-SELECT pg_catalog.setval('public.departments_department_id_seq', 4, true);
 
 
 --
--- Name: employees_employee_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.employees_employee_id_seq', 5, true);
+INSERT INTO public.users VALUES (1, 'admin', 'admin@example.com', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', '2025-04-24 07:52:25.855195');
 
 
 --
--- Name: leaves_leave_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
+-- Name: departments_department_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.departments_department_id_seq', 1, false);
+
+
+--
+-- Name: employees_employee_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.employees_employee_id_seq', 1, false);
+
+
+--
+-- Name: leaves_leave_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
 SELECT pg_catalog.setval('public.leaves_leave_id_seq', 1, false);
 
 
 --
--- Name: position_department_position_link_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
+-- Name: position_department_position_link_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.position_department_position_link_id_seq', 3, true);
-
-
---
--- Name: positions_position_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
---
-
-SELECT pg_catalog.setval('public.positions_position_id_seq', 7, true);
+SELECT pg_catalog.setval('public.position_department_position_link_id_seq', 1, false);
 
 
 --
--- Name: projects_project_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
+-- Name: positions_position_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.projects_project_id_seq', 2, true);
+SELECT pg_catalog.setval('public.positions_position_id_seq', 1, false);
 
 
 --
--- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
+-- Name: projects_project_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 4, true);
+SELECT pg_catalog.setval('public.projects_project_id_seq', 3, true);
+
+
+--
+-- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+--
+
+SELECT pg_catalog.setval('public.users_id_seq', 1, true);
 
 
 --

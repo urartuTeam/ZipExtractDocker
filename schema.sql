@@ -21,54 +21,19 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: _dummy_position_references; Type: TABLE; Schema: public; Owner: neondb_owner
---
-
-CREATE TABLE public._dummy_position_references (
-    id integer NOT NULL,
-    position_id integer
-);
-
-
-ALTER TABLE public._dummy_position_references OWNER TO neondb_owner;
-
---
--- Name: _dummy_position_references_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
---
-
-CREATE SEQUENCE public._dummy_position_references_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public._dummy_position_references_id_seq OWNER TO neondb_owner;
-
---
--- Name: _dummy_position_references_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
---
-
-ALTER SEQUENCE public._dummy_position_references_id_seq OWNED BY public._dummy_position_references.id;
-
-
---
--- Name: departments; Type: TABLE; Schema: public; Owner: neondb_owner
+-- Name: departments; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.departments (
     department_id integer NOT NULL,
     name text NOT NULL,
+    parent_department_id integer,
     parent_position_id integer
 );
 
 
-ALTER TABLE public.departments OWNER TO neondb_owner;
-
 --
--- Name: departments_department_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+-- Name: departments_department_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.departments_department_id_seq
@@ -80,17 +45,15 @@ CREATE SEQUENCE public.departments_department_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.departments_department_id_seq OWNER TO neondb_owner;
-
 --
--- Name: departments_department_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
+-- Name: departments_department_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.departments_department_id_seq OWNED BY public.departments.department_id;
 
 
 --
--- Name: employeeprojects; Type: TABLE; Schema: public; Owner: neondb_owner
+-- Name: employeeprojects; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.employeeprojects (
@@ -100,10 +63,8 @@ CREATE TABLE public.employeeprojects (
 );
 
 
-ALTER TABLE public.employeeprojects OWNER TO neondb_owner;
-
 --
--- Name: employees; Type: TABLE; Schema: public; Owner: neondb_owner
+-- Name: employees; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.employees (
@@ -117,10 +78,8 @@ CREATE TABLE public.employees (
 );
 
 
-ALTER TABLE public.employees OWNER TO neondb_owner;
-
 --
--- Name: employees_employee_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+-- Name: employees_employee_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.employees_employee_id_seq
@@ -132,17 +91,15 @@ CREATE SEQUENCE public.employees_employee_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.employees_employee_id_seq OWNER TO neondb_owner;
-
 --
--- Name: employees_employee_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
+-- Name: employees_employee_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.employees_employee_id_seq OWNED BY public.employees.employee_id;
 
 
 --
--- Name: leaves; Type: TABLE; Schema: public; Owner: neondb_owner
+-- Name: leaves; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.leaves (
@@ -154,10 +111,8 @@ CREATE TABLE public.leaves (
 );
 
 
-ALTER TABLE public.leaves OWNER TO neondb_owner;
-
 --
--- Name: leaves_leave_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+-- Name: leaves_leave_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.leaves_leave_id_seq
@@ -169,17 +124,15 @@ CREATE SEQUENCE public.leaves_leave_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.leaves_leave_id_seq OWNER TO neondb_owner;
-
 --
--- Name: leaves_leave_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
+-- Name: leaves_leave_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.leaves_leave_id_seq OWNED BY public.leaves.leave_id;
 
 
 --
--- Name: position_department; Type: TABLE; Schema: public; Owner: neondb_owner
+-- Name: position_department; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.position_department (
@@ -190,10 +143,8 @@ CREATE TABLE public.position_department (
 );
 
 
-ALTER TABLE public.position_department OWNER TO neondb_owner;
-
 --
--- Name: position_department_position_link_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+-- Name: position_department_position_link_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.position_department_position_link_id_seq
@@ -205,22 +156,21 @@ CREATE SEQUENCE public.position_department_position_link_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.position_department_position_link_id_seq OWNER TO neondb_owner;
-
 --
--- Name: position_department_position_link_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
+-- Name: position_department_position_link_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.position_department_position_link_id_seq OWNED BY public.position_department.position_link_id;
 
 
 --
--- Name: positions; Type: TABLE; Schema: public; Owner: neondb_owner
+-- Name: positions; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.positions (
     position_id integer NOT NULL,
     name text NOT NULL,
+    department_id integer,
     staff_units integer DEFAULT 0,
     current_count integer DEFAULT 0,
     vacancies integer DEFAULT 0,
@@ -229,10 +179,8 @@ CREATE TABLE public.positions (
 );
 
 
-ALTER TABLE public.positions OWNER TO neondb_owner;
-
 --
--- Name: positions_position_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+-- Name: positions_position_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.positions_position_id_seq
@@ -244,31 +192,26 @@ CREATE SEQUENCE public.positions_position_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.positions_position_id_seq OWNER TO neondb_owner;
-
 --
--- Name: positions_position_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
+-- Name: positions_position_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.positions_position_id_seq OWNED BY public.positions.position_id;
 
 
 --
--- Name: projects; Type: TABLE; Schema: public; Owner: neondb_owner
+-- Name: projects; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.projects (
     project_id integer NOT NULL,
     name text NOT NULL,
-    description text,
     department_id integer
 );
 
 
-ALTER TABLE public.projects OWNER TO neondb_owner;
-
 --
--- Name: projects_project_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+-- Name: projects_project_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.projects_project_id_seq
@@ -280,17 +223,15 @@ CREATE SEQUENCE public.projects_project_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.projects_project_id_seq OWNER TO neondb_owner;
-
 --
--- Name: projects_project_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
+-- Name: projects_project_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.projects_project_id_seq OWNED BY public.projects.project_id;
 
 
 --
--- Name: users; Type: TABLE; Schema: public; Owner: neondb_owner
+-- Name: users; Type: TABLE; Schema: public; Owner: -
 --
 
 CREATE TABLE public.users (
@@ -302,10 +243,8 @@ CREATE TABLE public.users (
 );
 
 
-ALTER TABLE public.users OWNER TO neondb_owner;
-
 --
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: -
 --
 
 CREATE SEQUENCE public.users_id_seq
@@ -317,89 +256,80 @@ CREATE SEQUENCE public.users_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.users_id_seq OWNER TO neondb_owner;
-
 --
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
 ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- Name: _dummy_position_references id; Type: DEFAULT; Schema: public; Owner: neondb_owner
---
-
-ALTER TABLE ONLY public._dummy_position_references ALTER COLUMN id SET DEFAULT nextval('public._dummy_position_references_id_seq'::regclass);
-
-
---
--- Name: departments department_id; Type: DEFAULT; Schema: public; Owner: neondb_owner
+-- Name: departments department_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.departments ALTER COLUMN department_id SET DEFAULT nextval('public.departments_department_id_seq'::regclass);
 
 
 --
--- Name: employees employee_id; Type: DEFAULT; Schema: public; Owner: neondb_owner
+-- Name: employees employee_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.employees ALTER COLUMN employee_id SET DEFAULT nextval('public.employees_employee_id_seq'::regclass);
 
 
 --
--- Name: leaves leave_id; Type: DEFAULT; Schema: public; Owner: neondb_owner
+-- Name: leaves leave_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.leaves ALTER COLUMN leave_id SET DEFAULT nextval('public.leaves_leave_id_seq'::regclass);
 
 
 --
--- Name: position_department position_link_id; Type: DEFAULT; Schema: public; Owner: neondb_owner
+-- Name: position_department position_link_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.position_department ALTER COLUMN position_link_id SET DEFAULT nextval('public.position_department_position_link_id_seq'::regclass);
 
 
 --
--- Name: positions position_id; Type: DEFAULT; Schema: public; Owner: neondb_owner
+-- Name: positions position_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.positions ALTER COLUMN position_id SET DEFAULT nextval('public.positions_position_id_seq'::regclass);
 
 
 --
--- Name: projects project_id; Type: DEFAULT; Schema: public; Owner: neondb_owner
+-- Name: projects project_id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.projects ALTER COLUMN project_id SET DEFAULT nextval('public.projects_project_id_seq'::regclass);
 
 
 --
--- Name: users id; Type: DEFAULT; Schema: public; Owner: neondb_owner
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
 
 
 --
--- Name: _dummy_position_references _dummy_position_references_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: departments departments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public._dummy_position_references
-    ADD CONSTRAINT _dummy_position_references_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.departments
+    ADD CONSTRAINT departments_pkey PRIMARY KEY (department_id);
 
 
 --
--- Name: employeeprojects employeeprojects_employee_id_project_id_pk; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: employeeprojects employeeprojects_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.employeeprojects
-    ADD CONSTRAINT employeeprojects_employee_id_project_id_pk PRIMARY KEY (employee_id, project_id);
+    ADD CONSTRAINT employeeprojects_pkey PRIMARY KEY (employee_id, project_id);
 
 
 --
--- Name: employees employees_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: employees employees_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.employees
@@ -407,31 +337,7 @@ ALTER TABLE ONLY public.employees
 
 
 --
--- Name: departments idx_department_id; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
---
-
-ALTER TABLE ONLY public.departments
-    ADD CONSTRAINT idx_department_id UNIQUE (department_id);
-
-
---
--- Name: positions idx_position_id; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
---
-
-ALTER TABLE ONLY public.positions
-    ADD CONSTRAINT idx_position_id UNIQUE (position_id);
-
-
---
--- Name: position_department idx_position_link_id; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
---
-
-ALTER TABLE ONLY public.position_department
-    ADD CONSTRAINT idx_position_link_id UNIQUE (position_link_id);
-
-
---
--- Name: leaves leaves_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: leaves leaves_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.leaves
@@ -439,7 +345,23 @@ ALTER TABLE ONLY public.leaves
 
 
 --
--- Name: projects projects_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: position_department position_department_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.position_department
+    ADD CONSTRAINT position_department_pkey PRIMARY KEY (position_link_id);
+
+
+--
+-- Name: positions positions_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.positions
+    ADD CONSTRAINT positions_pkey PRIMARY KEY (position_id);
+
+
+--
+-- Name: projects projects_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.projects
@@ -447,7 +369,7 @@ ALTER TABLE ONLY public.projects
 
 
 --
--- Name: users users_email_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: users users_email_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -455,7 +377,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -463,7 +385,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_username_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: users users_username_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.users
@@ -471,94 +393,118 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: _dummy_position_references _dummy_position_references_position_id_positions_position_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
---
-
-ALTER TABLE ONLY public._dummy_position_references
-    ADD CONSTRAINT _dummy_position_references_position_id_positions_position_id_fk FOREIGN KEY (position_id) REFERENCES public.positions(position_id);
-
-
---
--- Name: departments departments_parent_position_id_positions_position_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: departments departments_parent_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.departments
-    ADD CONSTRAINT departments_parent_position_id_positions_position_id_fk FOREIGN KEY (parent_position_id) REFERENCES public.positions(position_id);
+    ADD CONSTRAINT departments_parent_department_id_fkey FOREIGN KEY (parent_department_id) REFERENCES public.departments(department_id) ON DELETE SET NULL;
 
 
 --
--- Name: employeeprojects employeeprojects_employee_id_employees_employee_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: departments departments_parent_position_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.departments
+    ADD CONSTRAINT departments_parent_position_id_fkey FOREIGN KEY (parent_position_id) REFERENCES public.positions(position_id);
+
+
+--
+-- Name: employeeprojects employeeprojects_employee_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.employeeprojects
-    ADD CONSTRAINT employeeprojects_employee_id_employees_employee_id_fk FOREIGN KEY (employee_id) REFERENCES public.employees(employee_id);
+    ADD CONSTRAINT employeeprojects_employee_id_fkey FOREIGN KEY (employee_id) REFERENCES public.employees(employee_id) ON DELETE CASCADE;
 
 
 --
--- Name: employeeprojects employeeprojects_project_id_projects_project_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: employeeprojects employeeprojects_project_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.employeeprojects
-    ADD CONSTRAINT employeeprojects_project_id_projects_project_id_fk FOREIGN KEY (project_id) REFERENCES public.projects(project_id);
+    ADD CONSTRAINT employeeprojects_project_id_fkey FOREIGN KEY (project_id) REFERENCES public.projects(project_id) ON DELETE CASCADE;
 
 
 --
--- Name: employees employees_department_id_departments_department_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
---
-
-ALTER TABLE ONLY public.employees
-    ADD CONSTRAINT employees_department_id_departments_department_id_fk FOREIGN KEY (department_id) REFERENCES public.departments(department_id);
-
-
---
--- Name: employees employees_position_id_positions_position_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: employees employees_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.employees
-    ADD CONSTRAINT employees_position_id_positions_position_id_fk FOREIGN KEY (position_id) REFERENCES public.positions(position_id);
+    ADD CONSTRAINT employees_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(department_id) ON DELETE SET NULL;
 
 
 --
--- Name: leaves leaves_employee_id_employees_employee_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: employees employees_manager_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.employees
+    ADD CONSTRAINT employees_manager_id_fkey FOREIGN KEY (manager_id) REFERENCES public.employees(employee_id) ON DELETE SET NULL;
+
+
+--
+-- Name: employees employees_position_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.employees
+    ADD CONSTRAINT employees_position_id_fkey FOREIGN KEY (position_id) REFERENCES public.positions(position_id) ON DELETE SET NULL;
+
+
+--
+-- Name: positions fk_parent_position; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.positions
+    ADD CONSTRAINT fk_parent_position FOREIGN KEY (parent_position_id) REFERENCES public.positions(position_id) ON UPDATE CASCADE ON DELETE SET NULL;
+
+
+--
+-- Name: leaves leaves_employee_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.leaves
-    ADD CONSTRAINT leaves_employee_id_employees_employee_id_fk FOREIGN KEY (employee_id) REFERENCES public.employees(employee_id);
+    ADD CONSTRAINT leaves_employee_id_fkey FOREIGN KEY (employee_id) REFERENCES public.employees(employee_id) ON DELETE CASCADE;
 
 
 --
--- Name: position_department position_department_department_id_departments_department_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
---
-
-ALTER TABLE ONLY public.position_department
-    ADD CONSTRAINT position_department_department_id_departments_department_id_fk FOREIGN KEY (department_id) REFERENCES public.departments(department_id);
-
-
---
--- Name: position_department position_department_position_id_positions_position_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: position_department position_department_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.position_department
-    ADD CONSTRAINT position_department_position_id_positions_position_id_fk FOREIGN KEY (position_id) REFERENCES public.positions(position_id);
+    ADD CONSTRAINT position_department_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(department_id) ON DELETE CASCADE;
 
 
 --
--- Name: projects projects_department_id_departments_department_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: position_department position_department_position_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.position_department
+    ADD CONSTRAINT position_department_position_id_fkey FOREIGN KEY (position_id) REFERENCES public.positions(position_id) ON DELETE CASCADE;
+
+
+--
+-- Name: positions positions_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.positions
+    ADD CONSTRAINT positions_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(department_id) ON DELETE SET NULL;
+
+
+--
+-- Name: projects projects_department_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.projects
-    ADD CONSTRAINT projects_department_id_departments_department_id_fk FOREIGN KEY (department_id) REFERENCES public.departments(department_id);
+    ADD CONSTRAINT projects_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments(department_id) ON DELETE SET NULL;
 
 
 --
--- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: cloud_admin
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
 ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO neon_superuser WITH GRANT OPTION;
 
 
 --
--- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: cloud_admin
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: -
 --
 
 ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON TABLES TO neon_superuser WITH GRANT OPTION;

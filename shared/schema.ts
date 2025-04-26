@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date, primaryKey, varchar, unique } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, date, primaryKey, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -14,17 +14,14 @@ export const users = pgTable("users", {
 
 // Должности
 export const positions = pgTable("positions", {
-  position_id: serial("position_id").notNull(),
+  position_id: serial("position_id").primaryKey(),
   name: text("name").notNull(),
   staff_units: integer("staff_units").default(0),
   current_count: integer("current_count").default(0),
   vacancies: integer("vacancies").default(0),
   parent_position_id: integer("parent_position_id"),
   sort: integer("sort").default(0),
-}, (table) => ({
-  // Создаем уникальный индекс вместо первичного ключа
-  idx_position_id: unique("idx_position_id").on(table.position_id)
-}));
+});
 
 // Для создания self-reference на position.position_id
 export const positionReferences = pgTable("_dummy_position_references", {
@@ -34,24 +31,18 @@ export const positionReferences = pgTable("_dummy_position_references", {
 
 // Отделы
 export const departments = pgTable("departments", {
-  department_id: serial("department_id").notNull(),
+  department_id: serial("department_id").primaryKey(),
   name: text("name").notNull(),
   parent_position_id: integer("parent_position_id").references(() => positions.position_id),
-}, (table) => ({
-  // Создаем уникальный индекс вместо первичного ключа
-  idx_department_id: unique("idx_department_id").on(table.department_id)
-}));
+});
 
 // Связь между должностями и отделами
 export const position_department = pgTable("position_department", {
-  position_link_id: serial("position_link_id").notNull(),
+  position_link_id: serial("position_link_id").primaryKey(),
   position_id: integer("position_id").references(() => positions.position_id),
   department_id: integer("department_id").references(() => departments.department_id),
   sort: integer("sort").default(0),
-}, (table) => ({
-  // Создаем уникальный индекс вместо первичного ключа
-  idx_position_link_id: unique("idx_position_link_id").on(table.position_link_id)
-}));
+});
 
 // Сотрудники
 export const employees = pgTable("employees", {
