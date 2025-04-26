@@ -10,7 +10,7 @@ import {
   type Leave, type InsertLeave
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Пользователи
@@ -162,20 +162,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPosition(insertPosition: InsertPosition): Promise<Position> {
-    // Находим максимальный position_id в таблице
-    const result = await db.execute(sql`SELECT MAX(position_id) as max_id FROM positions`);
-    const maxId = result.rows[0]?.max_id || 0;
-    const nextId = maxId + 1;
-    
-    // Вставляем с явно указанным position_id
-    const [position] = await db
-      .insert(positions)
-      .values({
-        ...insertPosition,
-        position_id: nextId
-      })
-      .returning();
-    return position;
+    try {
+      // Находим максимальный position_id в таблице
+      const allPositions = await db.select().from(positions);
+      const maxId = allPositions.reduce((max, pos) => Math.max(max, pos.position_id), 0);
+      const nextId = maxId + 1;
+      
+      console.log(`Creating position with ID: ${nextId}, current max ID is ${maxId}`);
+      
+      // Вставляем с явно указанным position_id
+      const [position] = await db
+        .insert(positions)
+        .values({
+          ...insertPosition,
+          position_id: nextId
+        })
+        .returning();
+      return position;
+    } catch (error) {
+      console.error("Error in createPosition:", error);
+      throw error;
+    }
   }
 
   async updatePosition(id: number, positionData: Partial<InsertPosition>): Promise<Position | undefined> {
@@ -210,11 +217,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPositionDepartment(insertPositionDepartment: InsertPositionDepartment): Promise<PositionDepartment> {
-    const [positionDepartment] = await db
-      .insert(position_department)
-      .values(insertPositionDepartment)
-      .returning();
-    return positionDepartment;
+    try {
+      // Находим максимальный position_link_id в таблице
+      const allLinks = await db.select().from(position_department);
+      const maxId = allLinks.reduce((max, link) => Math.max(max, link.position_link_id), 0);
+      const nextId = maxId + 1;
+      
+      console.log(`Creating position-department link with ID: ${nextId}, current max ID is ${maxId}`);
+      
+      // Вставляем с явно указанным position_link_id
+      const [positionDepartment] = await db
+        .insert(position_department)
+        .values({
+          ...insertPositionDepartment,
+          position_link_id: nextId
+        })
+        .returning();
+      return positionDepartment;
+    } catch (error) {
+      console.error("Error in createPositionDepartment:", error);
+      throw error;
+    }
   }
 
   async updatePositionDepartment(id: number, positionDepartmentData: Partial<InsertPositionDepartment>): Promise<PositionDepartment | undefined> {
