@@ -819,7 +819,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       
       // Находим дочерние отделы, связанные с этой должностью
       const childDepartments = departments.filter(dept => 
-        dept.parent_department_id === adminDepartment.department_id
+        dept.parent_position_id === position.position_id
       );
       
       // Выводим для отладки информацию о дочерних отделах

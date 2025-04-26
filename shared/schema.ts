@@ -16,6 +16,7 @@ export const users = pgTable("users", {
 export const positions = pgTable("positions", {
   position_id: serial("position_id").primaryKey(),
   name: text("name").notNull(),
+  department_id: integer("department_id"),
   staff_units: integer("staff_units").default(0),
   current_count: integer("current_count").default(0),
   vacancies: integer("vacancies").default(0),
@@ -102,6 +103,10 @@ export const departmentsRelations = relations(departments, ({ one, many }) => ({
 
 export const positionsRelations = relations(positions, ({ many, one }) => ({
   departments: many(position_department, { relationName: "position_departments" }),
+  department: one(departments, {
+    fields: [positions.department_id],
+    references: [departments.department_id],
+  }),
   employees: many(employees),
   parentPosition: one(positions, {
     fields: [positions.parent_position_id],
@@ -109,6 +114,7 @@ export const positionsRelations = relations(positions, ({ many, one }) => ({
     relationName: "parent_position",
   }),
   childPositions: many(positions, { relationName: "parent_position" }),
+  childDepartments: many(departments, { relationName: "parent_position_department" }),
 }));
 
 export const position_departmentRelations = relations(position_department, ({ one }) => ({
