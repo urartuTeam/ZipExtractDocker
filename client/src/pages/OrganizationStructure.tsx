@@ -136,6 +136,22 @@ export default function OrganizationStructure() {
   const settings = Array.isArray(settingsResponse?.data) ? settingsResponse.data : [];
   
   // Загружаем настройку количества отображаемых уровней иерархии
+  // Добавляем эффект для прямого тестирования API
+  useEffect(() => {
+    // Прямой запрос к API для тестирования
+    console.log('Выполняем прямой запрос к API настроек...');
+    fetch('/api/public-settings', {
+      credentials: 'include',
+    })
+      .then(response => response.json())
+      .then(data => {
+        console.log('Прямой ответ от API настроек:', data);
+      })
+      .catch(error => {
+        console.error('Ошибка при прямом запросе к API настроек:', error);
+      });
+  }, []);
+
   useEffect(() => {
     console.log('Загружены настройки (useEffect):', settings);
     
@@ -592,10 +608,11 @@ export default function OrganizationStructure() {
     // Получаем все дочерние отделы (как по parent_department_id, так и по parent_position_id)
     const childDepartments = getAllChildDepartments(department.department_id);
     
-    // Проверяем уровень вложенности против настроек (initialLevels)
-    const shouldShowChildren = level < initialLevels - 1 || expandedDepartments[department.department_id];
+    // ВАЖНО: пока игнорируем настройки, сразу показываем только первый уровень для отладки
+    // const shouldShowChildren = level < initialLevels - 1 || expandedDepartments[department.department_id];
+    const shouldShowChildren = level < 1 || expandedDepartments[department.department_id];
     
-    console.log(`Отдел ${department.name} (уровень ${level}): показывать дочерние = ${shouldShowChildren}, initialLevels = ${initialLevels}`);
+    console.log(`Отдел ${department.name} (уровень ${level}): показывать дочерние = ${shouldShowChildren}, hardcoded = 1, initialLevels = ${initialLevels}`);
     
     if (childDepartments.length === 0) {
       return renderedDepartment;
