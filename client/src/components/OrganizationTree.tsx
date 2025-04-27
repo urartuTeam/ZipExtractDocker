@@ -309,6 +309,7 @@ const PositionTree = ({
               node={node} 
               onPositionClick={onPositionClick}
               isTopLevel={isRootView} // Верхний уровень, если это корневой вид
+              showVacancies={showVacancies}
             />
           </div>
           
@@ -984,6 +985,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           selectedPositionId={selectedPositionId}
           hierarchyInitialLevels={Number(hierarchyInitialLevels)}
           showThreeLevels={showThreeLevels}
+          showVacancies={showVacancies}
         />
       </div>
     </div>
