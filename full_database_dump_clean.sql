@@ -146,15 +146,10 @@ INSERT INTO public.departments (department_id, name, parent_department_id, paren
 (3, 'Управление цифрового развития', 1, 6, false, NULL),
 (5, 'тестовая должность', NULL, 6, true, '2025-04-26 11:51:46.653'),
 (6, 'тестовый отдел', NULL, 6, false, NULL),
-(7, 'ОТДЕЛ КООРДИНАЦИИ   РАЗРАБОТКИ', NULL, 9, false, NULL),
+(7, 'ОТДЕЛ КООРДИНАЦИИ РАЗРАБОТКИ', NULL, 9, false, NULL),
 (8, 'Управление', 1, NULL, false, NULL),
 (9, 'Тестовый отдел создан через API', 1, NULL, true, '2025-04-27 22:17:38.782'),
 (10, 'Обновленный тестовый отдел', 1, NULL, true, '2025-04-27 22:45:45.44'),
-(11, 'Администрация', NULL, NULL, false, NULL),
-(12, 'Управление цифровизации и градостроительных данных', 1, 6, false, NULL),
-(13, 'Управление цифрового развития', 1, 6, false, NULL),
-(14, 'тестовый отдел', NULL, 6, false, NULL),
-(15, 'ОТДЕЛ КООРДИНАЦИИ РАЗРАБОТКИ', NULL, 9, false, NULL),
 (16, 'Управление 1', NULL, 1, false, NULL);
 
 -- Данные для таблицы positions
@@ -182,17 +177,7 @@ INSERT INTO public.position_department (position_link_id, position_id, departmen
 (7, 7, 1, 0, false, NULL, 0, 0, 0),
 (8, 8, 1, 0, false, NULL, 0, 0, 0),
 (9, 9, 1, 0, false, NULL, 0, 0, 0),
-(10, 10, 1, 0, false, NULL, 1, 0, 1),
-(11, 1, 1, 0, false, NULL, 1, 1, 0),
-(12, 2, 1, 0, false, NULL, 0, 0, 0),
-(13, 3, 1, 0, false, NULL, 0, 0, 0),
-(14, 5, 1, 0, false, NULL, 0, 0, 0),
-(15, 6, 1, 0, false, NULL, 0, 0, 0),
-(16, 4, 1, 0, false, NULL, 0, 0, 0),
-(17, 7, 1, 0, false, NULL, 0, 0, 0),
-(18, 8, 1, 0, false, NULL, 0, 0, 0),
-(19, 9, 1, 0, false, NULL, 0, 0, 0),
-(20, 10, 1, 0, false, NULL, 1, 0, 1);
+(10, 10, 1, 0, false, NULL, 1, 0, 1);
 
 -- Данные для таблицы employees
 INSERT INTO public.employees (employee_id, full_name, position_id, phone, email, manager_id, department_id, deleted, deleted_at) VALUES
@@ -200,20 +185,13 @@ INSERT INTO public.employees (employee_id, full_name, position_id, phone, email,
 (2, 'Герц Владимир Андреевич', 6, NULL, NULL, 1, 1, false, NULL),
 (3, 'Терновский Андрей Викторович', 9, NULL, NULL, NULL, 1, false, NULL),
 (4, 'Подгорный Александр Владимирович', 4, NULL, NULL, NULL, 1, false, NULL),
-(5, 'Обновленный Тестовый Сотрудник', 11, '+7 (999) 987-65-43', 'test@example.com', NULL, 10, true, '2025-04-27 22:45:45.315'),
-(6, 'Степанова Дарья Владимировна', 1, '+7 (111) 111-11-11', 'mail@example.com', NULL, 1, false, NULL),
-(7, 'Герц Владимир Андреевич', 6, NULL, NULL, 1, 1, false, NULL),
-(8, 'Терновский Андрей Викторович', 9, NULL, NULL, NULL, 1, false, NULL),
-(9, 'Подгорный Александр Владимирович', 4, NULL, NULL, NULL, 1, false, NULL);
+(5, 'Обновленный Тестовый Сотрудник', 11, '+7 (999) 987-65-43', 'test@example.com', NULL, 10, true, '2025-04-27 22:45:45.315');
 
 -- Данные для таблицы projects
 INSERT INTO public.projects (project_id, name, description, department_id, deleted, deleted_at) VALUES
 (1, 'Городской портал цифровизации', NULL, 2, false, NULL),
 (2, 'Система аналитики градостроительных данных', NULL, 2, false, NULL),
-(3, 'Разработка API градостроительных данных', NULL, 3, false, NULL),
-(4, 'Городской портал цифровизации', NULL, 2, false, NULL),
-(5, 'Система аналитики градостроительных данных', NULL, 2, false, NULL),
-(6, 'Разработка API градостроительных данных', NULL, 3, false, NULL);
+(3, 'Разработка API градостроительных данных', NULL, 3, false, NULL);
 
 -- Данные для таблицы employeeprojects
 INSERT INTO public.employeeprojects (employee_id, project_id, role, deleted, deleted_at) VALUES
@@ -251,4 +229,3 @@ SELECT setval('projects_project_id_seq', (SELECT COALESCE(MAX(project_id), 0) + 
 SELECT setval('leaves_leave_id_seq', 1, false);
 SELECT setval('settings_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM settings), false);
 SELECT setval('users_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM users), false);
-

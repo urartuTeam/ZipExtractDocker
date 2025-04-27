@@ -5,20 +5,30 @@
 
 echo "Начинаем инициализацию базы данных..."
 
-# Создаем таблицы и структуру базы данных
-echo "1. Создание структуры базы данных..."
-psql "$DATABASE_URL" -f database_init.sql
+# Метод 1: Создаем таблицы и структуру базы данных с нуля по отдельным файлам
+if [ "$1" = "step" ]; then
+  echo "Выполнение пошаговой инициализации базы данных..."
+  
+  # Создаем таблицы и структуру базы данных
+  echo "1. Создание структуры базы данных..."
+  psql "$DATABASE_URL" -f database_init.sql
 
-# Вставляем начальные данные
-echo "2. Вставка начальных данных..."
-psql "$DATABASE_URL" -f database_insert_data.sql
+  # Вставляем начальные данные
+  echo "2. Вставка начальных данных..."
+  psql "$DATABASE_URL" -f database_insert_data.sql
 
-# Добавляем механизм soft delete
-echo "3. Настройка механизма soft delete..."
-psql "$DATABASE_URL" -f add_soft_delete.sql
+  # Добавляем механизм soft delete
+  echo "3. Настройка механизма soft delete..."
+  psql "$DATABASE_URL" -f add_soft_delete.sql
 
-# Исправляем последовательности
-echo "4. Обновление последовательностей..."
-psql "$DATABASE_URL" -f fix_sequences.sql
+  # Исправляем последовательности
+  echo "4. Обновление последовательностей..."
+  psql "$DATABASE_URL" -f fix_sequences.sql
+
+# Метод 2: Загружаем полный дамп базы из единого файла
+else
+  echo "Выполнение быстрой инициализации базы данных из полного дампа..."
+  psql "$DATABASE_URL" -f full_database_dump_clean.sql
+fi
 
 echo "Инициализация базы данных завершена успешно!"
