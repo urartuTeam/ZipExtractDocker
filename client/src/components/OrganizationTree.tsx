@@ -823,28 +823,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         onShowVacanciesChange={handleShowVacanciesChange}
       />
       
-      {/* Навигация для возврата назад */}
-      {(selectedPositionId || navigationHistory.length > 0) && (
-        <div className="navigation-controls">
-          <Button 
-            variant="outline" 
-            onClick={handleGoBack}
-            className="back-button"
-          >
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Назад
-          </Button>
-          
-          <Button 
-            variant="outline" 
-            onClick={handleReset}
-            className="ml-2"
-          >
-            На верхний уровень
-          </Button>
-        </div>
-      )}
-      
       {/* Дерево должностей */}
       <div className="hierarchy-tree">
         {/* Если выбрана конкретная должность, показываем отфильтрованную иерархию */}

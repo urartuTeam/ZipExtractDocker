@@ -66,26 +66,28 @@ const UnifiedPositionCard = ({
         position: 'relative' // Добавляем позиционирование для абсолютных элементов
       }}
     >
-      {/* Индикатор в правом верхнем углу */}
-      <div 
-        style={{
-          position: 'absolute',
-          top: '5px',
-          right: '5px',
-          background: '#a40000',
-          color: 'white',
-          borderRadius: '50%',
-          width: '20px',
-          height: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '12px',
-          fontWeight: 'bold'
-        }}
-      >
-        {topIndicator}
-      </div>
+      {/* Индикатор в правом верхнем углу - показываем только если включена настройка */}
+      {showVacancies && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: '5px',
+            right: '5px',
+            background: '#a40000',
+            color: 'white',
+            borderRadius: '50%',
+            width: '20px',
+            height: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '12px',
+            fontWeight: 'bold'
+          }}
+        >
+          {topIndicator}
+        </div>
+      )}
       
       <div className="position-title">
         {isDepartment 
@@ -100,12 +102,7 @@ const UnifiedPositionCard = ({
           {node.employee ? (
             <div className="employee-name">{node.employee.full_name}</div>
           ) : (
-            <>
-              <div className="position-vacant">Вакантная должность</div>
-              {showVacancies && (
-                <div className="vacancy-indicator">1</div>
-              )}
-            </>
+            <div className="position-vacant">Вакантная должность</div>
           )}
         </>
       )}
@@ -122,26 +119,28 @@ const UnifiedPositionCard = ({
         </div>
       )}
       
-      {/* Индикатор в правом нижнем углу */}
-      <div 
-        style={{
-          position: 'absolute',
-          bottom: '5px',
-          right: '5px',
-          background: '#4b7bec',
-          color: 'white',
-          borderRadius: '50%',
-          width: '20px',
-          height: '20px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '12px',
-          fontWeight: 'bold'
-        }}
-      >
-        {bottomIndicator}
-      </div>
+      {/* Индикатор в правом нижнем углу - показываем только если включена настройка */}
+      {showVacancies && (
+        <div 
+          style={{
+            position: 'absolute',
+            bottom: '5px',
+            right: '5px',
+            background: '#4b7bec',
+            color: 'white',
+            borderRadius: '50%',
+            width: '20px',
+            height: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '12px',
+            fontWeight: 'bold'
+          }}
+        >
+          {bottomIndicator}
+        </div>
+      )}
     </div>
   );
 };
