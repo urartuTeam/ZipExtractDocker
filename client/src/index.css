@@ -513,6 +513,7 @@
   justify-content: center;
   position: relative;
   width: 100%;
+  text-align: center;
 }
 
 .tree-branch-connections:before {
@@ -528,7 +529,9 @@
 .tree-branch-line {
   position: absolute;
   top: -20px;
-  width: 100%;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
   height: 2px;
   background-color: #a40000;
 }
