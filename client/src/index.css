@@ -48,6 +48,14 @@
   }
 
 /* Добавляем стили для организационной структуры в виде дерева */
+
+/* Разделительная черта между должностью и сотрудником */
+.position-divider {
+  width: 80%;
+  height: 1px;
+  background-color: #ccc;
+  margin: 8px auto;
+}
 .org-tree-container {
   width: 100%;
   padding: 20px;
