@@ -77,7 +77,24 @@ export default function OrganizationStructure() {
     
     // Попробуем принудительно форсировать запрос
     refetchOnMount: true,
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: true,
+    
+    // Используем собственную функцию запроса вместо дефолтной, которая может не отображаться в Network
+    queryFn: async () => {
+      console.log('Выполняем запрос к /api/public-settings напрямую...');
+      const res = await fetch('/api/public-settings', { 
+        credentials: 'include',
+        headers: { 'Cache-Control': 'no-cache' } // Запретим кэширование
+      });
+      
+      if (!res.ok) {
+        throw new Error(`Ошибка при запросе настроек: ${res.status} ${res.statusText}`);
+      }
+      
+      const data = await res.json();
+      console.log('Полученные данные настроек:', data);
+      return data;
+    }
   });
   
   // Получаем данные отделов
@@ -135,22 +152,7 @@ export default function OrganizationStructure() {
   // Получаем настройки, учитывая структуру ответа API
   const settings = Array.isArray(settingsResponse?.data) ? settingsResponse.data : [];
   
-  // Загружаем настройку количества отображаемых уровней иерархии
-  // Добавляем эффект для прямого тестирования API
-  useEffect(() => {
-    // Прямой запрос к API для тестирования
-    console.log('Выполняем прямой запрос к API настроек...');
-    fetch('/api/public-settings', {
-      credentials: 'include',
-    })
-      .then(response => response.json())
-      .then(data => {
-        console.log('Прямой ответ от API настроек:', data);
-      })
-      .catch(error => {
-        console.error('Ошибка при прямом запросе к API настроек:', error);
-      });
-  }, []);
+
 
   useEffect(() => {
     console.log('Загружены настройки (useEffect):', settings);
