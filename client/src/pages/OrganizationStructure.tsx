@@ -54,7 +54,10 @@ export default function OrganizationStructure() {
   const { toast } = useToast();
   const [expandedDepartments, setExpandedDepartments] = useState<{[key: number]: boolean}>({});
   const [expandedPositions, setExpandedPositions] = useState<{[key: string]: boolean}>({});
-  const [initialLevels, setInitialLevels] = useState<number>(2); // По умолчанию 2 уровня
+  const [initialLevels, setInitialLevels] = useState<number>(1); // По умолчанию 1 уровень!!!
+  
+  // Логируем значение при каждой отрисовке
+  console.log('!!! ТЕКУЩЕЕ ЗНАЧЕНИЕ initialLevels ПРИ ОТРИСОВКЕ !!!', initialLevels);
   
   // Тип для настроек
   type Setting = {
@@ -281,6 +284,7 @@ export default function OrganizationStructure() {
   // Получаем корневые отделы (определяются по отсутствию родительских связей)
   const getRootDepartments = () => {
     console.log('Все отделы:', departments);
+    console.log('ВНИМАНИЕ! ТЕКУЩЕЕ ЗНАЧЕНИЕ initialLevels:', initialLevels);
     
     // Корневыми являются отделы, у которых нет parent_department_id и parent_position_id
     const rootDepts = departments?.filter(dept => 
@@ -518,7 +522,17 @@ export default function OrganizationStructure() {
   
   // Рендер отдела и его содержимого
   const renderDepartment = (department: Department, level: number = 0) => {
-    const isExpanded = expandedDepartments[department.department_id] || false;
+    console.log(`РЕНДЕР ОТДЕЛА ${department.name} (ID:${department.department_id}) на уровне ${level}, initialLevels=${initialLevels}`);
+    
+    // Автоматическое расширение отделов до уровня initialLevels
+    let isExpanded = expandedDepartments[department.department_id] || false;
+    
+    // Принудительно показываем первые initialLevels уровней
+    if (level < initialLevels) {
+      console.log(`ПРИНУДИТЕЛЬНО РАСШИРЯЕМ ОТДЕЛ ${department.name} (уровень ${level} < ${initialLevels})`);
+      isExpanded = true;
+    }
+    
     const childDepartments = getChildDepartments(department.department_id);
     console.log(`Отдел: ${department.name} (ID: ${department.department_id}), дочерние отделы: ${childDepartments.length}`);
     
@@ -640,9 +654,8 @@ export default function OrganizationStructure() {
     // Получаем все дочерние отделы (как по parent_department_id, так и по parent_position_id)
     const childDepartments = getAllChildDepartments(department.department_id);
     
-    // ВАЖНО: пока игнорируем настройки, сразу показываем только первый уровень для отладки
-    // const shouldShowChildren = level < initialLevels - 1 || expandedDepartments[department.department_id];
-    const shouldShowChildren = level < 1 || expandedDepartments[department.department_id];
+    // Показываем дочерние элементы согласно настройке initialLevels
+    const shouldShowChildren = level < initialLevels - 1 || expandedDepartments[department.department_id];
     
     console.log(`Отдел ${department.name} (уровень ${level}): показывать дочерние = ${shouldShowChildren}, hardcoded = 1, initialLevels = ${initialLevels}`);
     
