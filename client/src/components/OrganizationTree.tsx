@@ -382,6 +382,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Используем данные о должностях с отделами из пропсов или из запроса
   const positionsWithDepartments = positionsData || positionsWithDepartmentsResponse?.data || [];
   
+  // Состояние для хранения истории навигации по дереву
+  const [navigationHistory, setNavigationHistory] = useState<number[]>([]);
+  
   // Рекурсивно ищем узел должности по ID
   const findPositionNodeById = (
     nodes: PositionHierarchyNode[], 
@@ -879,7 +882,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
               className="back-to-main-hierarchy" 
               onClick={() => setSelectedPositionId(undefined)}
             >
-              ← Вернуться к общей структуре
+              ← Вернуться к предыдущей структуре
             </button>
           </div>
         )}
