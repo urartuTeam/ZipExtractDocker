@@ -201,6 +201,48 @@ type PositionHierarchyNode = {
   childDepartments?: Department[]; // Дочерние отделы, связанные с этой должностью
 };
 
+// Вспомогательный компонент для отображения единой карточки должности/отдела
+const UnifiedPositionCard: React.FC<{
+  node: PositionHierarchyNode;
+  onPositionClick?: (positionId: number) => void;
+}> = ({ node, onPositionClick }) => {
+  // Проверяем, является ли это отделом
+  const isDepartment = node.position.name.includes('(отдел)');
+  const displayName = isDepartment 
+    ? node.position.name.replace(' (отдел)', '') 
+    : node.position.name;
+  
+  return (
+    <div 
+      className={`position-card ${isDepartment ? 'department-card' : ''}`}
+      onClick={() => onPositionClick && onPositionClick(node.position.position_id)}
+      style={{ cursor: onPositionClick ? 'pointer' : 'default' }}
+    >
+      <div className="position-title">{displayName}</div>
+      
+      {!isDepartment && (
+        node.employee ? (
+          <div className="employee-name">{node.employee.full_name}</div>
+        ) : (
+          <div className="position-vacant">Вакантная должность</div>
+        )
+      )}
+      
+      {/* Отображаем дочерние отделы для должности */}
+      {node.childDepartments && node.childDepartments.length > 0 && (
+        <div className="child-departments">
+          <div className="child-departments-title">Подчиненные отделы:</div>
+          {node.childDepartments.map((dept) => (
+            <div key={dept.department_id} className="child-department-name">
+              {dept.name}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Компонент для отображения горизонтального дерева иерархии должностей
 const PositionTree = ({ 
   nodes,
