@@ -219,6 +219,7 @@ export default function Positions() {
       queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
       setIsAddDepartmentDialogOpen(false);
       setSelectedDepartmentId(null);
+      setVacanciesCount(0); // Сбрасываем счетчик вакансий после успешного создания
     },
     onError: (error: Error) => {
       toast({
@@ -317,6 +318,7 @@ export default function Positions() {
   // Обработчик добавления связи должности с отделом
   const handleOpenAddDepartment = (position: Position) => {
     setSelectedPosition(position);
+    setVacanciesCount(0); // Сбрасываем счетчик вакансий при открытии диалога
     setIsAddDepartmentDialogOpen(true);
   };
   
