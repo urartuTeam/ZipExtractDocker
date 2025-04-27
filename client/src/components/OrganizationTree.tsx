@@ -764,40 +764,40 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       return [];
     }
     
-    // Находим отдел "Администрация"
-    const adminDepartment = departments.find(dept => dept.name === "Администрация");
-    if (!adminDepartment) {
-      console.error('Отдел "Администрация" не найден');
+    // Находим корневой отдел (без родительских отделов и позиций)
+    const rootDepartment = departments.find(dept => dept.parent_department_id === null && dept.parent_position_id === null);
+    if (!rootDepartment) {
+      console.error('Корневой отдел не найден');
       return [];
     }
     
-    console.log('Найден отдел "Администрация":', adminDepartment);
+    console.log('Найден корневой отдел:', rootDepartment);
     
-    // Шаг 1: Находим все должности отдела "Администрация"
+    // Шаг 1: Находим все должности корневого отдела
     let adminPositions = [];
     
     // Сначала проверим positions с отделами (из /api/positions/with-departments)
     if (positionsWithDepartments && positionsWithDepartments.length > 0) {
       adminPositions = positionsWithDepartments.filter(pos => {
-        // Проверяем, есть ли у должности привязка к отделу "Администрация"
+        // Проверяем, есть ли у должности привязка к корневому отделу
         return pos.departments && Array.isArray(pos.departments) && 
-          pos.departments.some((d: any) => d.department_id === adminDepartment.department_id);
+          pos.departments.some((d: any) => d.department_id === rootDepartment.department_id);
       });
     }
     
     // Если мы не нашли должности через positionsWithDepartments, используем резервную логику
     if (adminPositions.length === 0) {
       adminPositions = positions.filter(pos => {
-        // Проверяем, есть ли у должности привязка к отделу "Администрация"
+        // Проверяем, есть ли у должности привязка к корневому отделу
         // через сотрудников, назначенных на эту должность в этом отделе
         return employees.some(emp => 
           emp.position_id === pos.position_id && 
-          emp.department_id === adminDepartment.department_id
+          emp.department_id === rootDepartment.department_id
         );
       });
     }
     
-    console.log('Должности отдела "Администрация":', 
+    console.log('Должности корневого отдела:', 
       adminPositions.map(p => `${p.name} (ID: ${p.position_id})`));
     
     // Создаем мапу с должностями по ID для быстрого доступа
@@ -807,7 +807,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     adminPositions.forEach(position => {
       const employee = employees.find(emp => 
         emp.position_id === position.position_id && 
-        emp.department_id === adminDepartment.department_id
+        emp.department_id === rootDepartment.department_id
       ) || null;
       
       // Создаем новый узел-должность
@@ -1004,8 +1004,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     return <div className="loading-message">Загрузка организационной структуры...</div>;
   }
 
-  // Находим отдел Администрация
-  const administrationDept = departments.find(d => d.name === 'Администрация');
+  // Находим корневой отдел (без родительских отделов и позиций)
+  const rootDept = departments.find(d => d.parent_department_id === null && d.parent_position_id === null);
   
   return (
     <div className="org-tree-container">
