@@ -65,37 +65,52 @@ export default function OrganizationStructure() {
     updated_at: string;
   }
   
-  // Получаем настройки из базы данных через публичный API-endpoint
-  const { 
-    data: settingsResponse, 
-    isLoading: isLoadingSettings, 
-    error: settingsError 
-  } = useQuery<{status: string, data: Setting[]}>({
-    queryKey: ['/api/public-settings'],
-    retry: 3, // Попробуем несколько раз, если запрос не прошел
-    staleTime: 60000, // Данные считаются свежими в течение 1 минуты
-    
-    // Попробуем принудительно форсировать запрос
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    
-    // Используем собственную функцию запроса вместо дефолтной, которая может не отображаться в Network
-    queryFn: async () => {
-      console.log('Выполняем запрос к /api/public-settings напрямую...');
-      const res = await fetch('/api/public-settings', { 
-        credentials: 'include',
-        headers: { 'Cache-Control': 'no-cache' } // Запретим кэширование
-      });
-      
-      if (!res.ok) {
-        throw new Error(`Ошибка при запросе настроек: ${res.status} ${res.statusText}`);
+  // ПРИНУДИТЕЛЬНЫЙ ЗАПРОС НАСТРОЕК без React Query
+  useEffect(() => {
+    console.log('### FORCE-FETCH SETTINGS ###');
+    const fetchSettings = async () => {
+      try {
+        console.log('Принудительно запрашиваем настройки...');
+        const response = await fetch('/api/public-settings', {
+          method: 'GET',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          },
+          credentials: 'include'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('УСПЕШНО получены настройки:', data);
+        
+        // Применяем настройки
+        if (data.status === 'success' && Array.isArray(data.data)) {
+          const hierarchyLevel = data.data.find(s => s.data_key === 'hierarchy_initial_levels');
+          if (hierarchyLevel) {
+            const level = parseInt(hierarchyLevel.data_value);
+            if (!isNaN(level) && level > 0 && level <= 5) {
+              console.log(`Устанавливаем уровень иерархии: ${level}`);
+              setInitialLevels(level);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('ОШИБКА при запросе настроек:', error);
       }
-      
-      const data = await res.json();
-      console.log('Полученные данные настроек:', data);
-      return data;
-    }
-  });
+    };
+    
+    fetchSettings();
+  }, []);
+  
+  // Имитируем React Query для совместимости с остальным кодом
+  const settingsResponse = { status: 'success', data: [] };
+  const isLoadingSettings = false;
+  const settingsError = null;
   
   // Получаем данные отделов
   const { 
