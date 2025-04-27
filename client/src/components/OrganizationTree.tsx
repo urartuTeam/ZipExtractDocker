@@ -349,22 +349,7 @@ type OrganizationTreeProps = {
   employeesData?: Employee[];
 };
 
-// Функция для корректировки ширины дочерних элементов
-function adjustSubordinateWidths() {
-  const containers = document.querySelectorAll('.subordinates-container');
 
-  containers.forEach(container => {
-    const branches = container.querySelectorAll('.subordinate-branch');
-    const count = branches.length;
-
-    if (count > 0) {
-      const width = 100 / count;
-      branches.forEach(branch => {
-        (branch as HTMLElement).style.width = `calc(${width}% - 20px)`; // с отступами
-      });
-    }
-  });
-}
 
 const OrganizationTree: React.FC<OrganizationTreeProps> = ({ 
   initialPositionId, 
@@ -447,10 +432,10 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     setShowThreeLevels(threeLevels);
   }, [hierarchyInitialLevels]);
   
-  // Применяем adjustSubordinateWidths при изменении showThreeLevels
+  // Эффект для обновления UI при изменении настройки showThreeLevels
   useEffect(() => {
-    // Небольшая задержка для обновления DOM
-    setTimeout(adjustSubordinateWidths, 100);
+    // Реагируем на изменение настройки отображения уровней
+    console.log("Обновленная настройка showThreeLevels:", showThreeLevels);
   }, [showThreeLevels]);
   
   // Обработчики для изменения настроек отображения
@@ -933,9 +918,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       // Если нет выбранной должности, показываем все должности корневого отдела
       // Это будут корневые узлы, полученные из функции buildRootDepartmentHierarchy
       setFilteredHierarchy(positionHierarchy);
-      
-      // Применяем функцию корректировки ширины после обновления DOM
-      setTimeout(adjustSubordinateWidths, 100);
       return;
     }
 
