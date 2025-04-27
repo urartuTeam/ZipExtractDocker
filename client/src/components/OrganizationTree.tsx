@@ -280,8 +280,7 @@ const PositionTree = ({
                     <div className="subordinates-container">
                       <div className="tree-branch-connections">
                         <div className="tree-branch-line" style={{ 
-                          width: '90%',
-                          maxWidth: '1200px'
+                          width: `${Math.max(subNode.subordinates.length * 240, 100)}px` 
                         }}></div>
                       </div>
                       
@@ -321,8 +320,7 @@ const PositionTree = ({
             <div className="subordinates-container">
               <div className="tree-branch-connections">
                 <div className="tree-branch-line" style={{ 
-                  width: '90%',
-                  maxWidth: '1200px'
+                  width: `${Math.max(node.subordinates.length * 240, 100)}px` 
                 }}></div>
               </div>
               

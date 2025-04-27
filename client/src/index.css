@@ -514,7 +514,6 @@
   position: relative;
   width: 100%;
   text-align: center;
-  margin: 0 auto;
 }
 
 .tree-branch-connections:before {
@@ -535,8 +534,6 @@
   margin: 0 auto;
   height: 2px;
   background-color: #a40000;
-  display: block !important;
-  z-index: 1;
 }
 
 /* Стилизация карточек должностей */
