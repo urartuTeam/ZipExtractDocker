@@ -544,9 +544,11 @@ export default function OrganizationStructure() {
     const childDepartments = getAllChildDepartments(department.department_id);
     
     // Показываем дочерние элементы согласно настройке initialLevels
+    // Меняем условие: level < 0 означает, что автоматически не раскрываем вообще ничего
+    // Так как initialLevels = 1, то 1-1 = 0, и для уровня 0 это условие даст false
     const shouldShowChildren = level < initialLevels - 1 || expandedDepartments[department.department_id];
     
-    console.log(`Отдел ${department.name} (уровень ${level}): показывать дочерние = ${shouldShowChildren}, hardcoded = 1, initialLevels = ${initialLevels}`);
+    console.log(`Отдел ${department.name} (уровень ${level}): показывать дочерние = ${shouldShowChildren}, hardcoded = 1, initialLevels = ${initialLevels}, condition = ${level < initialLevels - 1}`);
     
     if (childDepartments.length === 0) {
       return renderedDepartment;
