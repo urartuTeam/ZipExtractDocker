@@ -786,12 +786,39 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // Обработчик клика по должности
   const handlePositionClick = (positionId: number) => {
+    console.log(`Клик по должности с ID: ${positionId}`);
+    
+    // Если текущая позиция выбрана, добавляем её в историю перед переходом на новую
+    if (selectedPositionId) {
+      console.log(`Сохраняем в историю позицию: ${selectedPositionId}`);
+      setNavigationHistory(prev => [...prev, selectedPositionId]);
+    }
+    
     // Обновляем ID выбранной должности
     setSelectedPositionId(positionId);
     
     // Если передан внешний обработчик, вызываем его
     if (onPositionClick) {
       onPositionClick(positionId);
+    }
+  };
+  
+  // Функция для возврата на предыдущий уровень
+  const handleGoBack = () => {
+    if (navigationHistory.length > 0) {
+      // Получаем последнюю позицию из истории
+      const prevPosition = navigationHistory[navigationHistory.length - 1];
+      console.log(`Возвращаемся к позиции: ${prevPosition}`);
+      
+      // Убираем её из истории
+      setNavigationHistory(prev => prev.slice(0, -1));
+      
+      // Устанавливаем как текущую позицию
+      setSelectedPositionId(prevPosition);
+    } else {
+      // Если история пуста, возвращаемся к корню
+      console.log("История пуста, возвращаемся к корню");
+      setSelectedPositionId(undefined);
     }
   };
 
@@ -880,7 +907,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           <div className="position-navigation">
             <button 
               className="back-to-main-hierarchy" 
-              onClick={() => setSelectedPositionId(undefined)}
+              onClick={handleGoBack}
             >
               ← Вернуться к предыдущей структуре
             </button>
