@@ -388,16 +388,23 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   const [navigationHistory, setNavigationHistory] = useState<number[]>([]);
   
   // Запрос настроек для получения количества показываемых уровней иерархии
-  const { data: settingsResponse } = useQuery<{status: string, data: any[]}>({
+  const { data: settingsResponse, isError } = useQuery<{status: string, data: any[]}>({
     queryKey: ['/api/settings'],
+    retry: false // Не повторять запрос в случае ошибки
   });
   
-  // Получаем настройки из ответа
-  const settings = settingsResponse?.data || [];
-  // Найдем настройку для количества начальных уровней иерархии
-  const hierarchyInitialLevels = settings.find((setting: any) => 
-    setting.key === 'hierarchy_initial_levels'
-  )?.value || 3; // По умолчанию 3 уровня, если настройка не найдена
+  // Если есть ошибка с запросом настроек, просто логируем
+  if (isError) {
+    console.log('Ошибка получения настроек, используем значения по умолчанию');
+  }
+  
+  // Получаем настройки из ответа или используем значение по умолчанию
+  const defaultLevels = 2; // По умолчанию 2 уровня
+  
+  // Пытаемся получить настройку из ответа API
+  const hierarchyInitialLevels = settingsResponse?.data
+    ? settingsResponse.data.find((item: any) => item.data_key === 'hierarchy_initial_levels')?.data_value || defaultLevels
+    : defaultLevels;
   
   console.log('Настройки уровней иерархии:', hierarchyInitialLevels);
   
