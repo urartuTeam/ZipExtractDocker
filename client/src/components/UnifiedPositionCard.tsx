@@ -50,14 +50,41 @@ const UnifiedPositionCard = ({
       ? 'topTopPositionClass' // Класс для должностей верхнего уровня
       : 'positionClass'; // Класс для обычных должностей
   
+  // Генерируем числовые индикаторы для правого верхнего и нижнего угла
+  // В данном случае берем ID позиции/отдела и количество подчиненных
+  const topIndicator = node.position.position_id % 10; // Берем последнюю цифру ID
+  const bottomIndicator = node.subordinates.length; // Количество подчиненных
+  
   return (
     <div 
       className={`position-card ${cardClass} ${isDepartment ? 'department-card' : ''}`}
       onClick={() => onPositionClick && onPositionClick(node.position.position_id)}
       style={{ 
-        cursor: onPositionClick ? 'pointer' : 'default'
+        cursor: onPositionClick ? 'pointer' : 'default',
+        position: 'relative' // Добавляем позиционирование для абсолютных элементов
       }}
     >
+      {/* Индикатор в правом верхнем углу */}
+      <div 
+        style={{
+          position: 'absolute',
+          top: '5px',
+          right: '5px',
+          background: '#a40000',
+          color: 'white',
+          borderRadius: '50%',
+          width: '20px',
+          height: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '12px',
+          fontWeight: 'bold'
+        }}
+      >
+        {topIndicator}
+      </div>
+      
       <div className="position-title">
         {isDepartment 
           ? node.position.name.replace(' (отдел)', '') 
@@ -87,6 +114,27 @@ const UnifiedPositionCard = ({
           ))}
         </div>
       )}
+      
+      {/* Индикатор в правом нижнем углу */}
+      <div 
+        style={{
+          position: 'absolute',
+          bottom: '5px',
+          right: '5px',
+          background: '#4b7bec',
+          color: 'white',
+          borderRadius: '50%',
+          width: '20px',
+          height: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '12px',
+          fontWeight: 'bold'
+        }}
+      >
+        {bottomIndicator}
+      </div>
     </div>
   );
 };

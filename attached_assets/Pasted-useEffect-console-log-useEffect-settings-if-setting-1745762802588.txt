@@ -1,0 +1,67 @@
+useEffect(() => {
+    console.log('Загружены настройки (useEffect):', settings);
+
+    if (settings && Array.isArray(settings)) {
+      // Получаем настройку hierarchy_initial_levels
+      const hierarchyLevelSetting = settings.find(
+        (setting: any) => setting.data_key === 'hierarchy_initial_levels'
+      );
+
+      console.log('Найдена настройка уровней иерархии:', hierarchyLevelSetting);
+
+      if (hierarchyLevelSetting) {
+        try {
+          // Приводим значение к числу
+          const levelsValue = parseInt(hierarchyLevelSetting.data_value);
+          console.log('Уровень иерархии (число):', levelsValue);
+
+          // Проверяем, что значение находится в допустимом диапазоне
+          if (!isNaN(levelsValue) && levelsValue > 0 && levelsValue <= 1) {
+            console.log('Применяем уровень иерархии:', levelsValue);
+
+            // Устанавливаем значение в состояние
+            setInitialLevels(levelsValue);
+
+            // Автоматически раскрываем нужное количество уровней
+            if (departments && departments.length > 0) {
+              const newExpandedDepartments: {[key: number]: boolean} = {};
+
+              // Рекурсивно расширяем отделы до нужного уровня
+              const expandDepartmentsToLevel = (deptId: number, currentLevel: number) => {
+                if (currentLevel >= levelsValue) return;
+
+                // Раскрываем текущий отдел
+                newExpandedDepartments[deptId] = true;
+                console.log(Автоматически раскрываем отдел ID:${deptId} на уровне ${currentLevel});
+
+                // Получаем дочерние отделы и раскрываем их
+                const childDepts = getChildDepartments(deptId);
+                console.log(Найдено ${childDepts.length} дочерних отделов для ID:${deptId});
+
+                childDepts.forEach(dept => {
+                  expandDepartmentsToLevel(dept.department_id, currentLevel + 1);
+                });
+              };
+
+              // Начинаем с корневых отделов (уровень 0)
+              const rootDepts = getRootDepartments();
+              console.log(Найдено ${rootDepts.length} корневых отделов:, rootDepts.map(d => d.name));
+
+              rootDepts.forEach(dept => {
+                expandDepartmentsToLevel(dept.department_id, 0);
+              });
+
+              console.log('Установка expandedDepartments:', newExpandedDepartments);
+              setExpandedDepartments(newExpandedDepartments);
+            } else {
+              console.log('Нет отделов для раскрытия, departments:', departments);
+            }
+          } else {
+            console.warn(Некорректное значение уровня иерархии: ${levelsValue});
+          }
+        } catch (error) {
+          console.error('Ошибка при обработке настройки уровней иерархии:', error);
+        }
+      }
+    }
+  }, [settings, departments]);
