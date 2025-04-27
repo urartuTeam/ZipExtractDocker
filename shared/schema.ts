@@ -194,6 +194,15 @@ export const leavesRelations = relations(leaves, ({ one }) => ({
   }),
 }));
 
+// Настройки
+export const settings = pgTable("settings", {
+  id: serial("id").primaryKey(),
+  data_key: text("data_key").notNull().unique(),
+  data_value: text("data_value").notNull(),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow(),
+});
+
 // Схемы для вставки данных
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -226,6 +235,9 @@ export const insertLeaveSchema = createInsertSchema(leaves).omit({
   leave_id: true,
 });
 
+// Схема Zod для настроек
+export const insertSettingSchema = createInsertSchema(settings).omit({ id: true, created_at: true, updated_at: true });
+
 // Типы
 export type User = typeof users.$inferSelect;
 export type Department = typeof departments.$inferSelect;
@@ -235,6 +247,7 @@ export type Employee = typeof employees.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type EmployeeProject = typeof employeeprojects.$inferSelect;
 export type Leave = typeof leaves.$inferSelect;
+export type Setting = typeof settings.$inferSelect;
 
 // Типы для вставки
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -242,20 +255,7 @@ export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
 export type InsertPosition = z.infer<typeof insertPositionSchema>;
 export type InsertPositionDepartment = z.infer<typeof insertPositionDepartmentSchema>;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
-// Настройки
-export const settings = pgTable("settings", {
-  id: serial("id").primaryKey(),
-  data_key: text("data_key").notNull().unique(),
-  data_value: text("data_value").notNull(),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow(),
-});
-
-// Схема Zod для настроек
-export const insertSettingSchema = createInsertSchema(settings).omit({ id: true, created_at: true, updated_at: true });
-
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type InsertEmployeeProject = z.infer<typeof insertEmployeeProjectSchema>;
 export type InsertLeave = z.infer<typeof insertLeaveSchema>;
-export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
