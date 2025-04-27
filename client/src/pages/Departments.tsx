@@ -57,6 +57,20 @@ const departmentFormSchema = z.object({
   parent_position_id: z.string().nullable().transform(val => 
     val && val !== "null" ? Number(val) : null
   ),
+  parent_department_id: z.string().nullable().transform(val => 
+    val && val !== "null" ? Number(val) : null
+  ),
+}).refine(data => {
+  // Проверяем, что только одно из полей заполнено (или оба пустые для корневого отдела)
+  const hasParentPosition = data.parent_position_id !== null;
+  const hasParentDepartment = data.parent_department_id !== null;
+  
+  return (!hasParentPosition && !hasParentDepartment) || // корневой отдел
+         (hasParentPosition && !hasParentDepartment) ||  // только родительская должность
+         (!hasParentPosition && hasParentDepartment);    // только родительский отдел
+}, {
+  message: "Выберите либо родительскую должность, либо родительский отдел, но не оба одновременно",
+  path: ["parent_selection"], // указывает, к какому полю относится ошибка
 });
 
 type DepartmentFormValues = z.infer<typeof departmentFormSchema>;
@@ -75,6 +89,7 @@ export default function Departments() {
     defaultValues: {
       name: "",
       parent_position_id: null,
+      parent_department_id: null,
     },
   });
 
@@ -84,6 +99,7 @@ export default function Departments() {
     defaultValues: {
       name: "",
       parent_position_id: null,
+      parent_department_id: null,
     },
   });
 
@@ -211,6 +227,9 @@ export default function Departments() {
       name: department.name,
       parent_position_id: department.parent_position_id ? 
         department.parent_position_id.toString() : 
+        "null",
+      parent_department_id: department.parent_department_id ? 
+        department.parent_department_id.toString() : 
         "null",
     } as any);
     setIsEditDialogOpen(true);
@@ -377,6 +396,12 @@ export default function Departments() {
                 )}
               />
               
+              <div className="space-y-2 mb-4">
+                <h3 className="text-sm font-medium text-red-500">
+                  Выберите один из вариантов подчинения (не оба одновременно):
+                </h3>
+              </div>
+              
               <FormField
                 control={form.control}
                 name="parent_position_id"
@@ -384,7 +409,13 @@ export default function Departments() {
                   <FormItem>
                     <FormLabel>Родительская должность</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Если выбрана должность, сбрасываем отдел
+                        if (value !== "null") {
+                          form.setValue("parent_department_id", "null");
+                        }
+                      }}
                       defaultValue={field.value?.toString() || "null"}
                     >
                       <FormControl>
@@ -393,13 +424,52 @@ export default function Departments() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="null">Нет (корневой отдел)</SelectItem>
+                        <SelectItem value="null">Не выбрано</SelectItem>
                         {positionsData?.data.map((pos) => (
                           <SelectItem 
                             key={pos.position_id} 
                             value={pos.position_id.toString()}
                           >
                             {pos.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="parent_department_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Родительский отдел</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Если выбран отдел, сбрасываем должность
+                        if (value !== "null") {
+                          form.setValue("parent_position_id", "null");
+                        }
+                      }}
+                      defaultValue={field.value?.toString() || "null"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите родительский отдел" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="null">Не выбрано</SelectItem>
+                        {departmentsData?.data.map((dept) => (
+                          <SelectItem 
+                            key={dept.department_id} 
+                            value={dept.department_id.toString()}
+                            disabled={dept.department_id === selectedDepartment?.department_id} // Нельзя выбрать себя как родителя
+                          >
+                            {dept.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -448,6 +518,12 @@ export default function Departments() {
                 )}
               />
               
+              <div className="space-y-2 mb-4">
+                <h3 className="text-sm font-medium text-red-500">
+                  Выберите один из вариантов подчинения (не оба одновременно):
+                </h3>
+              </div>
+              
               <FormField
                 control={editForm.control}
                 name="parent_position_id"
@@ -455,7 +531,13 @@ export default function Departments() {
                   <FormItem>
                     <FormLabel>Родительская должность</FormLabel>
                     <Select
-                      onValueChange={field.onChange}
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Если выбрана должность, сбрасываем отдел
+                        if (value !== "null") {
+                          editForm.setValue("parent_department_id", "null");
+                        }
+                      }}
                       defaultValue={field.value?.toString() || "null"}
                     >
                       <FormControl>
@@ -464,7 +546,7 @@ export default function Departments() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="null">Нет (корневой отдел)</SelectItem>
+                        <SelectItem value="null">Не выбрано</SelectItem>
                         {positionsData?.data.map((pos) => (
                           <SelectItem 
                             key={pos.position_id} 
@@ -473,6 +555,48 @@ export default function Departments() {
                             {pos.name}
                           </SelectItem>
                         ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editForm.control}
+                name="parent_department_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Родительский отдел</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        // Если выбран отдел, сбрасываем должность
+                        if (value !== "null") {
+                          editForm.setValue("parent_position_id", "null");
+                        }
+                      }}
+                      defaultValue={field.value?.toString() || "null"}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите родительский отдел" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="null">Не выбрано</SelectItem>
+                        {departmentsData?.data
+                          .filter(dept => dept.department_id !== selectedDepartment?.department_id) // Фильтруем, чтобы не отображать текущий отдел
+                          .map((dept) => (
+                            <SelectItem 
+                              key={dept.department_id}
+
+                              value={dept.department_id.toString()}
+                            >
+                              {dept.name}
+                            </SelectItem>
+                          ))
+                        }
                       </SelectContent>
                     </Select>
                     <FormMessage />
