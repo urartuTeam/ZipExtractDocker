@@ -54,10 +54,14 @@ export default function OrganizationStructure() {
   const { toast } = useToast();
   const [expandedDepartments, setExpandedDepartments] = useState<{[key: number]: boolean}>({});
   const [expandedPositions, setExpandedPositions] = useState<{[key: string]: boolean}>({});
-  const [initialLevels, setInitialLevels] = useState<number>(1); // По умолчанию 1 уровень!!!
   
-  // Логируем значение при каждой отрисовке
-  console.log('!!! ТЕКУЩЕЕ ЗНАЧЕНИЕ initialLevels ПРИ ОТРИСОВКЕ !!!', initialLevels);
+  // СТРОГО ФИКСИРУЕМ 1 УРОВЕНЬ
+  const initialLevels = 1;
+  
+  // ПРИНУДИТЕЛЬНО ВЫВОДИМ В КОНСОЛЬ
+  console.log('!!! ПРИНУДИТЕЛЬНОЕ ЗНАЧЕНИЕ initialLevels = 1 !!!');
+  // ВСЕ ПРЕЖНИЕ ХУКИ ЗАКОММЕНТИРОВАНЫ
+  // const [initialLevels, setInitialLevels] = useState<number>(1);
   
   // Тип для настроек
   type Setting = {
@@ -68,61 +72,12 @@ export default function OrganizationStructure() {
     updated_at: string;
   }
   
-  // ПРИНУДИТЕЛЬНЫЙ ЗАПРОС НАСТРОЕК без React Query
-  useEffect(() => {
-    console.log('### FORCE-FETCH SETTINGS STARTED ###');
-    
-    // Чтобы отследить завершение useEffect
-    console.log('initialLevels до запроса:', initialLevels);
-    
-    const fetchSettings = async () => {
-      try {
-        console.log('Принудительно запрашиваем настройки...');
-        const response = await fetch('/api/public-settings?nocache=' + new Date().getTime(), {
-          method: 'GET',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          },
-          credentials: 'include'
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('УСПЕШНО получены настройки:', data);
-        
-        // Применяем настройки
-        if (data.status === 'success' && Array.isArray(data.data)) {
-          const hierarchyLevel = data.data.find(s => s.data_key === 'hierarchy_initial_levels');
-          if (hierarchyLevel) {
-            const level = parseInt(hierarchyLevel.data_value);
-            if (!isNaN(level) && level > 0 && level <= 5) {
-              console.log(`Устанавливаем уровень иерархии: ${level}`);
-              setInitialLevels(level);
-              console.log('initialLevels должно быть обновлено до:', level);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('ОШИБКА при запросе настроек:', error);
-      }
-    };
-    
-    fetchSettings();
-    
-    return () => {
-      console.log('### EFFECT CLEANUP ###');
-    };
-  }, []);
+  // НАСТРОЙКИ УБРАНЫ
+  // useEffect(() => { ... });
   
   // Дополнительный эффект для отслеживания изменения initialLevels
-  useEffect(() => {
-    console.log('*** initialLevels ИЗМЕНЕНО:', initialLevels, '***');
-  }, [initialLevels]);
+  // Дополнительные хуки отключены
+  console.log('*** ПРИНУДИТЕЛЬНОЕ СТАТИЧНОЕ ЗНАЧЕНИЕ initialLevels:', initialLevels, '***');
   
   // Имитируем React Query для совместимости с остальным кодом
   const settingsResponse = { status: 'success', data: [] };
@@ -186,73 +141,7 @@ export default function OrganizationStructure() {
   
 
 
-  useEffect(() => {
-    console.log('Загружены настройки (useEffect):', settings);
-    
-    if (settings && Array.isArray(settings)) {
-      // Получаем настройку hierarchy_initial_levels
-      const hierarchyLevelSetting = settings.find(
-        (setting: any) => setting.data_key === 'hierarchy_initial_levels'
-      );
-      
-      console.log('Найдена настройка уровней иерархии:', hierarchyLevelSetting);
-      
-      if (hierarchyLevelSetting) {
-        try {
-          // Приводим значение к числу
-          const levelsValue = parseInt(hierarchyLevelSetting.data_value);
-          console.log('Уровень иерархии (число):', levelsValue);
-          
-          // Проверяем, что значение находится в допустимом диапазоне
-          if (!isNaN(levelsValue) && levelsValue > 0 && levelsValue <= 5) {
-            console.log('Применяем уровень иерархии:', levelsValue);
-            
-            // Устанавливаем значение в состояние
-            setInitialLevels(levelsValue);
-            
-            // Автоматически раскрываем нужное количество уровней
-            if (departments && departments.length > 0) {
-              const newExpandedDepartments: {[key: number]: boolean} = {};
-              
-              // Рекурсивно расширяем отделы до нужного уровня
-              const expandDepartmentsToLevel = (deptId: number, currentLevel: number) => {
-                if (currentLevel >= levelsValue) return;
-                
-                // Раскрываем текущий отдел
-                newExpandedDepartments[deptId] = true;
-                console.log(`Автоматически раскрываем отдел ID:${deptId} на уровне ${currentLevel}`);
-                
-                // Получаем дочерние отделы и раскрываем их
-                const childDepts = getChildDepartments(deptId);
-                console.log(`Найдено ${childDepts.length} дочерних отделов для ID:${deptId}`);
-                
-                childDepts.forEach(dept => {
-                  expandDepartmentsToLevel(dept.department_id, currentLevel + 1);
-                });
-              };
-              
-              // Начинаем с корневых отделов (уровень 0)
-              const rootDepts = getRootDepartments();
-              console.log(`Найдено ${rootDepts.length} корневых отделов:`, rootDepts.map(d => d.name));
-              
-              rootDepts.forEach(dept => {
-                expandDepartmentsToLevel(dept.department_id, 0);
-              });
-              
-              console.log('Установка expandedDepartments:', newExpandedDepartments);
-              setExpandedDepartments(newExpandedDepartments);
-            } else {
-              console.log('Нет отделов для раскрытия, departments:', departments);
-            }
-          } else {
-            console.warn(`Некорректное значение уровня иерархии: ${levelsValue}`);
-          }
-        } catch (error) {
-          console.error('Ошибка при обработке настройки уровней иерархии:', error);
-        }
-      }
-    }
-  }, [settings, departments]);
+  // ВСЕ ХУКИ С НАСТРОЙКАМИ ОТКЛЮЧЕНЫ
   
   const isLoading = isLoadingDepartments || isLoadingPositions || isLoadingEmployees || 
                     isLoadingPositionDepartments || isLoadingPositionsWithDepartments || isLoadingSettings;
