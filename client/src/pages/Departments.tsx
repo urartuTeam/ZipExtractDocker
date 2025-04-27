@@ -413,7 +413,7 @@ export default function Departments() {
                         field.onChange(value);
                         // Если выбрана должность, сбрасываем отдел
                         if (value !== "null") {
-                          form.setValue("parent_department_id", "null");
+                          form.setValue("parent_department_id", null);
                         }
                       }}
                       defaultValue={field.value?.toString() || "null"}
@@ -451,7 +451,7 @@ export default function Departments() {
                         field.onChange(value);
                         // Если выбран отдел, сбрасываем должность
                         if (value !== "null") {
-                          form.setValue("parent_position_id", "null");
+                          form.setValue("parent_position_id", null);
                         }
                       }}
                       defaultValue={field.value?.toString() || "null"}
@@ -535,7 +535,7 @@ export default function Departments() {
                         field.onChange(value);
                         // Если выбрана должность, сбрасываем отдел
                         if (value !== "null") {
-                          editForm.setValue("parent_department_id", "null");
+                          editForm.setValue("parent_department_id", null);
                         }
                       }}
                       defaultValue={field.value?.toString() || "null"}
@@ -573,7 +573,7 @@ export default function Departments() {
                         field.onChange(value);
                         // Если выбран отдел, сбрасываем должность
                         if (value !== "null") {
-                          editForm.setValue("parent_position_id", "null");
+                          editForm.setValue("parent_position_id", null);
                         }
                       }}
                       defaultValue={field.value?.toString() || "null"}
