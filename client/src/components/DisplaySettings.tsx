@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 
-interface DisplaySettingsProps {
+export interface DisplaySettingsProps {
   showThreeLevels: boolean;
   showVacancies: boolean;
   onShowThreeLevelsChange: (value: boolean) => void;
