@@ -14,12 +14,16 @@ import { Button } from "@/components/ui/button";
 
 interface DisplaySettingsProps {
   showThreeLevels: boolean;
+  showVacancies: boolean;
   onShowThreeLevelsChange: (value: boolean) => void;
+  onShowVacanciesChange: (value: boolean) => void;
 }
 
 const DisplaySettings: React.FC<DisplaySettingsProps> = ({
   showThreeLevels,
-  onShowThreeLevelsChange
+  showVacancies,
+  onShowThreeLevelsChange,
+  onShowVacanciesChange
 }) => {
   const [open, setOpen] = useState(false);
 
@@ -48,7 +52,20 @@ const DisplaySettings: React.FC<DisplaySettingsProps> = ({
             </Label>
           </div>
         </DropdownMenuItem>
-
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="p-3">
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="show-vacancies" 
+              checked={showVacancies}
+              onCheckedChange={(checked) => {
+                onShowVacanciesChange(checked === true);
+              }}
+            />
+            <Label htmlFor="show-vacancies" className="cursor-pointer">
+              Отображать количество вакансий
+            </Label>
+          </div>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
