@@ -215,7 +215,8 @@ const PositionTree = ({
   onPositionClick,
   selectedPositionId,
   hierarchyInitialLevels = 3, // По умолчанию 3 уровня
-  showThreeLevels = false // Новый параметр
+  showThreeLevels = false, // Показывать третий уровень
+  showVacancies = false // Показывать индикаторы вакансий
 }: { 
   nodes: PositionHierarchyNode[], 
   allPositions: Position[],
@@ -223,7 +224,8 @@ const PositionTree = ({
   onPositionClick?: (positionId: number) => void,
   selectedPositionId?: number,
   hierarchyInitialLevels?: number,
-  showThreeLevels?: boolean
+  showThreeLevels?: boolean,
+  showVacancies?: boolean
 }) => {
   // Проверяем, есть ли хотя бы одна действительная должность
   // Фильтрация необходима, т.к. иногда могут приходить неверные данные
@@ -248,6 +250,7 @@ const PositionTree = ({
               node={firstNode} 
               onPositionClick={onPositionClick}
               isTopLevel={isRootView} // Верхний уровень, если это корневой вид
+              showVacancies={showVacancies}
             />
           </div>
           
@@ -285,6 +288,7 @@ const PositionTree = ({
                             node={grandChild} 
                             onPositionClick={onPositionClick}
                             isTopLevel={false} // Третий уровень не верхний
+                            showVacancies={showVacancies}
                           />
                         </div>
                       ))}
