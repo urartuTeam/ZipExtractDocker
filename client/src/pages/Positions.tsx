@@ -87,6 +87,7 @@ export default function Positions() {
   const [isAddDepartmentDialogOpen, setIsAddDepartmentDialogOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+  const [vacanciesCount, setVacanciesCount] = useState<number>(0);
   const queryClient = useQueryClient();
 
   // Form для создания
@@ -197,10 +198,11 @@ export default function Positions() {
   
   // Mutation для создания связи должности с отделом
   const createPositionDepartment = useMutation({
-    mutationFn: async ({ position_id, department_id }: { position_id: number, department_id: number }) => {
+    mutationFn: async ({ position_id, department_id, vacancies }: { position_id: number, department_id: number, vacancies: number }) => {
       const res = await apiRequest("POST", "/api/positiondepartments", { 
         position_id, 
         department_id,
+        vacancies, // Количество вакансий
         sort: 0  // Значение по умолчанию
       });
       if (!res.ok) {
@@ -323,7 +325,8 @@ export default function Positions() {
     if (selectedPosition && selectedDepartmentId) {
       createPositionDepartment.mutate({
         position_id: selectedPosition.position_id,
-        department_id: selectedDepartmentId
+        department_id: selectedDepartmentId,
+        vacancies: vacanciesCount
       });
     }
   };
@@ -733,6 +736,19 @@ export default function Positions() {
                   </option>
                 ))}
               </select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Количество вакансий
+              </label>
+              <Input 
+                type="number" 
+                min="0" 
+                placeholder="Укажите количество вакансий"
+                value={vacanciesCount}
+                onChange={(e) => setVacanciesCount(parseInt(e.target.value) || 0)}
+              />
             </div>
             
             <DialogFooter>
