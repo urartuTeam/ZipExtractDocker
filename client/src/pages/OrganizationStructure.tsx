@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
   Card, 
@@ -54,6 +54,16 @@ export default function OrganizationStructure() {
   const { toast } = useToast();
   const [expandedDepartments, setExpandedDepartments] = useState<{[key: number]: boolean}>({});
   const [expandedPositions, setExpandedPositions] = useState<{[key: string]: boolean}>({});
+  const [initialLevels, setInitialLevels] = useState<number>(2); // По умолчанию 2 уровня
+  
+  // Получаем настройки из базы данных
+  const { 
+    data: settingsResponse, 
+    isLoading: isLoadingSettings, 
+    error: settingsError 
+  } = useQuery({
+    queryKey: ['/api/settings'],
+  });
   
   // Получаем данные отделов
   const { 
@@ -105,11 +115,55 @@ export default function OrganizationStructure() {
   const employees = employeesResponse?.data || [];
   const positionDepartments = positionDepartmentsResponse?.data || [];
   const positionsWithDepartments = positionsWithDepartmentsResponse?.data || [];
+  const settings = settingsResponse?.data || [];
+  
+  // Загружаем настройку количества отображаемых уровней иерархии
+  useEffect(() => {
+    if (settings && Array.isArray(settings)) {
+      const hierarchyLevelSetting = settings.find(
+        (setting: any) => setting.data_key === 'hierarchy_initial_levels'
+      );
+      
+      if (hierarchyLevelSetting) {
+        const levelsValue = parseInt(hierarchyLevelSetting.data_value);
+        if (!isNaN(levelsValue) && levelsValue > 0 && levelsValue <= 5) {
+          setInitialLevels(levelsValue);
+          
+          // Автоматически раскрываем нужное количество уровней
+          if (departments.length > 0) {
+            const newExpandedDepartments: {[key: number]: boolean} = {};
+            
+            // Рекурсивно расширяем отделы до нужного уровня
+            const expandDepartmentsToLevel = (deptId: number, currentLevel: number) => {
+              if (currentLevel >= levelsValue) return;
+              
+              // Раскрываем текущий отдел
+              newExpandedDepartments[deptId] = true;
+              
+              // Получаем дочерние отделы и раскрываем их
+              const childDepts = getChildDepartments(deptId);
+              childDepts.forEach(dept => {
+                expandDepartmentsToLevel(dept.department_id, currentLevel + 1);
+              });
+            };
+            
+            // Начинаем с корневых отделов (уровень 0)
+            const rootDepts = getRootDepartments();
+            rootDepts.forEach(dept => {
+              expandDepartmentsToLevel(dept.department_id, 0);
+            });
+            
+            setExpandedDepartments(newExpandedDepartments);
+          }
+        }
+      }
+    }
+  }, [settings, departments]);
   
   const isLoading = isLoadingDepartments || isLoadingPositions || isLoadingEmployees || 
-                    isLoadingPositionDepartments || isLoadingPositionsWithDepartments;
+                    isLoadingPositionDepartments || isLoadingPositionsWithDepartments || isLoadingSettings;
   const error = departmentsError || positionsError || employeesError || 
-                positionDepartmentsError || positionsWithDepartmentsError;
+                positionDepartmentsError || positionsWithDepartmentsError || settingsError;
   
   const toggleDepartment = (departmentId: number) => {
     setExpandedDepartments(prev => ({

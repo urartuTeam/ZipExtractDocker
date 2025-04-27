@@ -58,8 +58,8 @@ export default function Settings() {
     queryKey: ['/api/settings'],
   });
 
-  // Извлекаем настройки из ответа
-  const settings = settingsResponse?.data || [];
+  // Извлекаем настройки из ответа, учитывая структуру ответа API
+  const settings = Array.isArray(settingsResponse?.data) ? settingsResponse.data : [];
 
   // Эффект для установки выбранного уровня иерархии из полученных настроек
   useEffect(() => {
