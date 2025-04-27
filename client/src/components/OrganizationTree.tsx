@@ -209,12 +209,14 @@ const PositionTree = ({
   nodes,
   allPositions,
   allEmployees,
-  onPositionClick
+  onPositionClick,
+  selectedPositionId
 }: { 
   nodes: PositionHierarchyNode[], 
   allPositions: Position[],
   allEmployees: Employee[],
-  onPositionClick?: (positionId: number) => void
+  onPositionClick?: (positionId: number) => void,
+  selectedPositionId?: number
 }) => {
   // Проверяем, есть ли хотя бы одна действительная должность
   // Фильтрация необходима, т.к. иногда могут приходить неверные данные
@@ -226,13 +228,20 @@ const PositionTree = ({
   // Остальные должности верхнего уровня
   const otherNodes = validNodes.length > 0 ? validNodes.slice(1) : [];
   
+  // Определяем, является ли это первичным показом организационного дерева с самой вершины
+  const isRootView = !selectedPositionId;
+  
   return (
     <div className="tree-node">
       {firstNode && firstNode.position && (
         <div className="tree-branch">
           {/* Карточка первой должности верхнего уровня */}
           <div className="tree-node-container">
-            <UnifiedPositionCard node={firstNode} onPositionClick={onPositionClick} />
+            <UnifiedPositionCard 
+              node={firstNode} 
+              onPositionClick={onPositionClick}
+              isTopLevel={isRootView} // Верхний уровень, если это корневой вид
+            />
           </div>
           
           {/* Подчиненные первой должности */}
@@ -248,7 +257,11 @@ const PositionTree = ({
               {/* Отображаем подчиненных */}
               {firstNode.subordinates.filter(sub => sub && sub.position).map((subNode: PositionHierarchyNode, index: number) => (
                 <div key={`${subNode.position.position_id}-${index}`} className="subordinate-branch">
-                  <UnifiedPositionCard node={subNode} onPositionClick={onPositionClick} />
+                  <UnifiedPositionCard 
+                    node={subNode} 
+                    onPositionClick={onPositionClick}
+                    isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
+                  />
                   
                   {/* Рекурсивное отображение подчиненных подчиненного, если они есть */}
                   {subNode.subordinates.length > 0 && (
@@ -261,7 +274,11 @@ const PositionTree = ({
                       
                       {subNode.subordinates.filter(sub => sub && sub.position).map((grandChild: PositionHierarchyNode, grandIndex: number) => (
                         <div key={`${grandChild.position.position_id}-${grandIndex}`} className="subordinate-branch">
-                          <UnifiedPositionCard node={grandChild} onPositionClick={onPositionClick} />
+                          <UnifiedPositionCard 
+                            node={grandChild} 
+                            onPositionClick={onPositionClick}
+                            isTopLevel={false} // Третий уровень не верхний
+                          />
                         </div>
                       ))}
                     </div>
@@ -277,7 +294,11 @@ const PositionTree = ({
       {otherNodes.map((node: PositionHierarchyNode, index: number) => (
         <div key={`${node.position.position_id}-${index}`} className="tree-branch" style={{ marginLeft: '30px' }}>
           <div className="tree-node-container">
-            <UnifiedPositionCard node={node} onPositionClick={onPositionClick} />
+            <UnifiedPositionCard 
+              node={node} 
+              onPositionClick={onPositionClick}
+              isTopLevel={isRootView} // Верхний уровень, если это корневой вид
+            />
           </div>
           
           {/* Подчиненные других должностей */}
@@ -291,7 +312,11 @@ const PositionTree = ({
               
               {node.subordinates.filter(sub => sub && sub.position).map((subNode: PositionHierarchyNode, subIndex: number) => (
                 <div key={`${subNode.position.position_id}-${subIndex}`} className="subordinate-branch">
-                  <UnifiedPositionCard node={subNode} onPositionClick={onPositionClick} />
+                  <UnifiedPositionCard 
+                    node={subNode} 
+                    onPositionClick={onPositionClick}
+                    isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
+                  />
                 </div>
               ))}
             </div>
@@ -863,6 +888,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           allPositions={positions}
           allEmployees={employees}
           onPositionClick={handlePositionClick}
+          selectedPositionId={selectedPositionId}
         />
       </div>
     </div>

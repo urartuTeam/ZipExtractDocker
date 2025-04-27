@@ -34,16 +34,25 @@ type PositionHierarchyNode = {
 // Компонент для унифицированного отображения карточки позиции/отдела
 const UnifiedPositionCard = ({
   node,
-  onPositionClick
+  onPositionClick,
+  isTopLevel = false
 }: {
   node: PositionHierarchyNode,
-  onPositionClick?: (positionId: number) => void
+  onPositionClick?: (positionId: number) => void,
+  isTopLevel?: boolean
 }) => {
   const isDepartment = node.position.name.includes('(отдел)');
   
+  // Определяем класс на основе типа узла и положения в дереве
+  const cardClass = isDepartment 
+    ? 'departmentClass' // Класс для отделов
+    : isTopLevel 
+      ? 'topTopPositionClass' // Класс для должностей верхнего уровня
+      : 'positionClass'; // Класс для обычных должностей
+  
   return (
     <div 
-      className={`position-card ${isDepartment ? 'department-card' : ''}`}
+      className={`position-card ${cardClass} ${isDepartment ? 'department-card' : ''}`}
       onClick={() => onPositionClick && onPositionClick(node.position.position_id)}
       style={{ 
         cursor: onPositionClick ? 'pointer' : 'default',
