@@ -197,7 +197,10 @@ CREATE TABLE public.position_department (
     department_id integer,
     sort integer DEFAULT 0,
     deleted boolean DEFAULT false,
-    deleted_at timestamp without time zone
+    deleted_at timestamp without time zone,
+    staff_units integer DEFAULT 0,
+    current_count integer DEFAULT 0,
+    vacancies integer DEFAULT 0
 );
 
 
@@ -503,17 +506,17 @@ COPY public.leaves (leave_id, employee_id, start_date, end_date, type, deleted, 
 -- Data for Name: position_department; Type: TABLE DATA; Schema: public; Owner: neondb_owner
 --
 
-COPY public.position_department (position_link_id, position_id, department_id, sort, deleted, deleted_at) FROM stdin;
-1	1	1	0	f	\N
-2	2	1	0	f	\N
-3	3	1	0	f	\N
-4	5	1	0	f	\N
-5	6	1	0	f	\N
-6	4	1	0	f	\N
-7	7	1	0	f	\N
-8	8	1	0	f	\N
-9	9	1	0	f	\N
-10	10	1	0	f	\N
+COPY public.position_department (position_link_id, position_id, department_id, sort, deleted, deleted_at, staff_units, current_count, vacancies) FROM stdin;
+1	1	1	0	f	\N	1	1	0
+2	2	1	0	f	\N	0	0	0
+3	3	1	0	f	\N	0	0	0
+4	5	1	0	f	\N	0	0	0
+5	6	1	0	f	\N	0	0	0
+6	4	1	0	f	\N	0	0	0
+7	7	1	0	f	\N	0	0	0
+8	8	1	0	f	\N	0	0	0
+9	9	1	0	f	\N	0	0	0
+10	10	1	0	f	\N	1	0	1
 \.
 
 
@@ -551,7 +554,7 @@ COPY public.projects (project_id, name, description, department_id, deleted, del
 --
 
 COPY public.settings (id, data_key, data_value, created_at, updated_at) FROM stdin;
-1	hierarchy_initial_levels	1	2025-04-27 10:36:15.699481	2025-04-27 10:42:55.139
+1	hierarchy_initial_levels	3	2025-04-27 10:36:15.699481	2025-04-27 15:17:50.873
 \.
 
 
