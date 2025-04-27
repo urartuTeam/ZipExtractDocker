@@ -1,5 +1,5 @@
 import { 
-  users, departments, positions, employees, projects, employeeprojects, leaves, position_department,
+  users, departments, positions, employees, projects, employeeprojects, leaves, position_department, settings,
   type User, type InsertUser, 
   type Department, type InsertDepartment,
   type Position, type InsertPosition,
@@ -7,7 +7,8 @@ import {
   type Employee, type InsertEmployee,
   type Project, type InsertProject,
   type EmployeeProject, type InsertEmployeeProject,
-  type Leave, type InsertLeave
+  type Leave, type InsertLeave,
+  type Setting, type InsertSetting
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
@@ -73,6 +74,11 @@ export interface IStorage {
   createLeave(leave: InsertLeave): Promise<Leave>;
   updateLeave(id: number, leave: Partial<InsertLeave>): Promise<Leave | undefined>;
   deleteLeave(id: number): Promise<boolean>;
+  
+  // Настройки
+  getSetting(key: string): Promise<Setting | undefined>;
+  getAllSettings(): Promise<Setting[]>;
+  createOrUpdateSetting(key: string, value: string): Promise<Setting>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -467,6 +473,44 @@ export class DatabaseStorage implements IStorage {
       .where(eq(leaves.leave_id, id))
       .returning({ id: leaves.leave_id });
     return !!updated;
+  }
+  
+  // Методы для работы с настройками
+  async getSetting(key: string): Promise<Setting | undefined> {
+    const [setting] = await db.select().from(settings).where(eq(settings.data_key, key));
+    return setting || undefined;
+  }
+  
+  async getAllSettings(): Promise<Setting[]> {
+    return await db.select().from(settings);
+  }
+  
+  async createOrUpdateSetting(key: string, value: string): Promise<Setting> {
+    // Проверяем, существует ли запись
+    const existingSetting = await this.getSetting(key);
+    
+    if (existingSetting) {
+      // Если существует, обновляем
+      const [updated] = await db
+        .update(settings)
+        .set({ 
+          data_value: value,
+          updated_at: new Date()
+        })
+        .where(eq(settings.data_key, key))
+        .returning();
+      return updated;
+    } else {
+      // Если нет, создаем новую
+      const [setting] = await db
+        .insert(settings)
+        .values({ 
+          data_key: key, 
+          data_value: value 
+        })
+        .returning();
+      return setting;
+    }
   }
 }
 
