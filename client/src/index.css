@@ -525,19 +525,16 @@
   height: 20px;
   width: 2px;
   background-color: #a40000;
-  transform: translateX(-50%); /* Добавляем трансформацию для идеального центрирования */
 }
 
 .tree-branch-line {
-  /* Используем блочную модель для лучшего центрирования */
+  /* Используем inline-block вместо absolute для лучшего центрирования */
   position: relative;
-  display: block;
+  display: inline-block;
   margin: 0 auto;
   top: -20px;
   height: 2px;
   background-color: #a40000;
-  left: 50%;
-  transform: translateX(-50%); /* Центрирование с помощью transform */
 }
 
 /* Стилизация карточек должностей */

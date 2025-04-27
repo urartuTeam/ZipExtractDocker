@@ -1,0 +1,10 @@
+INSERT INTO public.positions (position_id, name, department_id, staff_units, current_count, vacancies, parent_position_id, sort) VALUES (1, 'ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА', 1, 1, 1, 0, null, 1);
+INSERT INTO public.positions (position_id, name, department_id, staff_units, current_count, vacancies, parent_position_id, sort) VALUES (2, 'Главный эксперт', null, 0, 0, 0, null, 2);
+INSERT INTO public.positions (position_id, name, department_id, staff_units, current_count, vacancies, parent_position_id, sort) VALUES (3, 'Главный специалист', null, 0, 0, 0, null, 3);
+INSERT INTO public.positions (position_id, name, department_id, staff_units, current_count, vacancies, parent_position_id, sort) VALUES (5, 'Генеральный директор', null, 0, 0, 0, 1, 5);
+INSERT INTO public.positions (position_id, name, department_id, staff_units, current_count, vacancies, parent_position_id, sort) VALUES (6, 'Начальник управления', null, 0, 0, 0, 1, 6);
+INSERT INTO public.positions (position_id, name, department_id, staff_units, current_count, vacancies, parent_position_id, sort) VALUES (4, 'Исполнительный директор', null, 0, 0, 0, 5, 4);
+INSERT INTO public.positions (position_id, name, department_id, staff_units, current_count, vacancies, parent_position_id, sort) VALUES (7, 'Заместитель генерального директора по координации реализации планов ОИВ', null, 0, 0, 0, 5, 7);
+INSERT INTO public.positions (position_id, name, department_id, staff_units, current_count, vacancies, parent_position_id, sort) VALUES (8, 'Заместитель генерального директора по координации аналитики', null, 0, 0, 0, 5, 8);
+INSERT INTO public.positions (position_id, name, department_id, staff_units, current_count, vacancies, parent_position_id, sort) VALUES (9, 'Заместитель генерального директора по координации разработки', null, 0, 0, 0, 5, 9);
+INSERT INTO public.positions (position_id, name, department_id, staff_units, current_count, vacancies, parent_position_id, sort) VALUES (10, 'Директор по развитию', 1, 1, 0, 1, 5, 10);

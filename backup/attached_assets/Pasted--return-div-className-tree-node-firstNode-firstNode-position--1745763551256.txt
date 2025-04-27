@@ -1,0 +1,76 @@
+
+  return (
+    <div className="tree-node">
+      {firstNode && firstNode.position && (
+        <div className="tree-branch">
+          {/* Карточка первой должности верхнего уровня */}
+          <div className="tree-node-container">
+            <UnifiedPositionCard 
+              node={firstNode} 
+              onPositionClick={onPositionClick}
+              isTopLevel={isRootView} // Верхний уровень, если это корневой вид
+            />
+          </div>
+          
+          {/* Подчиненные первой должности */}
+          {firstNode.subordinates.length > 0 && (
+            <div className="subordinates-container">
+              <div className="tree-branch-connections">
+                {/* Горизонтальная линия */}
+                <div className="tree-branch-line" style={{ 
+                  width: `${Math.max(firstNode.subordinates.length * 240, 100)}px` 
+                }}></div>
+              </div>
+              
+              {/* Отображаем подчиненных */}
+              {firstNode.subordinates.filter(sub => sub && sub.position).map((subNode: PositionHierarchyNode, index: number) => (
+                <div key={`${subNode.position.position_id}-${index}`} className="subordinate-branch">
+                  <UnifiedPositionCard 
+                    node={subNode} 
+                    onPositionClick={onPositionClick}
+                    isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
+                  />
+
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      
+      {/* Отображаем остальные должности верхнего уровня */}
+      {otherNodes.map((node: PositionHierarchyNode, index: number) => (
+        <div key={`${node.position.position_id}-${index}`} className="tree-branch" style={{ marginLeft: '30px' }}>
+          <div className="tree-node-container">
+            <UnifiedPositionCard 
+              node={node} 
+              onPositionClick={onPositionClick}
+              isTopLevel={isRootView} // Верхний уровень, если это корневой вид
+            />
+          </div>
+          
+          {/* Подчиненные других должностей */}
+          {node.subordinates.length > 0 && (
+            <div className="subordinates-container">
+              <div className="tree-branch-connections">
+                <div className="tree-branch-line" style={{ 
+                  width: `${Math.max(node.subordinates.length * 240, 100)}px` 
+                }}></div>
+              </div>
+              
+              {node.subordinates.filter(sub => sub && sub.position).map((subNode: PositionHierarchyNode, subIndex: number) => (
+                <div key={`${subNode.position.position_id}-${subIndex}`} className="subordinate-branch">
+                  <UnifiedPositionCard 
+                    node={subNode} 
+                    onPositionClick={onPositionClick}
+                    isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};

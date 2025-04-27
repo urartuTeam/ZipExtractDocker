@@ -1,0 +1,31 @@
+-- Таблица departments
+ALTER TABLE departments ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE departments ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+
+-- Таблица positions
+ALTER TABLE positions ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE positions ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+
+-- Таблица position_department
+ALTER TABLE position_department ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE position_department ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+
+-- Таблица employees
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE employees ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+
+-- Таблица projects
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+
+-- Таблица employeeprojects
+ALTER TABLE employeeprojects ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE employeeprojects ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+
+-- Таблица leaves
+ALTER TABLE leaves ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE leaves ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;
+
+-- Таблица users
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP;

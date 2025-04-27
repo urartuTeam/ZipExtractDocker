@@ -1,0 +1,10 @@
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort) VALUES (1, 1, 1, 0);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort) VALUES (2, 2, 1, 0);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort) VALUES (3, 3, 1, 0);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort) VALUES (4, 5, 1, 0);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort) VALUES (5, 6, 1, 0);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort) VALUES (6, 4, 1, 0);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort) VALUES (7, 7, 1, 0);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort) VALUES (8, 8, 1, 0);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort) VALUES (9, 9, 1, 0);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort) VALUES (10, 10, 1, 0);
