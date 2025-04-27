@@ -56,12 +56,21 @@ export default function OrganizationStructure() {
   const [expandedPositions, setExpandedPositions] = useState<{[key: string]: boolean}>({});
   const [initialLevels, setInitialLevels] = useState<number>(2); // По умолчанию 2 уровня
   
+  // Тип для настроек
+  type Setting = {
+    id: number;
+    data_key: string;
+    data_value: string;
+    created_at: string;
+    updated_at: string;
+  }
+  
   // Получаем настройки из базы данных
   const { 
     data: settingsResponse, 
     isLoading: isLoadingSettings, 
     error: settingsError 
-  } = useQuery({
+  } = useQuery<{status: string, data: Setting[]}>({
     queryKey: ['/api/settings'],
   });
   
@@ -110,12 +119,15 @@ export default function OrganizationStructure() {
     queryKey: ['/api/positions/with-departments'],
   });
   
+  // Извлекаем данные из API-ответов
   const departments = departmentsResponse?.data || [];
   const positions = positionsResponse?.data || [];
   const employees = employeesResponse?.data || [];
   const positionDepartments = positionDepartmentsResponse?.data || [];
   const positionsWithDepartments = positionsWithDepartmentsResponse?.data || [];
-  const settings = settingsResponse?.data || [];
+  
+  // Получаем настройки, учитывая структуру ответа API
+  const settings = Array.isArray(settingsResponse?.data) ? settingsResponse.data : [];
   
   // Загружаем настройку количества отображаемых уровней иерархии
   useEffect(() => {

@@ -54,7 +54,7 @@ export default function Settings() {
     data: settingsResponse, 
     isLoading: isLoadingSettings,
     error: settingsError 
-  } = useQuery({
+  } = useQuery<{status: string, data: Setting[]}>({
     queryKey: ['/api/settings'],
   });
 
