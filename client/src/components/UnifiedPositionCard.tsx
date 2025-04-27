@@ -35,11 +35,13 @@ type PositionHierarchyNode = {
 const UnifiedPositionCard = ({
   node,
   onPositionClick,
-  isTopLevel = false
+  isTopLevel = false,
+  showVacancies = false
 }: {
   node: PositionHierarchyNode,
   onPositionClick?: (positionId: number) => void,
-  isTopLevel?: boolean
+  isTopLevel?: boolean,
+  showVacancies?: boolean
 }) => {
   const isDepartment = node.position.name.includes('(отдел)');
   
@@ -98,7 +100,12 @@ const UnifiedPositionCard = ({
           {node.employee ? (
             <div className="employee-name">{node.employee.full_name}</div>
           ) : (
-            <div className="position-vacant">Вакантная должность</div>
+            <>
+              <div className="position-vacant">Вакантная должность</div>
+              {showVacancies && (
+                <div className="vacancy-indicator">1</div>
+              )}
+            </>
           )}
         </>
       )}
