@@ -271,30 +271,7 @@ const PositionTree = ({
         <div className="tree-branch">
           {/* Карточка первой должности верхнего уровня */}
           <div className="tree-node-container">
-            <div 
-              className={`position-card ${firstNode.position.name.includes('(отдел)') ? 'department-card' : ''}`}
-              onClick={() => onPositionClick && onPositionClick(firstNode.position.position_id)}
-              style={{ 
-                cursor: onPositionClick ? 'pointer' : 'default',
-                backgroundColor: firstNode.position.name.includes('(отдел)') ? '#f0f4ff' : undefined, 
-                borderColor: firstNode.position.name.includes('(отдел)') ? '#4b7bec' : undefined
-              }}
-            >
-              <div className="position-title">
-                {firstNode.position.name.includes('(отдел)') 
-                  ? firstNode.position.name.replace(' (отдел)', '') 
-                  : firstNode.position.name}
-              </div>
-              {!firstNode.position.name.includes('(отдел)') && (
-                firstNode.employee ? (
-                  <div className="employee-name">{firstNode.employee.full_name}</div>
-                ) : (
-                  <div className="position-vacant">Вакантная должность</div>
-                )
-              )}
-              
-              {/* Отображение дочерних отделов будет происходить в subordinates-container */}
-            </div>
+            <UnifiedPositionCard node={firstNode} onPositionClick={onPositionClick} />
           </div>
           
           {/* Подчиненные первой должности */}
@@ -310,40 +287,7 @@ const PositionTree = ({
               {/* Отображаем подчиненных */}
               {firstNode.subordinates.filter(sub => sub && sub.position).map((subNode: PositionHierarchyNode, index: number) => (
                 <div key={`${subNode.position.position_id}-${index}`} className="subordinate-branch">
-                  <div 
-                    className={`position-card ${subNode.position.name.includes('(отдел)') ? 'department-card' : ''}`}
-                    onClick={() => onPositionClick && onPositionClick(subNode.position.position_id)}
-                    style={{ 
-                      cursor: onPositionClick ? 'pointer' : 'default',
-                      backgroundColor: subNode.position.name.includes('(отдел)') ? '#f0f4ff' : undefined, 
-                      borderColor: subNode.position.name.includes('(отдел)') ? '#4b7bec' : undefined
-                    }}
-                  >
-                    <div className="position-title">
-                      {subNode.position.name.includes('(отдел)') 
-                        ? subNode.position.name.replace(' (отдел)', '') 
-                        : subNode.position.name}
-                    </div>
-                    {!subNode.position.name.includes('(отдел)') && (
-                      subNode.employee ? (
-                        <div className="employee-name">{subNode.employee.full_name}</div>
-                      ) : (
-                        <div className="position-vacant">Вакантная должность</div>
-                      )
-                    )}
-                    
-                    {/* Отображаем дочерние отделы для должности */}
-                    {subNode.childDepartments && subNode.childDepartments.length > 0 && (
-                      <div className="child-departments">
-                        <div className="child-departments-title">Подчиненные отделы:</div>
-                        {subNode.childDepartments.map((dept) => (
-                          <div key={dept.department_id} className="child-department-name">
-                            {dept.name}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <UnifiedPositionCard node={subNode} onPositionClick={onPositionClick} />
                   
                   {/* Рекурсивное отображение подчиненных подчиненного, если они есть */}
                   {subNode.subordinates.length > 0 && (
@@ -356,40 +300,7 @@ const PositionTree = ({
                       
                       {subNode.subordinates.filter(sub => sub && sub.position).map((grandChild: PositionHierarchyNode, grandIndex: number) => (
                         <div key={`${grandChild.position.position_id}-${grandIndex}`} className="subordinate-branch">
-                          <div 
-                            className={`position-card ${grandChild.position.name.includes('(отдел)') ? 'department-card' : ''}`}
-                            onClick={() => onPositionClick && onPositionClick(grandChild.position.position_id)}
-                            style={{ 
-                              cursor: onPositionClick ? 'pointer' : 'default',
-                              backgroundColor: grandChild.position.name.includes('(отдел)') ? '#f0f4ff' : undefined, 
-                              borderColor: grandChild.position.name.includes('(отдел)') ? '#4b7bec' : undefined
-                            }}
-                          >
-                            <div className="position-title">
-                              {grandChild.position.name.includes('(отдел)') 
-                                ? grandChild.position.name.replace(' (отдел)', '') 
-                                : grandChild.position.name}
-                            </div>
-                            {!grandChild.position.name.includes('(отдел)') && (
-                              grandChild.employee ? (
-                                <div className="employee-name">{grandChild.employee.full_name}</div>
-                              ) : (
-                                <div className="position-vacant">Вакантная должность</div>
-                              )
-                            )}
-                            
-                            {/* Отображаем дочерние отделы для должности */}
-                            {grandChild.childDepartments && grandChild.childDepartments.length > 0 && (
-                              <div className="child-departments">
-                                <div className="child-departments-title">Подчиненные отделы:</div>
-                                {grandChild.childDepartments.map((dept) => (
-                                  <div key={dept.department_id} className="child-department-name">
-                                    {dept.name}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                          <UnifiedPositionCard node={grandChild} onPositionClick={onPositionClick} />
                         </div>
                       ))}
                     </div>
@@ -405,40 +316,7 @@ const PositionTree = ({
       {otherNodes.map((node: PositionHierarchyNode, index: number) => (
         <div key={`${node.position.position_id}-${index}`} className="tree-branch" style={{ marginLeft: '30px' }}>
           <div className="tree-node-container">
-            <div 
-              className={`position-card ${node.position.name.includes('(отдел)') ? 'department-card' : ''}`}
-              onClick={() => onPositionClick && onPositionClick(node.position.position_id)}
-              style={{ 
-                cursor: onPositionClick ? 'pointer' : 'default',
-                backgroundColor: node.position.name.includes('(отдел)') ? '#f0f4ff' : undefined, 
-                borderColor: node.position.name.includes('(отдел)') ? '#4b7bec' : undefined
-              }}
-            >
-              <div className="position-title">
-                {node.position.name.includes('(отдел)') 
-                  ? node.position.name.replace(' (отдел)', '') 
-                  : node.position.name}
-              </div>
-              {!node.position.name.includes('(отдел)') && (
-                node.employee ? (
-                  <div className="employee-name">{node.employee.full_name}</div>
-                ) : (
-                  <div className="position-vacant">Вакантная должность</div>
-                )
-              )}
-              
-              {/* Отображаем дочерние отделы для должности */}
-              {node.childDepartments && node.childDepartments.length > 0 && (
-                <div className="child-departments">
-                  <div className="child-departments-title">Подчиненные отделы:</div>
-                  {node.childDepartments.map((dept) => (
-                    <div key={dept.department_id} className="child-department-name">
-                      {dept.name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <UnifiedPositionCard node={node} onPositionClick={onPositionClick} />
           </div>
           
           {/* Подчиненные других должностей */}
@@ -452,40 +330,7 @@ const PositionTree = ({
               
               {node.subordinates.filter(sub => sub && sub.position).map((subNode: PositionHierarchyNode, subIndex: number) => (
                 <div key={`${subNode.position.position_id}-${subIndex}`} className="subordinate-branch">
-                  <div 
-                    className={`position-card ${subNode.position.name.includes('(отдел)') ? 'department-card' : ''}`}
-                    onClick={() => onPositionClick && onPositionClick(subNode.position.position_id)}
-                    style={{ 
-                      cursor: onPositionClick ? 'pointer' : 'default',
-                      backgroundColor: subNode.position.name.includes('(отдел)') ? '#f0f4ff' : undefined, 
-                      borderColor: subNode.position.name.includes('(отдел)') ? '#4b7bec' : undefined
-                    }}
-                  >
-                    <div className="position-title">
-                      {subNode.position.name.includes('(отдел)') 
-                        ? subNode.position.name.replace(' (отдел)', '') 
-                        : subNode.position.name}
-                    </div>
-                    {!subNode.position.name.includes('(отдел)') && (
-                      subNode.employee ? (
-                        <div className="employee-name">{subNode.employee.full_name}</div>
-                      ) : (
-                        <div className="position-vacant">Вакантная должность</div>
-                      )
-                    )}
-                    
-                    {/* Отображаем дочерние отделы для должности */}
-                    {subNode.childDepartments && subNode.childDepartments.length > 0 && (
-                      <div className="child-departments">
-                        <div className="child-departments-title">Подчиненные отделы:</div>
-                        {subNode.childDepartments.map((dept) => (
-                          <div key={dept.department_id} className="child-department-name">
-                            {dept.name}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  <UnifiedPositionCard node={subNode} onPositionClick={onPositionClick} />
                 </div>
               ))}
             </div>
