@@ -72,6 +72,8 @@ export default function OrganizationStructure() {
     error: settingsError 
   } = useQuery<{status: string, data: Setting[]}>({
     queryKey: ['/api/public-settings'],
+    retry: 3, // Попробуем несколько раз, если запрос не прошел
+    staleTime: 60000 // Данные считаются свежими в течение 1 минуты
   });
   
   // Получаем данные отделов
@@ -131,9 +133,10 @@ export default function OrganizationStructure() {
   
   // Загружаем настройку количества отображаемых уровней иерархии
   useEffect(() => {
-    console.log('Загружены настройки:', settings);
+    console.log('Загружены настройки (useEffect):', settings);
     
     if (settings && Array.isArray(settings)) {
+      // Получаем настройку hierarchy_initial_levels
       const hierarchyLevelSetting = settings.find(
         (setting: any) => setting.data_key === 'hierarchy_initial_levels'
       );
@@ -141,39 +144,57 @@ export default function OrganizationStructure() {
       console.log('Найдена настройка уровней иерархии:', hierarchyLevelSetting);
       
       if (hierarchyLevelSetting) {
-        const levelsValue = parseInt(hierarchyLevelSetting.data_value);
-        console.log('Уровень иерархии:', levelsValue);
-        
-        if (!isNaN(levelsValue) && levelsValue > 0 && levelsValue <= 5) {
-          console.log('Применяем уровень иерархии:', levelsValue);
-          setInitialLevels(levelsValue);
+        try {
+          // Приводим значение к числу
+          const levelsValue = parseInt(hierarchyLevelSetting.data_value);
+          console.log('Уровень иерархии (число):', levelsValue);
           
-          // Автоматически раскрываем нужное количество уровней
-          if (departments.length > 0) {
-            const newExpandedDepartments: {[key: number]: boolean} = {};
+          // Проверяем, что значение находится в допустимом диапазоне
+          if (!isNaN(levelsValue) && levelsValue > 0 && levelsValue <= 5) {
+            console.log('Применяем уровень иерархии:', levelsValue);
             
-            // Рекурсивно расширяем отделы до нужного уровня
-            const expandDepartmentsToLevel = (deptId: number, currentLevel: number) => {
-              if (currentLevel >= levelsValue) return;
+            // Устанавливаем значение в состояние
+            setInitialLevels(levelsValue);
+            
+            // Автоматически раскрываем нужное количество уровней
+            if (departments && departments.length > 0) {
+              const newExpandedDepartments: {[key: number]: boolean} = {};
               
-              // Раскрываем текущий отдел
-              newExpandedDepartments[deptId] = true;
+              // Рекурсивно расширяем отделы до нужного уровня
+              const expandDepartmentsToLevel = (deptId: number, currentLevel: number) => {
+                if (currentLevel >= levelsValue) return;
+                
+                // Раскрываем текущий отдел
+                newExpandedDepartments[deptId] = true;
+                console.log(`Автоматически раскрываем отдел ID:${deptId} на уровне ${currentLevel}`);
+                
+                // Получаем дочерние отделы и раскрываем их
+                const childDepts = getChildDepartments(deptId);
+                console.log(`Найдено ${childDepts.length} дочерних отделов для ID:${deptId}`);
+                
+                childDepts.forEach(dept => {
+                  expandDepartmentsToLevel(dept.department_id, currentLevel + 1);
+                });
+              };
               
-              // Получаем дочерние отделы и раскрываем их
-              const childDepts = getChildDepartments(deptId);
-              childDepts.forEach(dept => {
-                expandDepartmentsToLevel(dept.department_id, currentLevel + 1);
+              // Начинаем с корневых отделов (уровень 0)
+              const rootDepts = getRootDepartments();
+              console.log(`Найдено ${rootDepts.length} корневых отделов:`, rootDepts.map(d => d.name));
+              
+              rootDepts.forEach(dept => {
+                expandDepartmentsToLevel(dept.department_id, 0);
               });
-            };
-            
-            // Начинаем с корневых отделов (уровень 0)
-            const rootDepts = getRootDepartments();
-            rootDepts.forEach(dept => {
-              expandDepartmentsToLevel(dept.department_id, 0);
-            });
-            
-            setExpandedDepartments(newExpandedDepartments);
+              
+              console.log('Установка expandedDepartments:', newExpandedDepartments);
+              setExpandedDepartments(newExpandedDepartments);
+            } else {
+              console.log('Нет отделов для раскрытия, departments:', departments);
+            }
+          } else {
+            console.warn(`Некорректное значение уровня иерархии: ${levelsValue}`);
           }
+        } catch (error) {
+          console.error('Ошибка при обработке настройки уровней иерархии:', error);
         }
       }
     }
@@ -185,6 +206,7 @@ export default function OrganizationStructure() {
                 positionDepartmentsError || positionsWithDepartmentsError || settingsError;
   
   const toggleDepartment = (departmentId: number) => {
+    console.log(`Переключение отображения отдела ID:${departmentId}`);
     setExpandedDepartments(prev => ({
       ...prev,
       [departmentId]: !prev[departmentId]
