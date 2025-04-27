@@ -803,7 +803,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Создаем мапу с должностями по ID для быстрого доступа
     const positionMap: Record<number, PositionHierarchyNode> = {};
     
-    // Инициализация узлов для всех должностей администрации
+    // Инициализация узлов для всех должностей корневого отдела
     adminPositions.forEach(position => {
       const employee = employees.find(emp => 
         emp.position_id === position.position_id && 
@@ -948,10 +948,10 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       const tree = buildDepartmentTree(null, departments, positions, employees, totalElements);
       setDepartmentTree(tree);
       
-      // Строим иерархию должностей для Администрации
-      const administrationHierarchy = buildAdministrationHierarchy();
-      if (administrationHierarchy) {
-        setPositionHierarchy(administrationHierarchy);
+      // Строим иерархию должностей для корневого отдела
+      const rootDepartmentHierarchy = buildAdministrationHierarchy();
+      if (rootDepartmentHierarchy) {
+        setPositionHierarchy(rootDepartmentHierarchy);
       } else {
         // Резервный вариант - строим на основе manager_id
         const hierarchy = buildPositionHierarchy();
@@ -963,7 +963,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Фильтруем иерархию при изменении выбранной должности
   useEffect(() => {
     if (!selectedPositionId || positionHierarchy.length === 0) {
-      // Если нет выбранной должности, показываем все должности отдела "Администрация"
+      // Если нет выбранной должности, показываем все должности корневого отдела
       // Это будут корневые узлы, полученные из функции buildAdministrationHierarchy
       setFilteredHierarchy(positionHierarchy);
       return;
