@@ -214,14 +214,16 @@ const PositionTree = ({
   allEmployees,
   onPositionClick,
   selectedPositionId,
-  hierarchyInitialLevels = 3 // По умолчанию 3 уровня
+  hierarchyInitialLevels = 3, // По умолчанию 3 уровня
+  showThreeLevels = false // Новый параметр
 }: { 
   nodes: PositionHierarchyNode[], 
   allPositions: Position[],
   allEmployees: Employee[],
   onPositionClick?: (positionId: number) => void,
   selectedPositionId?: number,
-  hierarchyInitialLevels?: number
+  hierarchyInitialLevels?: number,
+  showThreeLevels?: boolean
 }) => {
   // Проверяем, есть ли хотя бы одна действительная должность
   // Фильтрация необходима, т.к. иногда могут приходить неверные данные
@@ -948,16 +950,28 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       
       {/* Отображаем иерархию должностей как горизонтальное дерево */}
       <div className="position-hierarchy">
-        {selectedPositionId && (
-          <div className="position-navigation">
-            <button 
-              className="back-to-main-hierarchy" 
-              onClick={handleGoBack}
-            >
-              ← Вернуться к предыдущей структуре
-            </button>
+        <div className="organization-controls">
+          {selectedPositionId && (
+            <div className="position-navigation">
+              <button 
+                className="back-to-main-hierarchy" 
+                onClick={handleGoBack}
+              >
+                ← Вернуться к предыдущей структуре
+              </button>
+            </div>
+          )}
+          
+          <div className="display-settings-wrapper">
+            <DisplaySettings
+              showThreeLevels={showThreeLevels}
+              showVacancies={showVacancies}
+              onShowThreeLevelsChange={handleThreeLevelsChange}
+              onShowVacanciesChange={handleShowVacanciesChange}
+            />
           </div>
-        )}
+        </div>
+        
         <PositionTree
           nodes={filteredHierarchy}
           allPositions={positions}
@@ -965,6 +979,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           onPositionClick={handlePositionClick}
           selectedPositionId={selectedPositionId}
           hierarchyInitialLevels={Number(hierarchyInitialLevels)}
+          showThreeLevels={showThreeLevels}
         />
       </div>
     </div>
