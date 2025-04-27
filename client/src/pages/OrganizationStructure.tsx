@@ -247,13 +247,14 @@ export default function OrganizationStructure() {
     return dept.parent_department_id === null && dept.parent_position_id === null;
   };
 
-  // Получаем корневые отделы (только Администрация)
+  // Получаем корневые отделы (определяются по отсутствию родительских связей)
   const getRootDepartments = () => {
     console.log('Все отделы:', departments);
     
-    // В нашей структуре корневым является только отдел "Администрация"
-    const adminDept = departments?.find(dept => dept.name === "Администрация");
-    const rootDepts = adminDept ? [adminDept] : [];
+    // Корневыми являются отделы, у которых нет parent_department_id и parent_position_id
+    const rootDepts = departments?.filter(dept => 
+      dept.parent_department_id === null && dept.parent_position_id === null && !dept.deleted
+    ) || [];
     
     console.log('Корневые отделы:', rootDepts);
     return rootDepts;
