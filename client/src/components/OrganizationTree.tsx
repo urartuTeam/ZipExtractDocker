@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import UnifiedPositionCard from './UnifiedPositionCard';
+import DisplaySettings from './DisplaySettings';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft } from 'lucide-react';
 
 // Типы данных для организационной структуры
 type Department = {
@@ -266,7 +269,7 @@ const PositionTree = ({
                   />
                   
                   {/* Рекурсивное отображение подчиненных подчиненного, если они есть И настройка позволяет (3 уровня) */}
-                  {subNode.subordinates.length > 0 && hierarchyInitialLevels >= 3 && (
+                  {subNode.subordinates.length > 0 && showThreeLevels && (
                     <div className="subordinates-container">
                       <div className="tree-branch-connections">
                         <div className="tree-branch-line" style={{ 
@@ -387,6 +390,10 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Состояние для хранения истории навигации по дереву
   const [navigationHistory, setNavigationHistory] = useState<number[]>([]);
   
+  // Состояния для настроек отображения
+  const [showThreeLevels, setShowThreeLevels] = useState<boolean>(false);
+  const [showVacancies, setShowVacancies] = useState<boolean>(false);
+  
   // Запрос настроек для получения количества показываемых уровней иерархии
   const { data: settingsResponse, isError } = useQuery<{status: string, data: any[]}>({
     queryKey: ['/api/settings'],
@@ -407,6 +414,21 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     : defaultLevels;
   
   console.log('Настройки уровней иерархии:', hierarchyInitialLevels);
+  
+  // Инициализируем состояние showThreeLevels на основе настроек
+  useEffect(() => {
+    const threeLevels = Number(hierarchyInitialLevels) === 3;
+    setShowThreeLevels(threeLevels);
+  }, [hierarchyInitialLevels]);
+  
+  // Обработчики для изменения настроек отображения
+  const handleThreeLevelsChange = (value: boolean) => {
+    setShowThreeLevels(value);
+  };
+  
+  const handleShowVacanciesChange = (value: boolean) => {
+    setShowVacancies(value);
+  };
   
   // Рекурсивно ищем узел должности по ID
   const findPositionNodeById = (
