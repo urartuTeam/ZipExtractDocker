@@ -757,7 +757,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   };
   
   // Функция для построения структуры на основе данных о должностях
-  const buildAdministrationHierarchy = () => {
+  const buildRootDepartmentHierarchy = () => {
     // Проверяем, есть ли данные о должностях и отделах
     if (positions.length === 0 || departments.length === 0) {
       console.error('Нет данных о должностях или отделах');
@@ -879,40 +879,27 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       }
     });
     
-    // Корректировка иерархии с учетом фактического состояния базы данных
-    // (особенность: Генеральный директор подчиняется ЗАМЕСТИТЕЛЮ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА)
-    // Проверяем, существует ли сотрудник на должности "Генеральный директор" (ID: 5)
-    const genDirectorPos = adminPositions.find(p => p.position_id === 5);
+    // В этом месте находилась жестко закодированная корректировка иерархии для Генерального директора
+    // Убираем жесткие привязки к конкретным ID должностей в пользу структуры из базы данных
+    // Вместо этого все связи должны следовать из данных, получаемых из parent_position_id
     
-    if (genDirectorPos && positionMap[5] && positionMap[1]) {
-      // Если Генеральный директор есть в списке должностей и маппинге
-      // и есть ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА (ID: 1)
-      
-      // Проверяем, является ли позиция ID 5 уже корневой
-      const genDirectorIndex = rootNodes.findIndex(node => node.position.position_id === 5);
-      if (genDirectorIndex !== -1) {
-        // Убираем из корневых
-        const genDirectorNode = rootNodes.splice(genDirectorIndex, 1)[0];
-        
-        // Добавляем его как подчиненного к ЗАМЕСТИТЕЛЮ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА
-        positionMap[1].subordinates.push(genDirectorNode);
-      }
-    }
+    // Проходим по всем позициям и собираем корректную иерархию на основе parent_position_id
+    // В этой версии мы устраняем жестко закодированную привязку к ID директоров и заместителей
+    // Все позиции изначально помещаются в корень, а затем перемещаются в подчиненные,
+    // если есть соответствующее значение parent_position_id
     
-    // Добавляем заместителей гендиректора как его подчиненных, а не как отдельные корневые узлы
-    const deputyPositions = adminPositions.filter(p => 
-      p.parent_position_id === 5 && [7, 8, 9, 10].includes(p.position_id)
-    );
-    
-    // Для каждого заместителя проверяем, находится ли он в корне
-    deputyPositions.forEach(deputyPos => {
-      const deputyIndex = rootNodes.findIndex(node => node.position.position_id === deputyPos.position_id);
-      if (deputyIndex !== -1 && positionMap[5]) {
-        // Убираем из корневых
-        const deputyNode = rootNodes.splice(deputyIndex, 1)[0];
-        
-        // Добавляем как подчиненного гендиректору
-        positionMap[5].subordinates.push(deputyNode);
+    // Повторно обрабатываем, чтобы исправить случаи, когда дочерние ноды могут быть созданы
+    // раньше родительских (в зависимости от порядка данных)
+    adminPositions.forEach(position => {
+      if (position.parent_position_id && positionMap[position.parent_position_id]) {
+        // Если у позиции есть родитель, и этот родитель в нашем списке позиций
+        const childIndex = rootNodes.findIndex(node => node.position.position_id === position.position_id);
+        if (childIndex !== -1) {
+          // Если эта позиция уже в корне, убираем её оттуда
+          const childNode = rootNodes.splice(childIndex, 1)[0];
+          // И добавляем в подчиненные к родителю
+          positionMap[position.parent_position_id].subordinates.push(childNode);
+        }
       }
     });
     
@@ -949,7 +936,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       setDepartmentTree(tree);
       
       // Строим иерархию должностей для корневого отдела
-      const rootDepartmentHierarchy = buildAdministrationHierarchy();
+      const rootDepartmentHierarchy = buildRootDepartmentHierarchy();
       if (rootDepartmentHierarchy) {
         setPositionHierarchy(rootDepartmentHierarchy);
       } else {
@@ -964,7 +951,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   useEffect(() => {
     if (!selectedPositionId || positionHierarchy.length === 0) {
       // Если нет выбранной должности, показываем все должности корневого отдела
-      // Это будут корневые узлы, полученные из функции buildAdministrationHierarchy
+      // Это будут корневые узлы, полученные из функции buildRootDepartmentHierarchy
       setFilteredHierarchy(positionHierarchy);
       return;
     }
