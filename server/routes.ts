@@ -9,7 +9,8 @@ import {
   insertEmployeeSchema,
   insertProjectSchema,
   insertEmployeeProjectSchema,
-  insertLeaveSchema
+  insertLeaveSchema,
+  insertSettingSchema
 } from "@shared/schema";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
@@ -906,6 +907,94 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting leave:', error);
       res.status(500).json({ status: 'error', message: 'Failed to delete leave' });
+    }
+  });
+
+  // Настройки (Settings) endpoints
+  app.get('/api/settings', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getAllSettings();
+      res.json({ status: 'success', data: settings });
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch settings' });
+    }
+  });
+
+  app.get('/api/settings/:key', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const key = req.params.key;
+      const setting = await storage.getSetting(key);
+      
+      if (!setting) {
+        return res.status(404).json({ status: 'error', message: 'Setting not found' });
+      }
+
+      res.json({ status: 'success', data: setting });
+    } catch (error) {
+      console.error('Error fetching setting:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch setting' });
+    }
+  });
+
+  app.post('/api/settings', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { key, value } = req.body;
+      
+      if (!key || !value) {
+        return res.status(400).json({ status: 'error', message: 'Key and value are required' });
+      }
+
+      const setting = await storage.createOrUpdateSetting(key, value);
+      res.status(201).json({ status: 'success', data: setting });
+    } catch (error) {
+      console.error('Error creating/updating setting:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to create/update setting' });
+    }
+  });
+  
+  // Смена пароля пользователя
+  app.post('/api/change-password', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      const { currentPassword, newPassword } = req.body;
+      
+      if (!userId || !currentPassword || !newPassword) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'User ID, current password and new password are required' 
+        });
+      }
+      
+      // Получаем пользователя
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ status: 'error', message: 'User not found' });
+      }
+      
+      // Проверяем текущий пароль
+      const { comparePasswords } = await import('./auth'); // Импортируем функцию сравнения паролей
+      const isCorrectPassword = await comparePasswords(currentPassword, user.password);
+      
+      if (!isCorrectPassword) {
+        return res.status(400).json({ status: 'error', message: 'Неверный текущий пароль' });
+      }
+      
+      // Хешируем новый пароль
+      const { hashPassword } = await import('./auth'); // Импортируем функцию хеширования
+      const hashedPassword = await hashPassword(newPassword);
+      
+      // Обновляем пароль пользователя
+      const updatedUser = await storage.updateUser(userId, { password: hashedPassword });
+      
+      if (!updatedUser) {
+        return res.status(500).json({ status: 'error', message: 'Не удалось обновить пароль' });
+      }
+      
+      res.json({ status: 'success', message: 'Пароль успешно изменен' });
+    } catch (error) {
+      console.error('Error changing password:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to change password' });
     }
   });
 

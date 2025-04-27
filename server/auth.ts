@@ -17,13 +17,15 @@ declare global {
 const MemoryStore = createMemoryStore(session);
 const scryptAsync = promisify(scrypt);
 
-async function hashPassword(password: string) {
+// Экспортируем функцию для хеширования пароля
+export async function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const buf = (await scryptAsync(password, salt, 64)) as Buffer;
   return `${buf.toString("hex")}.${salt}`;
 }
 
-async function comparePasswords(supplied: string, stored: string) {
+// Экспортируем функцию для сравнения паролей
+export async function comparePasswords(supplied: string, stored: string) {
   try {
     // Проверяем, содержит ли хеш точку (разделитель соли)
     if (stored.includes('.')) {
