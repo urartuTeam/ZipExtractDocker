@@ -84,11 +84,13 @@ export default function Home() {
               <Skeleton className="h-8 w-1/2 ml-8" />
             </div>
           ) : (
-            <OrganizationTree
-              departmentsData={departments}
-              positionsData={positionsWithDepartments}
-              employeesData={employees}
-            />
+            <div className="flex justify-center">
+              <OrganizationTree
+                departmentsData={departments}
+                positionsData={positionsWithDepartments}
+                employeesData={employees}
+              />
+            </div>
           )}
         </div>
 
