@@ -67,11 +67,15 @@ export default function OrganizationStructure() {
   
   // ПРИНУДИТЕЛЬНЫЙ ЗАПРОС НАСТРОЕК без React Query
   useEffect(() => {
-    console.log('### FORCE-FETCH SETTINGS ###');
+    console.log('### FORCE-FETCH SETTINGS STARTED ###');
+    
+    // Чтобы отследить завершение useEffect
+    console.log('initialLevels до запроса:', initialLevels);
+    
     const fetchSettings = async () => {
       try {
         console.log('Принудительно запрашиваем настройки...');
-        const response = await fetch('/api/public-settings', {
+        const response = await fetch('/api/public-settings?nocache=' + new Date().getTime(), {
           method: 'GET',
           headers: {
             'Cache-Control': 'no-cache, no-store, must-revalidate',
@@ -96,6 +100,7 @@ export default function OrganizationStructure() {
             if (!isNaN(level) && level > 0 && level <= 5) {
               console.log(`Устанавливаем уровень иерархии: ${level}`);
               setInitialLevels(level);
+              console.log('initialLevels должно быть обновлено до:', level);
             }
           }
         }
@@ -105,7 +110,16 @@ export default function OrganizationStructure() {
     };
     
     fetchSettings();
+    
+    return () => {
+      console.log('### EFFECT CLEANUP ###');
+    };
   }, []);
+  
+  // Дополнительный эффект для отслеживания изменения initialLevels
+  useEffect(() => {
+    console.log('*** initialLevels ИЗМЕНЕНО:', initialLevels, '***');
+  }, [initialLevels]);
   
   // Имитируем React Query для совместимости с остальным кодом
   const settingsResponse = { status: 'success', data: [] };
