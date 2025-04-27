@@ -599,14 +599,26 @@
 /* Классы для стилизации блоков дерева */
 .topTopPositionClass {
   /* Стиль для блоков верхнего уровня при первом входе */
+  border: 2px solid #a40000;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
 }
 
 .positionClass {
   /* Стиль для блоков должностей */
+  border: 1px solid #a40000;
+  background-color: #fff;
 }
 
 .departmentClass {
   /* Стиль для блоков отделов */
+  border: 1px solid #4b7bec;
+  background-color: #f0f4ff;
+}
+
+/* Переопределяем стиль конкретно для карточек отделов, чтобы решить проблему */
+.department-card {
+  border: 1px solid #4b7bec;
+  background-color: #f0f4ff;
 }
 
 /* Стили для хедера с картинкой */

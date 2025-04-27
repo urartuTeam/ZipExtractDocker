@@ -55,9 +55,7 @@ const UnifiedPositionCard = ({
       className={`position-card ${cardClass} ${isDepartment ? 'department-card' : ''}`}
       onClick={() => onPositionClick && onPositionClick(node.position.position_id)}
       style={{ 
-        cursor: onPositionClick ? 'pointer' : 'default',
-        backgroundColor: isDepartment ? '#f0f4ff' : undefined, 
-        borderColor: isDepartment ? '#4b7bec' : undefined
+        cursor: onPositionClick ? 'pointer' : 'default'
       }}
     >
       <div className="position-title">
