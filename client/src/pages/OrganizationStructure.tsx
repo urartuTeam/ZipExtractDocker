@@ -73,7 +73,11 @@ export default function OrganizationStructure() {
   } = useQuery<{status: string, data: Setting[]}>({
     queryKey: ['/api/public-settings'],
     retry: 3, // Попробуем несколько раз, если запрос не прошел
-    staleTime: 60000 // Данные считаются свежими в течение 1 минуты
+    staleTime: 60000, // Данные считаются свежими в течение 1 минуты
+    
+    // Попробуем принудительно форсировать запрос
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
   
   // Получаем данные отделов
@@ -605,7 +609,10 @@ export default function OrganizationStructure() {
         {renderedDepartment}
         {shouldShowChildren && (
           <div className="ml-8">
-            {childDepartments.map(childDept => renderDepartmentTree(childDept, level + 1))}
+            {childDepartments.map(childDept => {
+              console.log(`Рендерим дочерний отдел: ${childDept.name} (ID: ${childDept.department_id}), родительский уровень: ${level}`);
+              return renderDepartmentTree(childDept, level + 1);
+            })}
           </div>
         )}
       </React.Fragment>

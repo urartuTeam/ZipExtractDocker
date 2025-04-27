@@ -923,8 +923,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Публичные настройки (без необходимости авторизации)
   app.get('/api/public-settings', async (req: Request, res: Response) => {
+    console.log('Public settings endpoint called');
     try {
       const settings = await storage.getAllSettings();
+      console.log('Retrieved public settings:', settings);
       res.json({ status: 'success', data: settings });
     } catch (error) {
       console.error('Error fetching public settings:', error);
