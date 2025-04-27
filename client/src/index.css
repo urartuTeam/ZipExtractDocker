@@ -513,6 +513,8 @@
   justify-content: center;
   position: relative;
   width: 100%;
+  /* Устанавливаем центральное выравнивание */
+  text-align: center;
 }
 
 .tree-branch-connections:before {
@@ -526,10 +528,11 @@
 }
 
 .tree-branch-line {
-  position: absolute;
+  /* Используем inline-block вместо absolute для лучшего центрирования */
+  position: relative;
+  display: inline-block;
+  margin: 0 auto;
   top: -20px;
-  left: 50%;
-  transform: translateX(-50%);
   height: 2px;
   background-color: #a40000;
 }
