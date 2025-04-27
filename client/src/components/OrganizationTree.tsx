@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import UnifiedPositionCard from './UnifiedPositionCard';
 import DisplaySettings from './DisplaySettings';
