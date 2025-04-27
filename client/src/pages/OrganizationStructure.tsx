@@ -65,13 +65,13 @@ export default function OrganizationStructure() {
     updated_at: string;
   }
   
-  // Получаем настройки из базы данных
+  // Получаем настройки из базы данных через публичный API-endpoint
   const { 
     data: settingsResponse, 
     isLoading: isLoadingSettings, 
     error: settingsError 
   } = useQuery<{status: string, data: Setting[]}>({
-    queryKey: ['/api/settings'],
+    queryKey: ['/api/public-settings'],
   });
   
   // Получаем данные отделов
@@ -131,14 +131,21 @@ export default function OrganizationStructure() {
   
   // Загружаем настройку количества отображаемых уровней иерархии
   useEffect(() => {
+    console.log('Загружены настройки:', settings);
+    
     if (settings && Array.isArray(settings)) {
       const hierarchyLevelSetting = settings.find(
         (setting: any) => setting.data_key === 'hierarchy_initial_levels'
       );
       
+      console.log('Найдена настройка уровней иерархии:', hierarchyLevelSetting);
+      
       if (hierarchyLevelSetting) {
         const levelsValue = parseInt(hierarchyLevelSetting.data_value);
+        console.log('Уровень иерархии:', levelsValue);
+        
         if (!isNaN(levelsValue) && levelsValue > 0 && levelsValue <= 5) {
+          console.log('Применяем уровень иерархии:', levelsValue);
           setInitialLevels(levelsValue);
           
           // Автоматически раскрываем нужное количество уровней
