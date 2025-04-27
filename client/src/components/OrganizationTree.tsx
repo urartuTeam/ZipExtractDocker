@@ -260,8 +260,7 @@ const PositionTree = ({
               <div className="tree-branch-connections">
                 {/* Горизонтальная линия */}
                 <div className="tree-branch-line" style={{ 
-                  width: '90%', // Процентное значение вместо пикселей
-                  maxWidth: '1200px' // Максимальная ширина для очень широких экранов
+                  width: `${Math.max(firstNode.subordinates.length * 240, 100)}px` 
                 }}></div>
               </div>
               
