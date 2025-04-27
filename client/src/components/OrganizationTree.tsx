@@ -271,6 +271,7 @@ const PositionTree = ({
                     node={subNode} 
                     onPositionClick={onPositionClick}
                     isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
+                    showVacancies={showVacancies}
                   />
                   
                   {/* Рекурсивное отображение подчиненных подчиненного, если они есть И настройка позволяет (3 уровня) */}
@@ -327,6 +328,7 @@ const PositionTree = ({
                   <UnifiedPositionCard 
                     node={subNode} 
                     onPositionClick={onPositionClick}
+                    showVacancies={showVacancies}
                     isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
                   />
                 </div>
