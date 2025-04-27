@@ -260,7 +260,7 @@ const PositionTree = ({
               <div className="tree-branch-connections">
                 {/* Горизонтальная линия */}
                 <div className="tree-branch-line" style={{ 
-                  width: `${Math.max(firstNode.subordinates.length * 240, 100)}px` 
+                  width: `${Math.max(firstNode.subordinates.length * 240, 100)}px`
                 }}></div>
               </div>
               
@@ -279,7 +279,7 @@ const PositionTree = ({
                     <div className="subordinates-container">
                       <div className="tree-branch-connections">
                         <div className="tree-branch-line" style={{ 
-                          width: `${Math.max(subNode.subordinates.length * 240, 100)}px` 
+                          width: `${Math.max(subNode.subordinates.length * 240, 100)}px`
                         }}></div>
                       </div>
                       
@@ -319,7 +319,7 @@ const PositionTree = ({
             <div className="subordinates-container">
               <div className="tree-branch-connections">
                 <div className="tree-branch-line" style={{ 
-                  width: `${Math.max(node.subordinates.length * 240, 100)}px` 
+                  width: `${Math.max(node.subordinates.length * 240, 100)}px`
                 }}></div>
               </div>
               

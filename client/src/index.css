@@ -528,7 +528,8 @@
 .tree-branch-line {
   position: absolute;
   top: -20px;
-  width: 100%;
+  left: 50%;
+  transform: translateX(-50%);
   height: 2px;
   background-color: #a40000;
 }
