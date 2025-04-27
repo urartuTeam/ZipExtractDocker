@@ -210,13 +210,15 @@ const PositionTree = ({
   allPositions,
   allEmployees,
   onPositionClick,
-  selectedPositionId
+  selectedPositionId,
+  hierarchyInitialLevels = 3 // По умолчанию 3 уровня
 }: { 
   nodes: PositionHierarchyNode[], 
   allPositions: Position[],
   allEmployees: Employee[],
   onPositionClick?: (positionId: number) => void,
-  selectedPositionId?: number
+  selectedPositionId?: number,
+  hierarchyInitialLevels?: number
 }) => {
   // Проверяем, есть ли хотя бы одна действительная должность
   // Фильтрация необходима, т.к. иногда могут приходить неверные данные
@@ -263,8 +265,8 @@ const PositionTree = ({
                     isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
                   />
                   
-                  {/* Рекурсивное отображение подчиненных подчиненного, если они есть */}
-                  {subNode.subordinates.length > 0 && (
+                  {/* Рекурсивное отображение подчиненных подчиненного, если они есть И настройка позволяет (3 уровня) */}
+                  {subNode.subordinates.length > 0 && hierarchyInitialLevels >= 3 && (
                     <div className="subordinates-container">
                       <div className="tree-branch-connections">
                         <div className="tree-branch-line" style={{ 
@@ -384,6 +386,20 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   
   // Состояние для хранения истории навигации по дереву
   const [navigationHistory, setNavigationHistory] = useState<number[]>([]);
+  
+  // Запрос настроек для получения количества показываемых уровней иерархии
+  const { data: settingsResponse } = useQuery<{status: string, data: any[]}>({
+    queryKey: ['/api/settings'],
+  });
+  
+  // Получаем настройки из ответа
+  const settings = settingsResponse?.data || [];
+  // Найдем настройку для количества начальных уровней иерархии
+  const hierarchyInitialLevels = settings.find((setting: any) => 
+    setting.key === 'hierarchy_initial_levels'
+  )?.value || 3; // По умолчанию 3 уровня, если настройка не найдена
+  
+  console.log('Настройки уровней иерархии:', hierarchyInitialLevels);
   
   // Рекурсивно ищем узел должности по ID
   const findPositionNodeById = (
@@ -919,6 +935,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           allEmployees={employees}
           onPositionClick={handlePositionClick}
           selectedPositionId={selectedPositionId}
+          hierarchyInitialLevels={Number(hierarchyInitialLevels)}
         />
       </div>
     </div>
