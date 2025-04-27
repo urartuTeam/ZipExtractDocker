@@ -566,15 +566,22 @@ export default function OrganizationStructure() {
     // Получаем все дочерние отделы (как по parent_department_id, так и по parent_position_id)
     const childDepartments = getAllChildDepartments(department.department_id);
     
+    // Проверяем уровень вложенности против настроек (initialLevels)
+    const shouldShowChildren = level < initialLevels - 1 || expandedDepartments[department.department_id];
+    
+    console.log(`Отдел ${department.name} (уровень ${level}): показывать дочерние = ${shouldShowChildren}, initialLevels = ${initialLevels}`);
+    
     if (childDepartments.length === 0) {
       return renderedDepartment;
     }
     
-    // Если есть дочерние отделы, добавляем их под данным отделом
+    // Если есть дочерние отделы, добавляем их под данным отделом, но только если:
+    // 1. Уровень вложенности меньше initialLevels - 1 (авто-раскрыто)
+    // 2. Или этот отдел явно раскрыт пользователем
     return (
       <React.Fragment key={`dept-tree-${department.department_id}`}>
         {renderedDepartment}
-        {expandedDepartments[department.department_id] && (
+        {shouldShowChildren && (
           <div className="ml-8">
             {childDepartments.map(childDept => renderDepartmentTree(childDept, level + 1))}
           </div>
