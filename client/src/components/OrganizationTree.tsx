@@ -630,8 +630,12 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       return [];
     }
     
-    // Вместо хука useQuery используем уже загруженные данные из positionDepartmentsData
-    const positionDepartments = positionDepartmentsData || [];
+    // Получаем данные о связях position_department
+    const { data: positionDepartmentsResponse } = useQuery<{status: string, data: any[]}>({
+      queryKey: [`/api/positiondepartments`],
+      staleTime: 60000 // Используем кэш в течение минуты
+    });
+    const positionDepartments = positionDepartmentsResponse?.data || [];
     
     // Сначала создаем узлы для всех должностей
     const positionNodes: Record<number, PositionHierarchyNode> = {};
@@ -757,9 +761,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   
   // Функция для построения структуры на основе данных о должностях
   const buildRootDepartmentHierarchy = () => {
-    // Проверяем, есть ли данные об отделах
-    if (departments.length === 0) {
-      console.error('Нет данных об отделах');
+    // Проверяем, есть ли данные о должностях и отделах
+    if (positions.length === 0 || departments.length === 0) {
+      console.error('Нет данных о должностях или отделах');
       return [];
     }
     
@@ -947,7 +951,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // Строим дерево, когда данные загружены
   useEffect(() => {
-    if (departments.length > 0) {
+    if (departments.length > 0 && (positions.length > 0 || positionsWithDepartments.length > 0)) {
       // Находим корневые отделы (без родительской должности)
       const rootDepartments = departments.filter(d => d.parent_department_id === null);
       
@@ -963,15 +967,12 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       
       // Строим иерархию должностей для корневого отдела
       const rootDepartmentHierarchy = buildRootDepartmentHierarchy();
-      if (rootDepartmentHierarchy && rootDepartmentHierarchy.length > 0) {
+      if (rootDepartmentHierarchy) {
         setPositionHierarchy(rootDepartmentHierarchy);
-      } else if (positions.length > 0) {
+      } else {
         // Резервный вариант - строим на основе manager_id
         const hierarchy = buildPositionHierarchy();
         setPositionHierarchy(hierarchy);
-      } else {
-        // Если нет должностей, создаем пустой массив
-        setPositionHierarchy([]);
       }
     }
   }, [departments, positions, employees, positionsWithDepartments]);
@@ -1016,7 +1017,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   }, [selectedPositionId, positionHierarchy]);
 
   // Если данные еще не загружены, показываем загрузку
-  if (departments.length === 0) {
+  if (departments.length === 0 || (positions.length === 0 && positionsWithDepartments.length === 0)) {
     return <div className="loading-message">Загрузка организационной структуры...</div>;
   }
 
