@@ -591,10 +591,23 @@ export default function OrganizationStructure() {
     // Получаем все дочерние отделы (как по parent_department_id, так и по parent_position_id)
     const childDepartments = getAllChildDepartments(department.department_id);
     
+    // ВАЖНЫЙ ОТЛАДОЧНЫЙ ВЫВОД
+    if (department.department_id === 18) {
+      console.log('ВАЖНО! ДОЧЕРНИЕ ОТДЕЛЫ ДЛЯ "УПРАВЛЕНИЕ" (ID=18):');
+      childDepartments.forEach(child => {
+        console.log(`  - ${child.name} (ID=${child.department_id}, parent_department_id=${child.parent_department_id})`);
+      });
+    }
+    
     // Показываем дочерние элементы если:
     // 1. Уровень меньше initialLevels (автоматическое раскрытие)
     // 2. ИЛИ пользователь явно раскрыл этот отдел
     const shouldShowChildren = level < initialLevels || expandedDepartments[department.department_id] === true;
+    
+    // Для отдела "Управление" (ID=18) принудительно показываем дочерние элементы
+    if (department.department_id === 18) {
+      console.log(`Для отдела "Управление" (ID=18): shouldShowChildren = ${shouldShowChildren}, level = ${level}, initialLevels = ${initialLevels}`);
+    }
     
     // Отладочный вывод для отдела "Управление"
     if (department.department_id === 18) {
