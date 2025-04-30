@@ -53,7 +53,9 @@ type DepartmentAsPosition = {
 const DepartmentCard = ({ department }: { department: DepartmentNode }) => {
   return (
     <div className="department-card" style={{ minWidth: '300px' }}>
-      <div className="department-title">{department.name}</div>
+      <div className="department-title">
+        {department.name} <span className="department-label">Отдел</span>
+      </div>
     </div>
   );
 };
