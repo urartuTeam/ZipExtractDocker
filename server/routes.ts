@@ -467,7 +467,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/positions', async (req: Request, res: Response) => {
     try {
       const positionData = insertPositionSchema.parse(req.body);
+      
+      // Сохраняем department_id перед созданием должности, если он есть
+      const departmentId = positionData.department_id;
+      
+      // Создаем должность
       const position = await storage.createPosition(positionData);
+      
+      // Если был указан department_id, создаем связь в таблице position_department
+      if (departmentId) {
+        try {
+          await storage.createPositionDepartment({
+            position_id: position.position_id,
+            department_id: departmentId,
+            sort: 0,
+            vacancies: 0,
+            staff_units: 0,
+            current_count: 0
+          });
+          console.log(`Создана связь должности ID ${position.position_id} с отделом ID ${departmentId}`);
+        } catch (linkError) {
+          console.error('Ошибка при создании связи должность-отдел:', linkError);
+          // Продолжаем выполнение, так как должность уже создана
+        }
+      }
+      
       res.status(201).json({ status: 'success', data: position });
     } catch (error) {
       if (error instanceof ZodError) {
