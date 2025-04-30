@@ -50,41 +50,35 @@ export default function OrganizationStructure() {
   const positions = posR?.data || [];
   const employees = empR?.data || [];
 
-  const toggleDept = (id: number) =>
-    setExpDept((s) => ({ ...s, [id]: !s[id] }));
-  const togglePos = (key: string) =>
-    setExpPos((s) => ({ ...s, [key]: !s[key] }));
+  const toggleDept = (id: number) => {
+    // Если элемент сейчас развернут, то закрываем его
+    // Если элемент сейчас закрыт, то открываем его
+    const isCurrentlyExpanded = expDept[id] === false ? false : (expanded || (expDept[id] ?? false));
+    setExpDept((s) => ({ ...s, [id]: !isCurrentlyExpanded }));
+  };
+  
+  const togglePos = (key: string) => {
+    // Если элемент сейчас развернут, то закрываем его
+    // Если элемент сейчас закрыт, то открываем его  
+    const isCurrentlyExpanded = expPos[key] === false ? false : (expanded || (expPos[key] ?? false));
+    setExpPos((s) => ({ ...s, [key]: !isCurrentlyExpanded }));
+  };
     
   // Функция для разворачивания/сворачивания всей структуры
   const toggleAllStructure = () => {
-    setExpanded(!expanded);
+    const newExpandedState = !expanded;
+    setExpanded(newExpandedState);
     
-    // Получаем все ID отделов и идентификаторы должностей
-    const allDeptIds = departments.filter(d => !d.deleted).map(d => d.department_id);
-    
-    // Создаем объекты для развернутых/свернутых элементов
-    const deptState: { [k: number]: boolean } = {};
-    const posState: { [k: string]: boolean } = {};
-    
-    // Если разворачиваем, устанавливаем все элементы как развернутые
-    if (!expanded) {
-      allDeptIds.forEach(id => { deptState[id] = true; });
-      
-      // Для каждого отдела получаем связанные должности и добавляем их в posState
-      allDeptIds.forEach(deptId => {
-        const deptPositions = positions.filter(p => 
-          p.departments.some(dd => dd.department_id === deptId)
-        );
-        
-        deptPositions.forEach(pos => {
-          posState[`${pos.position_id}-${deptId}`] = true;
-        });
-      });
+    if (!newExpandedState) {
+      // Если сворачиваем структуру, сбрасываем все состояния
+      setExpDept({});
+      setExpPos({});
     }
     
-    // Обновляем состояния
-    setExpDept(deptState);
-    setExpPos(posState);
+    // При развертывании, мы не меняем состояния expDept и expPos,
+    // потому что логика рендеринга теперь учитывает expanded
+    // и сами состояния элементов, что позволяет закрывать отдельные элементы
+    // после общего разворачивания
   };
 
   const roots = departments.filter(
