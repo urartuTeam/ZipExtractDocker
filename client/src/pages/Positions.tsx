@@ -471,31 +471,17 @@ export default function Positions() {
                                         </span>
                                       )}
                                     </span>
-                                    <div className="flex gap-1">
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-6 w-6" 
-                                        onClick={() => handleOpenEditVacancies(dept)}
-                                        title="Изменить количество вакансий"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                        </svg>
-                                      </Button>
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-6 w-6" 
-                                        onClick={() => handleDeleteLink(dept.position_link_id)}
-                                        title="Удалить связь"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
-                                          <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
-                                        </svg>
-                                      </Button>
-                                    </div>
+                                    <Button 
+                                      variant="ghost" 
+                                      size="icon" 
+                                      className="h-6 w-6 ml-auto" 
+                                      onClick={() => handleDeleteLink(dept.position_link_id)}
+                                      title="Удалить связь"
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                                        <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
+                                      </svg>
+                                    </Button>
                                   </div>
                                 ))}
                               </div>
@@ -811,18 +797,70 @@ export default function Positions() {
                           )}
                         </span>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8" 
-                          onClick={() => handleDeleteLink(dept.position_link_id)}
-                          title="Удалить связь"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
-                            <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
-                          </svg>
-                        </Button>
+                      <div className="flex items-center gap-2">
+                        {selectedPositionDepartment?.position_link_id === dept.position_link_id ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              min="0"
+                              className="w-20 h-8"
+                              value={editVacanciesCount}
+                              onChange={(e) => setEditVacanciesCount(parseInt(e.target.value) || 0)}
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8"
+                              onClick={() => {
+                                updatePositionDepartment.mutate({
+                                  id: dept.position_link_id,
+                                  vacancies: editVacanciesCount
+                                });
+                                setSelectedPositionDepartment(null);
+                              }}
+                              disabled={updatePositionDepartment.isPending}
+                            >
+                              {updatePositionDepartment.isPending ? "..." : "Сохранить"}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8"
+                              onClick={() => setSelectedPositionDepartment(null)}
+                            >
+                              Отмена
+                            </Button>
+                          </div>
+                        ) : (
+                          <>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8" 
+                              onClick={() => {
+                                setSelectedPositionDepartment(dept);
+                                setEditVacanciesCount(dept.vacancies || 0);
+                              }}
+                              title="Изменить количество вакансий"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                              </svg>
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8" 
+                              onClick={() => handleDeleteLink(dept.position_link_id)}
+                              title="Удалить связь"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                                <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
+                              </svg>
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
                   ))}
