@@ -303,7 +303,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const positionDepartments = await storage.getAllPositionDepartments();
       positionDepartments
         .filter(link => link.department_id === departmentId && !link.deleted)
-        .forEach(link => positionIds.add(link.position_id));
+        .forEach(link => {
+          if (link.position_id !== null) {
+            positionIds.add(link.position_id);
+          }
+        });
       
       // 2. Добавляем ID должностей сотрудников, которые работают в этом отделе
       allEmployees

@@ -123,37 +123,41 @@ const DepartmentWithChildren = ({
   if (departmentPositionsResponse?.data && departmentPositionsResponse.data.length > 0) {
     // Используем данные из API
     departmentPositions = departmentPositionsResponse.data;
+    console.log(`Получено ${departmentPositions.length} должностей для отдела ${department.name} (ID: ${department.department_id}) из API`);
   } else {
-    // Резервная логика с учетом position_department
+    // Резервная логика с учетом position_department и сотрудников
     const positionDepartmentLinks = positionDepartmentsResponse?.data || [];
     
-    // Находим ID должностей, связанных с текущим отделом через position_department
-    const linkedPositionIds = positionDepartmentLinks
-      .filter(link => link.department_id === department.department_id && !link.deleted)
-      .map(link => link.position_id);
+    // Множество для хранения ID найденных должностей
+    const positionIds = new Set<number>();
     
-    // Фильтруем должности по всем критериям
-    departmentPositions = allPositions.filter(pos => {
-      // Проверяем, есть ли сотрудники с этой позицией в этом отделе
-      const hasEmployeesInDepartment = allEmployees.some(
-        emp => emp.position_id === pos.position_id && emp.department_id === department.department_id
-      );
-      
-      // Проверяем, есть ли прямая связь через position_department
-      const isLinkedThroughPositionDepartment = linkedPositionIds.includes(pos.position_id);
-      
-      // Также включаем позиции, которые уже были привязаны к этому отделу через API
-      const isPositionInDepartment = department.positions.some(
-        deptPos => deptPos.position_id === pos.position_id
-      );
-      
-      return hasEmployeesInDepartment || isPositionInDepartment || isLinkedThroughPositionDepartment;
-    });
+    // 1. Добавляем ID из связей позиция-отдел
+    positionDepartmentLinks
+      .filter(link => link.department_id === department.department_id)
+      .forEach(link => positionIds.add(link.position_id));
     
-    // Если у нас всё равно нет позиций, покажем все позиции в системе
+    // 2. Добавляем ID должностей сотрудников, которые работают в этом отделе
+    allEmployees
+      .filter(emp => emp.department_id === department.department_id && emp.position_id !== null)
+      .forEach(emp => {
+        if (emp.position_id) positionIds.add(emp.position_id);
+      });
+    
+    // 3. Также включаем позиции, которые уже были привязаны к этому отделу через API
+    department.positions.forEach(pos => positionIds.add(pos.position_id));
+    
+    // Фильтруем позиции по найденным ID
+    departmentPositions = allPositions.filter(
+      position => positionIds.has(position.position_id)
+    );
+    
+    console.log(`Найдено ${departmentPositions.length} должностей для отдела ${department.name} (ID: ${department.department_id}) через резервную логику`);
+    
+    // Если у нас всё равно нет позиций и это уровень 0, покажем все позиции системы
     // (только для демонстрации, в реальном приложении так не делать)
     if (departmentPositions.length === 0 && level === 0) {
       departmentPositions = allPositions;
+      console.log(`Используем все ${departmentPositions.length} должностей для отдела ${department.name} (уровень 0)`);
     }
   }
 
