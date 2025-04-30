@@ -55,13 +55,11 @@ export default function OrganizationStructure() {
   const [expandedDepartments, setExpandedDepartments] = useState<{[key: number]: boolean}>({});
   const [expandedPositions, setExpandedPositions] = useState<{[key: string]: boolean}>({});
   
-  // СТРОГО ФИКСИРУЕМ 1 УРОВЕНЬ
-  const initialLevels = 1;
+  // Изменяем настройки отображения для дерева организации
+  const initialLevels = 3; // Показываем 3 уровня иерархии вместо 1
   
-  // ПРИНУДИТЕЛЬНО ВЫВОДИМ В КОНСОЛЬ
-  console.log('!!! ПРИНУДИТЕЛЬНОЕ ЗНАЧЕНИЕ initialLevels = 1 !!!');
-  // ВСЕ ПРЕЖНИЕ ХУКИ ЗАКОММЕНТИРОВАНЫ
-  // const [initialLevels, setInitialLevels] = useState<number>(1);
+  // Выводим информацию в консоль
+  console.log('Установленное значение initialLevels =', initialLevels);
   
   // Тип для настроек
   type Setting = {
@@ -538,20 +536,20 @@ export default function OrganizationStructure() {
     // Получаем все дочерние отделы (как по parent_department_id, так и по parent_position_id)
     const childDepartments = getAllChildDepartments(department.department_id);
     
-    // Показываем дочерние элементы согласно настройке initialLevels
-    // Меняем условие: level < 0 означает, что автоматически не раскрываем вообще ничего
-    // Так как initialLevels = 1, то 1-1 = 0, и для уровня 0 это условие даст false
-    const shouldShowChildren = level < initialLevels - 1 || expandedDepartments[department.department_id];
+    // Показываем дочерние элементы если:
+    // 1. Уровень меньше initialLevels (автоматическое раскрытие)
+    // 2. ИЛИ пользователь явно раскрыл этот отдел
+    const shouldShowChildren = level < initialLevels || expandedDepartments[department.department_id] === true;
     
-    console.log(`Отдел ${department.name} (уровень ${level}): показывать дочерние = ${shouldShowChildren}, hardcoded = 1, initialLevels = ${initialLevels}, condition = ${level < initialLevels - 1}`);
+    console.log(`Отдел ${department.name} (уровень ${level}): показывать дочерние = ${shouldShowChildren}, initialLevels = ${initialLevels}, level < initialLevels = ${level < initialLevels}`);
     
     if (childDepartments.length === 0) {
       return renderedDepartment;
     }
     
     // Если есть дочерние отделы, добавляем их под данным отделом, но только если:
-    // 1. Уровень вложенности меньше initialLevels - 1 (авто-раскрыто)
-    // 2. Или этот отдел явно раскрыт пользователем
+    // 1. Уровень вложенности меньше initialLevels (авто-раскрыто)
+    // 2. Или этот отдел явно раскрыт пользователем кликом
     return (
       <React.Fragment key={`dept-tree-${department.department_id}`}>
         {renderedDepartment}
