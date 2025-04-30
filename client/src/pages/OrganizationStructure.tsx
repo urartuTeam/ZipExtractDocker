@@ -504,17 +504,26 @@ export default function OrganizationStructure() {
   
   const rootDepartments = getRootDepartments();
   
-  // Глобальный список отделов, которые уже отображены в дереве
-  // Используется для исключения дублирования в рекурсивном рендеринге
-  const alreadyRenderedDepartments = new Set<number>();
+  // Вместо глобального Set используем зависимость для компонента
+  // Это заставит React перерисовать компонент при изменении
+  const [renderedDepartments, setRenderedDepartments] = useState<number[]>([]);
+  
+  // Хук для инициализации отрендеренных отделов при первой загрузке
+  useEffect(() => {
+    if (departments.length > 0) {
+      // Получаем ID корневого отдела (обычно это 17 - "Администрация")
+      const rootDeptIds = departments
+        .filter(dept => dept.parent_department_id === null && dept.parent_position_id === null)
+        .map(dept => dept.department_id);
+      
+      setRenderedDepartments(rootDeptIds);
+    }
+  }, [departments]);
 
   // Получаем все дочерние отделы для отдела parentDepartmentId
   const getAllChildDepartments = (parentDepartmentId: number) => {
-    // Если мы находимся на корневом уровне, очищаем список отрендеренных отделов
-    if (parentDepartmentId === 17) { // 17 = ID корневого отдела "Администрация"
-      alreadyRenderedDepartments.clear();
-      alreadyRenderedDepartments.add(17); // Добавляем корневой отдел
-    }
+    // Принудительно показываем отдел Управление под должностью
+    const isSpecialPosition = parentDepartmentId === 17;
     
     // Получаем все должности отдела
     const departmentPositions = positions.filter(pos => 
