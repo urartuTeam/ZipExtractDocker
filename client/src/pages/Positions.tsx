@@ -125,7 +125,9 @@ export default function Positions() {
         title: "Должность создана успешно",
         description: "Новая должность была добавлена в систему",
       });
+      // Обновляем оба запроса - обычный и с отделами
       queryClient.invalidateQueries({ queryKey: ['/api/positions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
       setIsAddDialogOpen(false);
       form.reset();
     },
@@ -153,7 +155,9 @@ export default function Positions() {
         title: "Должность обновлена успешно",
         description: "Информация о должности была обновлена",
       });
+      // Обновляем оба запроса
       queryClient.invalidateQueries({ queryKey: ['/api/positions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
       setIsEditDialogOpen(false);
       editForm.reset();
       setSelectedPosition(null);

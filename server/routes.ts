@@ -232,7 +232,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const positionsWithDepts = positions.map(position => {
         // Находим все связи position_department для данной должности
         const links = positionDepartments.filter(pd => pd.position_id === position.position_id);
-        // Находим соответствующие отделы
+        
+        // Находим соответствующие отделы из связей в таблице position_department
         const linkedDepartments = links.map(link => {
           const dept = departments.find(d => d.department_id === link.department_id);
           return {
@@ -243,7 +244,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         });
         
-        // Добавляем информацию о родительской должности, если она есть
+        // Если должность имеет department_id, но нет соответствующей записи в таблице position_department,
+        // добавляем его тоже
+        if (position.department_id && 
+            !linkedDepartments.some(link => link.department_id === position.department_id)) {
+          const dept = departments.find(d => d.department_id === position.department_id);
+          if (dept) {
+            linkedDepartments.push({
+              position_link_id: 0, // Используем 0 как признак того, что это связь из поля department_id без записи в position_department
+              department_id: position.department_id,
+              department_name: dept.name || 'Неизвестный отдел',
+              sort: 0
+            });
+          }
+        }
+        
         return {
           ...position,
           departments: linkedDepartments
@@ -441,7 +456,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Находим все связи position_department для данной должности
       const links = positionDepartments.filter(pd => pd.position_id === position.position_id);
-      // Находим соответствующие отделы
+      
+      // Находим соответствующие отделы из связей в таблице position_department
       const linkedDepartments = links.map(link => {
         const dept = departments.find(d => d.department_id === link.department_id);
         return {
@@ -451,6 +467,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sort: link.sort
         };
       });
+      
+      // Если должность имеет department_id, но нет соответствующей записи в таблице position_department,
+      // добавляем его тоже
+      if (position.department_id && 
+          !linkedDepartments.some(link => link.department_id === position.department_id)) {
+        const dept = departments.find(d => d.department_id === position.department_id);
+        if (dept) {
+          linkedDepartments.push({
+            position_link_id: 0, // Используем 0 как признак того, что это связь из поля department_id без записи в position_department
+            department_id: position.department_id,
+            department_name: dept.name || 'Неизвестный отдел',
+            sort: 0
+          });
+        }
+      }
       
       const positionWithDepts = {
         ...position,
@@ -512,10 +543,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const positionData = req.body;
+      
+      // Сохраняем department_id перед обновлением должности, если он есть
+      const departmentId = positionData.department_id;
+      
       const updatedPosition = await storage.updatePosition(id, positionData);
       
       if (!updatedPosition) {
         return res.status(404).json({ status: 'error', message: 'Position not found' });
+      }
+      
+      // Если был указан department_id, проверяем наличие связи в таблице position_department
+      if (departmentId) {
+        try {
+          // Получаем существующие связи для этой должности
+          const positionDepartments = await storage.getAllPositionDepartments();
+          const existingLink = positionDepartments.find(
+            pd => pd.position_id === id && pd.department_id === departmentId
+          );
+          
+          // Если связи нет, создаем ее
+          if (!existingLink) {
+            await storage.createPositionDepartment({
+              position_id: id,
+              department_id: departmentId,
+              sort: 0,
+              vacancies: 0,
+              staff_units: 0,
+              current_count: 0
+            });
+            console.log(`Создана связь должности ID ${id} с отделом ID ${departmentId} при обновлении`);
+          }
+        } catch (linkError) {
+          console.error('Ошибка при обновлении связи должность-отдел:', linkError);
+          // Продолжаем выполнение, так как должность уже обновлена
+        }
       }
 
       res.json({ status: 'success', data: updatedPosition });
