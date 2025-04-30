@@ -74,7 +74,7 @@ interface Employee {
 const positionFormSchema = z.object({
   name: z.string().min(2, "Название должно содержать минимум 2 символа").max(100, "Название не должно превышать 100 символов"),
   parent_position_id: z.number().nullable().optional(),
-  department_id: z.number().nullable().optional(),
+  // Убираем поле department_id, т.к. теперь будем связывать должности с отделами через таблицу position_department
 });
 
 type PositionFormValues = z.infer<typeof positionFormSchema>;
@@ -717,47 +717,88 @@ export default function Positions() {
       
       {/* Диалог добавления отдела к должности */}
       <Dialog open={isAddDepartmentDialogOpen} onOpenChange={setIsAddDepartmentDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Привязать должность к отделу</DialogTitle>
+            <DialogTitle>Привязать должность к отделам</DialogTitle>
             <DialogDescription>
-              Выберите отдел, к которому нужно привязать должность "{selectedPosition?.name}"
+              Выберите отделы, к которым нужно привязать должность "{selectedPosition?.name}" и укажите количество вакансий для каждого отдела
             </DialogDescription>
           </DialogHeader>
           
           <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Отдел
-              </label>
-              <select 
-                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                value={selectedDepartmentId || ""}
-                onChange={(e) => setSelectedDepartmentId(Number(e.target.value))}
-              >
-                <option value="" disabled>Выберите отдел</option>
-                {departmentsData?.data.map(dept => (
-                  <option key={dept.department_id} value={dept.department_id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Отдел
+                </label>
+                <select 
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={selectedDepartmentId || ""}
+                  onChange={(e) => setSelectedDepartmentId(Number(e.target.value))}
+                >
+                  <option value="" disabled>Выберите отдел</option>
+                  {departmentsData?.data
+                    // Фильтруем отделы, исключая те, которые уже привязаны к этой должности
+                    .filter(dept => !selectedPosition?.departments?.some(d => d.department_id === dept.department_id))
+                    .map(dept => (
+                      <option key={dept.department_id} value={dept.department_id}>
+                        {dept.name}
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Количество штатных единиц
+                </label>
+                <Input 
+                  type="number" 
+                  min="0" 
+                  placeholder="Укажите количество штатных единиц"
+                  value={vacanciesCount}
+                  onChange={(e) => setVacanciesCount(parseInt(e.target.value) || 0)}
+                />
+              </div>
             </div>
             
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Количество вакансий
+            <div className="mt-4">
+              <label className="text-sm font-medium mb-2 block">
+                Привязанные отделы
               </label>
-              <Input 
-                type="number" 
-                min="0" 
-                placeholder="Укажите количество вакансий"
-                value={vacanciesCount}
-                onChange={(e) => setVacanciesCount(parseInt(e.target.value) || 0)}
-              />
+              
+              {selectedPosition?.departments && selectedPosition.departments.length > 0 ? (
+                <div className="border rounded-md divide-y">
+                  {selectedPosition.departments.map(dept => (
+                    <div key={dept.position_link_id} className="flex items-center justify-between p-3">
+                      <div>
+                        <span className="font-medium">{dept.department_name}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8" 
+                          onClick={() => handleDeleteLink(dept.position_link_id)}
+                          title="Удалить связь"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                            <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
+                          </svg>
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground py-3 border rounded-md text-center">
+                  Нет привязанных отделов
+                </div>
+              )}
             </div>
             
-            <DialogFooter>
+            <DialogFooter className="mt-4">
               <Button 
                 onClick={handleAddDepartment}
                 disabled={!selectedDepartmentId || createPositionDepartment.isPending}
