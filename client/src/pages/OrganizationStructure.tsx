@@ -29,6 +29,18 @@ type Employee = {
   position_id: number;
   department_id: number;
 };
+// Интерфейс для связки должности с отделом (содержит информацию о вакансиях)
+type PositionDepartment = {
+  position_link_id: number;
+  position_id: number;
+  department_id: number;
+  staff_units: number;
+  current_count: number;
+  vacancies: number;
+  sort: number;
+  deleted: boolean;
+  deleted_at: string | null;
+};
 
 export default function OrganizationStructure() {
   const [expDept, setExpDept] = useState<{ [k: number]: boolean }>({});
@@ -44,11 +56,20 @@ export default function OrganizationStructure() {
   const { data: empR, isLoading: le } = useQuery<{ data: Employee[] }>({
     queryKey: ["/api/employees"],
   });
-  if (ld || lp || le) return <div>Загрузка...</div>;
+  
+  // Получаем данные о связях должностей с отделами (включая информацию о вакансиях)
+  const { data: posDeptR, isLoading: lpd } = useQuery<{
+    data: PositionDepartment[];
+  }>({
+    queryKey: ["/api/positiondepartments"],
+  });
+  
+  if (ld || lp || le || lpd) return <div>Загрузка...</div>;
 
   const departments = deptR?.data || [];
   const positions = posR?.data || [];
   const employees = empR?.data || [];
+  const positionDepartments = posDeptR?.data || [];
 
   const toggleDept = (id: number) => {
     // Если элемент сейчас развернут, то закрываем его
@@ -114,6 +135,19 @@ export default function OrganizationStructure() {
     employees.filter(
       (e) => e.position_id === posId && e.department_id === deptId,
     );
+    
+  // Функция для получения информации о вакансиях для позиции в отделе
+  const getPositionDepartmentInfo = (posId: number, deptId: number) => {
+    const positionDept = positionDepartments.find(
+      pd => pd.position_id === posId && pd.department_id === deptId && !pd.deleted
+    );
+    
+    return {
+      staffUnits: positionDept?.staff_units || 0, // Общее количество мест
+      vacancies: positionDept?.vacancies || 0,     // Количество свободных мест
+      currentCount: positionDept?.current_count || 0 // Текущее количество сотрудников
+    };
+  };
 
   const renderPos = (p: any, deptId: number, lvl = 0) => {
     const key = `${p.position_id}-${deptId}`;
@@ -122,6 +156,9 @@ export default function OrganizationStructure() {
     const emps = getEmps(p.position_id, deptId);
     const childPositions = p.children || [];
     const childDepts = getChildDeptsByPosition(p.position_id);
+    
+    // Получаем информацию о вакансиях для данной позиции в отделе
+    const { staffUnits, vacancies } = getPositionDepartmentInfo(p.position_id, deptId);
     
     // Определяем, как отображать сотрудников в зависимости от их количества
     // Если один сотрудник - показываем в скобках рядом с должностью
@@ -151,12 +188,19 @@ export default function OrganizationStructure() {
         : `${p.name} (${emps[0].full_name})`;
 
     return (
-      <div key={key}>
+      <div key={key} className="mb-2">
         <div
-          className="flex items-center cursor-pointer p-2"
+          className="relative flex items-center cursor-pointer p-2 border border-gray-200 rounded-md hover:bg-gray-50"
           style={{ paddingLeft: `${lvl * 16 + 8}px` }}
           onClick={() => togglePos(key)}
         >
+          {/* Количество свободных позиций (верхний правый угол) */}
+          {vacancies > 0 && (
+            <div className="absolute top-0 right-0 m-1 px-1.5 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded">
+              +{vacancies}
+            </div>
+          )}
+          
           {ex ? (
             <ChevronDown className="h-4 w-4 mr-2 text-neutral-500" />
           ) : (
@@ -164,12 +208,20 @@ export default function OrganizationStructure() {
           )}
           <Users className="h-5 w-5 mr-2 text-blue-500" />
           <span>{displayText}</span>
+          
+          {/* Общее количество мест (нижний правый угол) */}
+          {staffUnits > 0 && (
+            <div className="absolute bottom-0 right-0 m-1 px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+              {staffUnits}
+            </div>
+          )}
         </div>
+        
         {ex && (
-          <div className="ml-6 border-l-2 pl-4">
+          <div className="ml-6 border-l-2 pl-4 mt-1">
             {/* Если несколько сотрудников, отображаем их как дочерние элементы */}
             {hasMultipleEmployees && (
-              <div className="mt-1 mb-2">
+              <div className="mb-2">
                 <div className="border-l border-l-gray-200 ml-1">
                   {emps.map(emp => (
                     <div 
@@ -198,9 +250,9 @@ export default function OrganizationStructure() {
     const deptPositions = getDeptPositions(d.department_id);
 
     return (
-      <div key={d.department_id} className="ml-4">
+      <div key={d.department_id} className="ml-4 mb-2">
         <div
-          className="flex items-center cursor-pointer p-2"
+          className="relative flex items-center cursor-pointer p-2 border border-primary/20 bg-primary/5 rounded-md hover:bg-primary/10"
           onClick={() => toggleDept(d.department_id)}
         >
           {ex ? (
@@ -209,14 +261,15 @@ export default function OrganizationStructure() {
             <ChevronRight className="h-4 w-4 mr-2 text-neutral-500" />
           )}
           <Building className="h-5 w-5 mr-2 text-primary" />
-          <span className="font-medium">{d.name} <span className="text-neutral-600 ml-1">(Отдел)</span></span>
+          <span className="font-medium">{d.name}</span>
+          <span className="ml-2 text-neutral-500 text-sm">(Отдел)</span>
         </div>
         {ex && (
           <div className="ml-6 border-l-2 pl-4 py-2">
             {deptPositions.length > 0 ? (
               deptPositions.map((p) => renderPos(p, d.department_id))
             ) : (
-              <div className="italic text-neutral-500 pl-7">
+              <div className="italic text-neutral-500 pl-7 mt-1">
                 Нет должностей в этом отделе
               </div>
             )}
