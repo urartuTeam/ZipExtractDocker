@@ -345,22 +345,7 @@ export default function Positions() {
     deletePositionDepartment.mutate(linkId);
   };
   
-  // Обработчик открытия диалога редактирования количества вакансий
-  const handleOpenEditVacancies = (dept: DepartmentLink) => {
-    setSelectedPositionDepartment(dept);
-    setEditVacanciesCount(dept.vacancies || 0);
-    setIsEditVacanciesDialogOpen(true);
-  };
-  
-  // Обработчик подтверждения редактирования количества вакансий
-  const handleUpdateVacancies = () => {
-    if (selectedPositionDepartment) {
-      updatePositionDepartment.mutate({
-        id: selectedPositionDepartment.position_link_id,
-        vacancies: editVacanciesCount
-      });
-    }
-  };
+
   
   // Обработчик добавления связи должности с отделом
   const handleOpenAddDepartment = (position: Position) => {
@@ -882,41 +867,7 @@ export default function Positions() {
         </DialogContent>
       </Dialog>
       
-      {/* Диалог редактирования количества вакансий */}
-      <Dialog open={isEditVacanciesDialogOpen} onOpenChange={setIsEditVacanciesDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Изменить количество штатных единиц</DialogTitle>
-            <DialogDescription>
-              Укажите количество штатных единиц для отдела "{selectedPositionDepartment?.department_name}"
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Количество штатных единиц
-              </label>
-              <Input 
-                type="number" 
-                min="0" 
-                placeholder="Укажите количество штатных единиц"
-                value={editVacanciesCount}
-                onChange={(e) => setEditVacanciesCount(parseInt(e.target.value) || 0)}
-              />
-            </div>
-            
-            <DialogFooter className="mt-4">
-              <Button 
-                onClick={handleUpdateVacancies}
-                disabled={updatePositionDepartment.isPending}
-              >
-                {updatePositionDepartment.isPending ? "Сохранение..." : "Сохранить изменения"}
-              </Button>
-            </DialogFooter>
-          </div>
-        </DialogContent>
-      </Dialog>
+
     </div>
   );
 }
