@@ -78,11 +78,13 @@ export default function Vacancies() {
   });
   
   // Получаем данные о связях должностей с отделами (включая информацию о вакансиях)
-  const { data: posDeptR, isLoading: lpd } = useQuery<{
+  const { data: posDeptR } = useQuery<{
     data: PositionDepartment[];
   }>({
-    queryKey: ["/api/positiondepartments"],
+    queryKey: ["/api/position-departments"],
   });
+  
+  console.log("Данные о вакансиях:", posDeptR?.data);
   
   // Автоматически раскрываем все дерево при загрузке данных
   useEffect(() => {
@@ -112,7 +114,7 @@ export default function Vacancies() {
     }
   }, [ld, lp, deptR, posR]);
   
-  if (ld || lp || le || lpd) return <div>Загрузка...</div>;
+  if (ld || lp || le) return <div>Загрузка...</div>;
 
   const departments = deptR?.data || [];
   const positions = posR?.data || [];
@@ -225,13 +227,18 @@ export default function Vacancies() {
     
     // Определяем цвет фона в зависимости от наличия вакансий
     let bgClass = '';
+    
+    // Отладочная информация
+    console.log(`Позиция ${p.name} (ID: ${p.position_id}) в отделе ${deptId}:`, 
+      { staffUnits, currentCount, emps: emps.length });
+    
     if (staffUnits > 0) {
-      if (currentCount < staffUnits) {
+      if (emps.length < staffUnits) {
         // Есть вакансии - красноватый фон
-        bgClass = 'bg-red-50';
-      } else if (currentCount >= staffUnits) {
+        bgClass = 'bg-red-100';
+      } else if (emps.length >= staffUnits) {
         // Нет вакансий - зеленоватый фон
-        bgClass = 'bg-green-50';
+        bgClass = 'bg-green-100';
       }
     }
     
