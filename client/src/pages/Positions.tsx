@@ -55,6 +55,7 @@ interface DepartmentLink {
   department_id: number;
   department_name: string;
   sort: number;
+  vacancies?: number; // Количество вакансий (штатных единиц) в этом отделе
 }
 
 interface Position {
@@ -96,7 +97,6 @@ export default function Positions() {
     defaultValues: {
       name: "",
       parent_position_id: null,
-      department_id: null,
     },
   });
 
@@ -106,7 +106,6 @@ export default function Positions() {
     defaultValues: {
       name: "",
       parent_position_id: null,
-      department_id: null,
     },
   });
 
@@ -298,7 +297,6 @@ export default function Positions() {
     editForm.reset({
       name: position.name,
       parent_position_id: position.parent_position_id || null,
-      department_id: position.department_id || null,
     });
     setIsEditDialogOpen(true);
   };
@@ -536,39 +534,10 @@ export default function Positions() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="department_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Отдел</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value === "null" ? null : parseInt(value));
-                      }}
-                      value={field.value?.toString() || undefined}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите отдел" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">Не привязывать к отделу</SelectItem>
-                        {departmentsData?.data.map((department) => (
-                          <SelectItem 
-                            key={department.department_id} 
-                            value={department.department_id.toString()}
-                          >
-                            {department.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Убрали поле department_id, теперь связь с отделами управляется через таблицу position_department */}
+              <div className="text-sm text-muted-foreground mt-2">
+                После создания должности вы сможете привязать её к нужным отделам и указать количество штатных единиц для каждого отдела
+              </div>
               
               <DialogFooter>
                 <Button 
@@ -646,39 +615,23 @@ export default function Positions() {
                 )}
               />
 
-              <FormField
-                control={editForm.control}
-                name="department_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Отдел</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value === "null" ? null : parseInt(value));
-                      }}
-                      value={field.value?.toString() || undefined}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите отдел" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">Не привязывать к отделу</SelectItem>
-                        {departmentsData?.data.map((department) => (
-                          <SelectItem 
-                            key={department.department_id} 
-                            value={department.department_id.toString()}
-                          >
-                            {department.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Информацию о связях с отделами отображаем и управляем через отдельный интерфейс */}
+              
+              {selectedPosition?.departments && selectedPosition.departments.length > 0 && (
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Привязанные отделы</h3>
+                  <div className="border rounded-md divide-y">
+                    {selectedPosition.departments.map(dept => (
+                      <div key={dept.position_link_id} className="flex items-center justify-between p-3">
+                        <span className="text-sm">{dept.department_name}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Управление связями с отделами доступно после сохранения
+                  </div>
+                </div>
+              )}
               
               <DialogFooter>
                 <Button 
