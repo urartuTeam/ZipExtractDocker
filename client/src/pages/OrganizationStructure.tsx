@@ -7,7 +7,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ChevronRight, ChevronDown, Users, Building, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChevronRight, ChevronDown, Users, Building, User, ChevronsRight, ChevronsDown } from "lucide-react";
 
 type Department = {
   department_id: number;
@@ -32,6 +33,7 @@ type Employee = {
 export default function OrganizationStructure() {
   const [expDept, setExpDept] = useState<{ [k: number]: boolean }>({});
   const [expPos, setExpPos] = useState<{ [k: string]: boolean }>({});
+  const [expanded, setExpanded] = useState(false);
 
   const { data: deptR, isLoading: ld } = useQuery<{ data: Department[] }>({
     queryKey: ["/api/departments"],
@@ -52,6 +54,38 @@ export default function OrganizationStructure() {
     setExpDept((s) => ({ ...s, [id]: !s[id] }));
   const togglePos = (key: string) =>
     setExpPos((s) => ({ ...s, [key]: !s[key] }));
+    
+  // Функция для разворачивания/сворачивания всей структуры
+  const toggleAllStructure = () => {
+    setExpanded(!expanded);
+    
+    // Получаем все ID отделов и идентификаторы должностей
+    const allDeptIds = departments.filter(d => !d.deleted).map(d => d.department_id);
+    
+    // Создаем объекты для развернутых/свернутых элементов
+    const deptState: { [k: number]: boolean } = {};
+    const posState: { [k: string]: boolean } = {};
+    
+    // Если разворачиваем, устанавливаем все элементы как развернутые
+    if (!expanded) {
+      allDeptIds.forEach(id => { deptState[id] = true; });
+      
+      // Для каждого отдела получаем связанные должности и добавляем их в posState
+      allDeptIds.forEach(deptId => {
+        const deptPositions = positions.filter(p => 
+          p.departments.some(dd => dd.department_id === deptId)
+        );
+        
+        deptPositions.forEach(pos => {
+          posState[`${pos.position_id}-${deptId}`] = true;
+        });
+      });
+    }
+    
+    // Обновляем состояния
+    setExpDept(deptState);
+    setExpPos(posState);
+  };
 
   const roots = departments.filter(
     (d) =>
@@ -89,7 +123,8 @@ export default function OrganizationStructure() {
 
   const renderPos = (p: any, deptId: number, lvl = 0) => {
     const key = `${p.position_id}-${deptId}`;
-    const ex = expPos[key] ?? false;
+    // Используем значение из expPos, если оно есть, иначе берем значение из expanded
+    const ex = expanded ? true : (expPos[key] ?? false);
     const emps = getEmps(p.position_id, deptId);
     const childPositions = p.children || [];
     const childDepts = getChildDeptsByPosition(p.position_id);
@@ -163,7 +198,8 @@ export default function OrganizationStructure() {
   };
 
   const renderDept = (d: Department, lvl = 0) => {
-    const ex = expDept[d.department_id] ?? false;
+    // Используем значение из expDept, если оно есть, иначе берем значение из expanded
+    const ex = expanded ? true : (expDept[d.department_id] ?? false);
     const childDepts = getChildDeptsByDept(d.department_id);
     const deptPositions = getDeptPositions(d.department_id);
 
@@ -200,9 +236,28 @@ export default function OrganizationStructure() {
   return (
     <div className="p-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Структура организации</CardTitle>
-          <CardDescription>Иерархия</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Структура организации</CardTitle>
+            <CardDescription>Иерархия</CardDescription>
+          </div>
+          <Button 
+            variant="outline" 
+            className="flex items-center gap-1 border border-primary hover:bg-primary/10" 
+            onClick={toggleAllStructure}
+          >
+            {expanded ? (
+              <>
+                <ChevronsDown className="h-4 w-4" />
+                <span>Свернуть структуру</span>
+              </>
+            ) : (
+              <>
+                <ChevronsRight className="h-4 w-4" />
+                <span>Развернуть структуру</span>
+              </>
+            )}
+          </Button>
         </CardHeader>
         <CardContent>{roots.map((r) => renderDept(r))}</CardContent>
       </Card>
