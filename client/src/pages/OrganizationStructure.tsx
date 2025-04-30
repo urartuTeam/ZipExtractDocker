@@ -56,7 +56,7 @@ export default function OrganizationStructure() {
   const [expandedPositions, setExpandedPositions] = useState<{[key: string]: boolean}>({});
   
   // Изменяем настройки отображения для дерева организации
-  const initialLevels = 3; // Показываем 3 уровня иерархии вместо 1
+  const initialLevels = 4; // Показываем 4 уровня иерархии для отображения всей структуры
   
   // Выводим информацию в консоль
   console.log('Установленное значение initialLevels =', initialLevels);
@@ -511,6 +511,21 @@ export default function OrganizationStructure() {
   const getAllChildDepartments = (parentDepartmentId: number) => {
     // Проверяем, является ли это корневым отделом (обычно Администрация с ID=17)
     const isRootLevel = parentDepartmentId === 17;
+    
+    // СПЕЦИАЛЬНАЯ ОБРАБОТКА ДЛЯ ОТДЕЛА "УПРАВЛЕНИЕ" (ID=18)
+    if (parentDepartmentId === 18) {
+      console.log("ОБРАБОТКА ОТДЕЛА УПРАВЛЕНИЕ С ID=18");
+      
+      // Напрямую находим все отделы, у которых parent_department_id = 18
+      const childDeps = departments.filter(dept => 
+        dept.parent_department_id === 18 && !dept.deleted
+      );
+      
+      console.log(`Дочерние отделы "Управления" (ID=18):`, 
+        childDeps.map(d => `${d.name} (ID: ${d.department_id})`));
+      
+      return childDeps;
+    }
     
     // Получаем все должности отдела
     const departmentPositions = positions.filter(pos => 
