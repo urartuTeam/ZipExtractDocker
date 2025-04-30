@@ -292,24 +292,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ status: 'error', message: 'Invalid department ID' });
       }
       
-      // Получаем все связи позиция-отдел для этого отдела
-      const positionDepartments = await storage.getAllPositionDepartments();
-      const departmentPositionLinks = positionDepartments.filter(
-        link => link.department_id === departmentId
-      );
+      // Получаем все позиции и сотрудников
+      const allPositions = await storage.getAllPositions();
+      const allEmployees = await storage.getAllEmployees();
       
-      // Если связей нет, возвращаем пустой массив
-      if (departmentPositionLinks.length === 0) {
+      // Множество для хранения ID найденных должностей
+      const positionIds = new Set<number>();
+      
+      // 1. Добавляем ID из связей позиция-отдел
+      const positionDepartments = await storage.getAllPositionDepartments();
+      positionDepartments
+        .filter(link => link.department_id === departmentId && !link.deleted)
+        .forEach(link => positionIds.add(link.position_id));
+      
+      // 2. Добавляем ID должностей сотрудников, которые работают в этом отделе
+      allEmployees
+        .filter(emp => emp.department_id === departmentId && emp.position_id !== null && !emp.deleted)
+        .forEach(emp => {
+          if (emp.position_id) positionIds.add(emp.position_id);
+        });
+      
+      // Если должностей не найдено, возвращаем пустой массив
+      if (positionIds.size === 0) {
         return res.json({ status: 'success', data: [] });
       }
       
-      // Получаем все позиции
-      const allPositions = await storage.getAllPositions();
-      
-      // Фильтруем позиции, которые связаны с этим отделом
-      const linkedPositionIds = departmentPositionLinks.map(link => link.position_id);
+      // Фильтруем позиции по найденным ID
       const departmentPositions = allPositions.filter(
-        position => linkedPositionIds.includes(position.position_id)
+        position => positionIds.has(position.position_id) && !position.deleted
       );
       
       res.json({ status: 'success', data: departmentPositions });
