@@ -1,84 +1,157 @@
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronDown, Users, Building } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ChevronRight, ChevronDown, Users, Building } from "lucide-react";
 
-type Department = { department_id: number; name: string; parent_department_id: number | null; parent_position_id: number | null; deleted: boolean; deleted_at?: string | null; };
-type Position = { position_id: number; name: string; parent_position_id: number | null; departments: { department_id: number }[]; };
-type Employee = { employee_id: number; full_name: string; position_id: number; department_id: number; };
+type Department = {
+  department_id: number;
+  name: string;
+  parent_department_id: number | null;
+  parent_position_id: number | null;
+  deleted: boolean;
+};
+type Position = {
+  position_id: number;
+  name: string;
+  parent_position_id: number | null;
+  departments: { department_id: number }[];
+};
+type Employee = {
+  employee_id: number;
+  full_name: string;
+  position_id: number;
+  department_id: number;
+};
 
 export default function OrganizationStructure() {
-  const [expDept, setExpDept] = useState<{[k:number]:boolean}>({});
-  const [expPos, setExpPos] = useState<{[k:string]:boolean}>({});
-  const { toast } = useToast();
-  
-  const { data: deptR, isLoading: ld } = useQuery<{data: Department[]}>({ queryKey: ['/api/departments'] });
-  const { data: posR, isLoading: lp } = useQuery<{data: Position[]}>({ queryKey: ['/api/positions/with-departments'] });
-  const { data: empR, isLoading: le } = useQuery<{data: Employee[]}>({ queryKey: ['/api/employees'] });
-  if(ld||lp||le) return <div>Загрузка...</div>;
-  const departments = deptR?.data||[];
-  const positions = posR?.data||[];
-  const employees = empR?.data||[];
+  const [expDept, setExpDept] = useState<{ [k: number]: boolean }>({});
+  const [expPos, setExpPos] = useState<{ [k: string]: boolean }>({});
 
-  const toggleDept = (id:number)=>setExpDept(s=>({...s,[id]:!s[id]}));
-  const togglePos = (key:string)=>setExpPos(s=>({...s,[key]:!s[key]}));
+  const { data: deptR, isLoading: ld } = useQuery<{ data: Department[] }>({
+    queryKey: ["/api/departments"],
+  });
+  const { data: posR, isLoading: lp } = useQuery<{ data: Position[] }>({
+    queryKey: ["/api/positions/with-departments"],
+  });
+  const { data: empR, isLoading: le } = useQuery<{ data: Employee[] }>({
+    queryKey: ["/api/employees"],
+  });
+  if (ld || lp || le) return <div>Загрузка...</div>;
 
-  const roots = departments.filter(d=>!d.deleted && d.parent_department_id===null && d.parent_position_id===null);
+  const departments = deptR?.data || [];
+  const positions = posR?.data || [];
+  const employees = empR?.data || [];
 
-  const getChildDepts = (dept: Department) => departments.filter(d=>!d.deleted && (
-    d.parent_department_id===dept.department_id || 
-    (d.parent_position_id!==null && positions.some(p=>p.position_id===d.parent_position_id && p.departments.some(dd=>dd.department_id===dept.department_id)))
-  ));
+  const toggleDept = (id: number) =>
+    setExpDept((s) => ({ ...s, [id]: !s[id] }));
+  const togglePos = (key: string) =>
+    setExpPos((s) => ({ ...s, [key]: !s[key] }));
 
-  const getDeptPositions = (dept:Department) => {
-    const linked = positions.filter(p=>p.departments.some(dd=>dd.department_id===dept.department_id));
-    const map:{[k:number]:any} = {};
-    linked.forEach(p=>map[p.position_id]={...p,children:[]});
-    linked.forEach(p=>{ if(p.parent_position_id && map[p.parent_position_id]) map[p.parent_position_id].children.push(map[p.position_id]); });
-    return Object.values(map).filter((p:any)=>p.parent_position_id===null || !map[p.parent_position_id]);
+  const roots = departments.filter(
+    (d) =>
+      !d.deleted &&
+      d.parent_department_id === null &&
+      d.parent_position_id === null,
+  );
+
+  const getChildDeptsByDept = (deptId: number) =>
+    departments.filter((d) => !d.deleted && d.parent_department_id === deptId);
+
+  const getChildDeptsByPosition = (posId: number) =>
+    departments.filter((d) => !d.deleted && d.parent_position_id === posId);
+
+  const getDeptPositions = (deptId: number) => {
+    const linked = positions.filter((p) =>
+      p.departments.some((dd) => dd.department_id === deptId),
+    );
+    const map: { [k: number]: any } = {};
+    linked.forEach((p) => (map[p.position_id] = { ...p, children: [] }));
+    linked.forEach((p) => {
+      if (p.parent_position_id && map[p.parent_position_id]) {
+        map[p.parent_position_id].children.push(map[p.position_id]);
+      }
+    });
+    return Object.values(map).filter(
+      (p: any) => p.parent_position_id === null || !map[p.parent_position_id],
+    );
   };
 
-  const getEmps = (posId:number, deptId:number) => employees.filter(e=>e.position_id===posId && e.department_id===deptId);
+  const getEmps = (posId: number, deptId: number) =>
+    employees.filter(
+      (e) => e.position_id === posId && e.department_id === deptId,
+    );
 
-  const renderPos = (p:any, deptId:number, lvl=0) => {
+  const renderPos = (p: any, deptId: number, lvl = 0) => {
     const key = `${p.position_id}-${deptId}`;
-    const ex = expPos[key];
+    const ex = expPos[key] ?? false;
     const emps = getEmps(p.position_id, deptId);
-    const childs = p.children||[];
+    const childPositions = p.children || [];
+    const childDepts = getChildDeptsByPosition(p.position_id);
+
     return (
       <div key={key}>
-        <div className="flex items-center cursor-pointer p-2" style={{paddingLeft:`${lvl*16+8}px`}} onClick={()=>togglePos(key)}>
-          {ex?<ChevronDown className="mr-2"/>:<ChevronRight className="mr-2"/>}<Users className="mr-2"/>
-          <span>{p.name} {emps.length?`(${emps[0].full_name})`:'(Вакантная)'}</span>
+        <div
+          className="flex items-center cursor-pointer p-2"
+          style={{ paddingLeft: `${lvl * 16 + 8}px` }}
+          onClick={() => togglePos(key)}
+        >
+          {ex ? (
+            <ChevronDown className="h-4 w-4 mr-2 text-neutral-500" />
+          ) : (
+            <ChevronRight className="h-4 w-4 mr-2 text-neutral-500" />
+          )}
+          <Users className="h-5 w-5 mr-2 text-blue-500" />
+          <span>
+            {p.name} {emps.length ? `(${emps[0].full_name})` : "(Вакантная)"}
+          </span>
         </div>
         {ex && (
           <div className="ml-6 border-l-2 pl-4">
-            {childs.map((c:any)=>renderPos(c,deptId,lvl+1))}
-            {getChildDepts({department_id:0,name:'',parent_department_id:deptId,parent_position_id:p.position_id,deleted:false}).map(d=>renderDept(d,lvl+1))}
+            {childPositions.map((c: any) => renderPos(c, deptId, lvl + 1))}
+            {childDepts.map((d) => renderDept(d, lvl + 1))}
           </div>
         )}
       </div>
     );
   };
 
-  const renderDept = (d:Department, lvl=0) => {
-    const ex = expDept[d.department_id] || lvl<4;
+  const renderDept = (d: Department, lvl = 0) => {
+    const ex = expDept[d.department_id] ?? false;
+    const childDepts = getChildDeptsByDept(d.department_id);
+    const deptPositions = getDeptPositions(d.department_id);
+
     return (
       <div key={d.department_id} className="ml-4">
-        <div className="flex items-center cursor-pointer p-2" onClick={()=>toggleDept(d.department_id)}>
-          {ex?<ChevronDown className="mr-2"/>:<ChevronRight className="mr-2"/>}<Building className="mr-2"/>
-          <span className="font-medium">{d.name}</span>
+        <div
+          className="flex items-center cursor-pointer p-2"
+          onClick={() => toggleDept(d.department_id)}
+        >
+          {ex ? (
+            <ChevronDown className="h-4 w-4 mr-2 text-neutral-500" />
+          ) : (
+            <ChevronRight className="h-4 w-4 mr-2 text-neutral-500" />
+          )}
+          <Building className="h-5 w-5 mr-2 text-primary" />
+          <span className="font-medium">{d.name} <span className="text-neutral-600 ml-1">(Отдел)</span></span>
         </div>
-        {ex && <div className="ml-6 border-l-2 pl-4 py-2">
-          {getDeptPositions(d).length?
-            getDeptPositions(d).map((p:any)=>renderPos(p,d.department_id)):
-            <div className="italic text-neutral-500 pl-7">Нет должностей в этом отделе</div>
-          }
-          {getChildDepts(d).map(cd=>renderDept(cd,lvl+1))}
-        </div>}
+        {ex && (
+          <div className="ml-6 border-l-2 pl-4 py-2">
+            {deptPositions.length > 0 ? (
+              deptPositions.map((p) => renderPos(p, d.department_id))
+            ) : (
+              <div className="italic text-neutral-500 pl-7">
+                Нет должностей в этом отделе
+              </div>
+            )}
+            {childDepts.map((cd) => renderDept(cd, lvl + 1))}
+          </div>
+        )}
       </div>
     );
   };
@@ -86,8 +159,11 @@ export default function OrganizationStructure() {
   return (
     <div className="p-4">
       <Card>
-        <CardHeader><CardTitle>Структура организации</CardTitle><CardDescription>Иерархия</CardDescription></CardHeader>
-        <CardContent>{roots.map(r=>renderDept(r))}</CardContent>
+        <CardHeader>
+          <CardTitle>Структура организации</CardTitle>
+          <CardDescription>Иерархия</CardDescription>
+        </CardHeader>
+        <CardContent>{roots.map((r) => renderDept(r))}</CardContent>
       </Card>
     </div>
   );

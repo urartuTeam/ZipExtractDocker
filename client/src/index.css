@@ -3,49 +3,50 @@
 @tailwind utilities;
 
 :root {
-      --background: 0 0% 100%;
---foreground: 20 14.3% 4.1%;
---muted: 60 4.8% 95.9%;
---muted-foreground: 25 5.3% 44.7%;
---popover: 0 0% 100%;
---popover-foreground: 20 14.3% 4.1%;
---card: 0 0% 100%;
---card-foreground: 20 14.3% 4.1%;
---border: 20 5.9% 90%;
---input: 20 5.9% 90%;
---primary: 0 84% 32%;
---primary-foreground: 0 0% 100%;
---secondary: 0 10% 95%;
---secondary-foreground: 0 50% 30%;
---accent: 0 10% 95%;
---accent-foreground: 0 50% 30%;
---destructive: 0 84.2% 60.2%;
---destructive-foreground: 60 9.1% 97.8%;
---ring: 0 84% 32%;
---radius: 0.5rem;
-  }
-  .dark {
-      --background: 240 10% 3.9%;
---foreground: 0 0% 98%;
---muted: 240 3.7% 15.9%;
---muted-foreground: 240 5% 64.9%;
---popover: 240 10% 3.9%;
---popover-foreground: 0 0% 98%;
---card: 240 10% 3.9%;
---card-foreground: 0 0% 98%;
---border: 240 3.7% 15.9%;
---input: 240 3.7% 15.9%;
---primary: 0 84% 32%;
---primary-foreground: 0 0% 100%;
---secondary: 240 3.7% 15.9%;
---secondary-foreground: 0 0% 98%;
---accent: 240 3.7% 15.9%;
---accent-foreground: 0 0% 98%;
---destructive: 0 62.8% 30.6%;
---destructive-foreground: 0 0% 98%;
---ring: 0 84% 32%;
---radius: 0.5rem;
-  }
+  --background: 0 0% 100%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 0 84% 32%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 0 10% 95%;
+  --secondary-foreground: 0 50% 30%;
+  --accent: 0 10% 95%;
+  --accent-foreground: 0 50% 30%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 0 84% 32%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 0 84% 32%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 0 84% 32%;
+  --radius: 0.5rem;
+}
 
 /* Добавляем стили для организационной структуры в виде дерева */
 
@@ -56,11 +57,12 @@
   background-color: #ccc;
   margin: 8px auto;
 }
+
 .org-tree-container {
   width: 100%;
   padding: 20px;
   overflow-x: auto;
-  min-height: 600px;
+  min-height: 400px;
   position: relative;
 }
 
@@ -97,10 +99,13 @@
 }
 
 .position-divider {
-  width: 60%;
   height: 2px;
   background-color: #a40000;
   margin: 10px auto;
+}
+
+.topTopPositionClass.position-divider {
+  background-color: #fff;
 }
 
 .top-position-name {
@@ -155,18 +160,7 @@
   border-width: 2px;
 }
 
-.position-title {
-  font-weight: 600;
-  font-size: 1.1rem;
-  color: #a40000;
-  text-align: center;
-}
 
-.position-name {
-  text-align: center;
-  margin-top: 8px;
-  font-weight: 500;
-}
 
 .org-level-2 {
   display: flex;
@@ -407,7 +401,7 @@
 }
 
 .department-node .department-card {
-  width: 100%;
+  min-width: 220px;
   max-width: calc(100% - 20px);
   margin-bottom: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -462,7 +456,7 @@
 .position-hierarchy {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: normal;
   width: 100%;
   margin: 30px auto;
   padding: 20px;
@@ -488,7 +482,7 @@
   background-color: #e0e0e0;
 }
 
-/* Стилизация ветвей структуры */
+/* Стилизация ветвей структуры
 .tree-branch {
   display: flex;
   flex-direction: column;
@@ -506,65 +500,101 @@
   margin: 0 15px;
   position: relative;
 }
-
+*/
 /* Горизонтальные и вертикальные линии */
 .tree-branch-connections {
   display: flex;
   justify-content: center;
   position: relative;
   width: 100%;
-  /* Устанавливаем центральное выравнивание */
-  text-align: center;
 }
 
-.tree-branch-connections:before {
-  content: "";
-  position: absolute;
-  top: -20px;
-  left: 50%;
-  height: 20px;
-  width: 2px;
-  background-color: #a40000;
-  transform: translateX(-50%); /* Добавляем трансформацию для идеального центрирования */
-}
+/*.tree-branch-connections:before {*/
+/*  content: "";*/
+/*  position: absolute;*/
+/*  top: -20px;*/
+/*  left: 50%;*/
+/*  height: 20px;*/
+/*  width: 2px;*/
+/*  background-color: #a40000;*/
+/*}*/
 
 .tree-branch-line {
-  /* Используем блочную модель для лучшего центрирования */
-  position: relative;
-  display: block;
-  margin: 0 auto;
+  position: absolute;
   top: -20px;
+  width: 100%;
   height: 2px;
   background-color: #a40000;
-  left: 50%;
-  transform: translateX(-50%); /* Центрирование с помощью transform */
 }
+
+.tree-node {
+  display: flex;
+  flex-direction: row;
+  /* гарантирует горизонтальное размещение веток */
+  align-items: flex-start;
+  /* каждая ветка выравнивается по высоте контента */
+  flex-wrap: nowrap;
+  /* отключает перенос, если не нужен */
+  justify-content: center;
+  gap: 30px;
+  /* вместо margin-left */
+  margin-bottom: 20px;
+}
+
+.tree-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  /* запрещаем сжатие */
+}
+
+.tree-node-container {
+  margin: 0 auto;
+  position: relative;
+}
+
+
+
 
 /* Стилизация карточек должностей */
 .position-card {
-  width: 220px;
+  min-width: 220px;
   background-color: white;
   border: 1px solid #e0e0e0;
   border-left: 3px solid #a40000;
   border-radius: 5px;
   padding: 10px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   cursor: pointer;
 }
 
 .position-card:hover {
-  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
   transform: translateY(-2px);
   background-color: #faf5f5;
 }
 
+
+
 .position-title {
   font-weight: bold;
   color: #333;
-  border-bottom: 1px solid #e0e0e0;
   padding-bottom: 5px;
   margin-bottom: 5px;
+}
+
+.position-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #a40000;
+}
+
+.position-name {
+  text-align: center;
+  margin-top: 8px;
+  font-weight: 500;
 }
 
 .employee-name {
@@ -579,9 +609,8 @@
 /* Стили для подчиненных в одном блоке */
 .subordinates-container {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   justify-content: center;
-  width: 100%;
   margin-top: 20px;
 }
 
@@ -589,9 +618,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1;
+  margin: 0 10px;
   position: relative;
-  padding: 0 5px;
 }
 
 .subordinate-branch:before {
@@ -607,27 +635,31 @@
 
 /* Классы для стилизации блоков дерева */
 .topTopPositionClass {
-  /* Стиль для блоков верхнего уровня при первом входе */
-  border: 2px solid #a40000;
+  background-color: #a40000;
+  /* Стиль для блоков верхнего уровня при первом входе
+  border: 2px solid #a40000;*/
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
 }
 
+.topTopPositionClass .position-title,
+.topTopPositionClass .employee-name {
+  color: #fff;
+}
+
 .positionClass {
+
   /* Стиль для блоков должностей */
-  border: 1px solid #a40000;
   background-color: #fff;
 }
 
 .departmentClass {
+
   /* Стиль для блоков отделов */
-  border: 1px solid #4b7bec;
-  background-color: #f0f4ff;
 }
 
 /* Переопределяем стиль конкретно для карточек отделов, чтобы решить проблему */
 .department-card {
-  border: 1px solid #4b7bec;
-  background-color: #f0f4ff;
+  border-left: 3px solid #4b7bec;
 }
 
 /* Стили для хедера с картинкой */
@@ -639,6 +671,7 @@
   background-repeat: no-repeat;
   height: 4rem;
 }
+
 .org-chart {
   width: 100%;
   margin-top: 0.5rem;
@@ -744,7 +777,7 @@
   text-align: center;
   font-weight: bold;
   font-size: 0.9rem;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .org-node-content {
@@ -842,60 +875,21 @@
   padding: 3px 0;
 }
 
-/* Стили для элементов управления отображением */
-.organization-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-  width: 100%;
-  padding: 0 10px;
-}
-
-.position-navigation {
-  flex: 1;
-}
-
 .display-settings-wrapper {
-  display: flex;
-  justify-content: flex-end;
-}
-
-.back-to-main-hierarchy {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 16px;
-  background-color: var(--primary-color);
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background-color 0.3s;
-}
-
-.back-to-main-hierarchy:hover {
-  background-color: var(--primary-color-dark);
-}
-
-/* Стили для отображения количества вакансий */
-.vacancy-indicator {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f8d7da;
-  color: #721c24;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  font-size: 12px;
-  font-weight: bold;
-  margin-left: 10px;
-}
-
-.position-card .vacancy-indicator {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 0;
+  right: 0;
 }
 
+.topTopPositionClass:hover .position-title,
+.topTopPositionClass:hover .employee-name {
+  color: #a40000;
+}
+
+.topTopPositionClass:hover .position-divider {
+  background-color: #a40000;
+}
+
+.topTopPositionClass .position-divider {
+  background-color: #fff;
+}
