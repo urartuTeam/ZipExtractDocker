@@ -5,6 +5,13 @@ import DisplaySettings from './DisplaySettings';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 
+// Расширяем интерфейс Window глобально
+declare global {
+  interface Window {
+    positionsWithDepartmentsData: any[];
+  }
+}
+
 // Типы данных для организационной структуры
 type Department = {
   department_id: number;
@@ -147,8 +154,8 @@ const DepartmentWithChildren = ({
     department.positions.forEach(pos => positionIds.add(pos.position_id));
     
     // 4. Проверяем positionsWithDepartmentsData для дополнительных связей
-    const posWithDepts = (window as any).positionsWithDepartmentsData || []; // Берем из глобального объекта
-    posWithDepts.forEach((pos: any) => {
+    const posWithDepts = window.positionsWithDepartmentsData || []; // Берем из глобального объекта
+    posWithDepts.forEach(pos => {
       if (pos.departments && Array.isArray(pos.departments)) {
         // Если должность связана с текущим отделом через departments
         if (pos.departments.some((d: any) => d.department_id === department.department_id)) {
@@ -433,7 +440,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   
   // Сохраняем positionsWithDepartments в глобальном объекте для доступа из подкомпонентов
   if (typeof window !== 'undefined') {
-    (window as any).positionsWithDepartmentsData = positionsWithDepartments;
+    window.positionsWithDepartmentsData = positionsWithDepartments;
   }
   
   // Состояние для хранения истории навигации по дереву
