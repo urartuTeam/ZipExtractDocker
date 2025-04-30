@@ -504,8 +504,18 @@ export default function OrganizationStructure() {
   
   const rootDepartments = getRootDepartments();
   
-  // Получаем все дочерние отделы, включая отделы, подчиняющиеся должностям в данном отделе
+  // Глобальный список отделов, которые уже отображены в дереве
+  // Используется для исключения дублирования в рекурсивном рендеринге
+  const alreadyRenderedDepartments = new Set<number>();
+
+  // Получаем все дочерние отделы для отдела parentDepartmentId
   const getAllChildDepartments = (parentDepartmentId: number) => {
+    // Если мы находимся на корневом уровне, очищаем список отрендеренных отделов
+    if (parentDepartmentId === 17) { // 17 = ID корневого отдела "Администрация"
+      alreadyRenderedDepartments.clear();
+      alreadyRenderedDepartments.add(17); // Добавляем корневой отдел
+    }
+    
     // Получаем все должности отдела
     const departmentPositions = positions.filter(pos => 
       pos.department_id === parentDepartmentId
@@ -515,31 +525,43 @@ export default function OrganizationStructure() {
       departmentPositions.map(p => `${p.name} (ID: ${p.position_id})`));
     
     // Для каждой должности ищем подчиненные отделы через parent_position_id
-    let allPositionChildDeps: Department[] = [];
+    const allPositionChildDeps: Department[] = [];
     
     departmentPositions.forEach(position => {
       // Получаем отделы, которые подчиняются этой должности через parent_position_id
       const positionChildDeps = departments.filter(dept => 
-        dept.parent_position_id === position.position_id && !dept.deleted
+        dept.parent_position_id === position.position_id && 
+        !dept.deleted &&
+        !alreadyRenderedDepartments.has(dept.department_id) // Исключаем уже отрендеренные отделы
       );
       
       if (positionChildDeps.length > 0) {
         console.log(`Дочерние отделы для должности "${position.name}" (ID: ${position.position_id}):`, 
           positionChildDeps.map(d => `${d.name} (ID: ${d.department_id})`));
         
-        allPositionChildDeps = [...allPositionChildDeps, ...positionChildDeps];
+        // Добавляем отделы в список отрендеренных
+        positionChildDeps.forEach(dept => {
+          alreadyRenderedDepartments.add(dept.department_id);
+        });
+        
+        allPositionChildDeps.push(...positionChildDeps);
       }
     });
     
-    // Получаем прямых дочерних отделов по parent_department_id, 
-    // но исключаем те, которые уже связаны с должностями этого отдела через parent_position_id
+    // Получаем прямых дочерних отделов по parent_department_id,
+    // исключая уже отрендеренные и удаленные
     const directChildDeps = departments?.filter(
       dept => dept.parent_department_id === parentDepartmentId && 
               !dept.deleted && 
-              !departmentPositions.some(pos => dept.parent_position_id === pos.position_id)
+              !alreadyRenderedDepartments.has(dept.department_id)
     ) || [];
     
-    console.log(`Прямые дочерние отделы для отдела ID:${parentDepartmentId} (исключая связанные с должностями):`, 
+    // Добавляем отделы в список отрендеренных
+    directChildDeps.forEach(dept => {
+      alreadyRenderedDepartments.add(dept.department_id);
+    });
+    
+    console.log(`Прямые дочерние отделы для отдела ID:${parentDepartmentId} (исключая уже отрендеренные):`, 
       directChildDeps.map(d => `${d.name} (ID: ${d.department_id})`));
     
     // Объединяем все дочерние отделы
