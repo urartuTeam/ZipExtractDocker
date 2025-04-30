@@ -358,42 +358,26 @@ export default function OrganizationStructure() {
             <ChevronRight className="h-4 w-4 mr-2 text-neutral-500" />
           }
           <Users className="h-5 w-5 mr-2 text-blue-500" />
-          <span>{position.positionName}</span>
+          <span>
+            {position.positionName}
+            {positionEmployees.length > 0 && (
+              <span className="text-neutral-600 ml-1">
+                ({positionEmployees[0].full_name})
+              </span>
+            )}
+            {positionEmployees.length === 0 && (
+              <span className="text-amber-500 ml-1">(Вакантная)</span>
+            )}
+          </span>
         </div>
         
         {isPositionExpanded && (
           <div className="ml-6 border-l-2 border-neutral-200 pl-4 py-2">
-            {/* Сотрудники на должности */}
-            {positionEmployees.length > 0 ? (
-              positionEmployees.map(employee => (
-                <div key={employee.employee_id}>
-                  <div 
-                    className="flex items-center p-2 hover:bg-neutral-100 rounded-md"
-                  >
-                    <User className="h-5 w-5 mr-2 text-green-500" />
-                    <span>{employee.full_name}</span>
-                  </div>
-                  
-                  {/* Подчиненные отделы сотрудника */}
-                  {positionChildDepartments.length > 0 && (
-                    <div className="ml-6 border-l-2 border-neutral-200 pl-4 py-2">
-                      <div className="font-medium mb-2 pl-2">Подчиненные отделы:</div>
-                      {positionChildDepartments.map(childDept => renderDepartment(childDept, level + 1))}
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <div className="text-neutral-500 italic pl-7">
-                Нет сотрудников на этой должности
-                
-                {/* Даже если нет сотрудников, показываем подчиненные отделы */}
-                {positionChildDepartments.length > 0 && (
-                  <div className="mt-4">
-                    <div className="font-medium mb-2 pl-2">Подчиненные отделы:</div>
-                    {positionChildDepartments.map(childDept => renderDepartment(childDept, level + 1))}
-                  </div>
-                )}
+            {/* Подчиненные отделы сотрудника */}
+            {positionChildDepartments.length > 0 && (
+              <div className="ml-0 border-l-2 border-neutral-200 pl-4 py-2">
+                <div className="font-medium mb-2 pl-2">Подчиненные отделы:</div>
+                {positionChildDepartments.map(childDept => renderDepartment(childDept, level + 1))}
               </div>
             )}
             
