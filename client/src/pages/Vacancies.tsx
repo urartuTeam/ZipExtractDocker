@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card,
@@ -55,6 +55,7 @@ type PositionDepartment = {
 export default function Vacancies() {
   const [expDept, setExpDept] = useState<{ [k: number]: boolean }>({});
   const [expPos, setExpPos] = useState<{ [k: string]: boolean }>({});
+  const [allExpanded, setAllExpanded] = useState(true);
   
   // Получаем данные о департаментах
   const { data: deptR, isLoading: ld } = useQuery<{ data: Department[] }>({
@@ -82,6 +83,34 @@ export default function Vacancies() {
     queryKey: ["/api/positiondepartments"],
   });
   
+  // Автоматически раскрываем все дерево при загрузке данных
+  useEffect(() => {
+    if (!ld && !lp && deptR && posR) {
+      const departments = deptR.data || [];
+      const positions = posR.data || [];
+      
+      // Создаем объект для всех департаментов, где все изначально раскрыты
+      const allDepts = departments.reduce((acc, dept) => {
+        if (!dept.deleted) {
+          acc[dept.department_id] = true;
+        }
+        return acc;
+      }, {} as { [k: number]: boolean });
+      
+      // Создаем объект для всех позиций, где все изначально раскрыты
+      const allPos = positions.reduce((acc, pos) => {
+        pos.departments.forEach(dept => {
+          const key = `${pos.position_id}-${dept.department_id}`;
+          acc[key] = true;
+        });
+        return acc;
+      }, {} as { [k: string]: boolean });
+      
+      setExpDept(allDepts);
+      setExpPos(allPos);
+    }
+  }, [ld, lp, deptR, posR]);
+  
   if (ld || lp || le || lpd) return <div>Загрузка...</div>;
 
   const departments = deptR?.data || [];
@@ -95,6 +124,39 @@ export default function Vacancies() {
   
   const togglePos = (key: string) => {
     setExpPos((s) => ({ ...s, [key]: !s[key] }));
+  };
+  
+  // Функция для переключения состояния всех элементов (развернуть/свернуть все)
+  const toggleAll = () => {
+    if (allExpanded) {
+      // Сворачиваем все
+      setExpDept({});
+      setExpPos({});
+    } else {
+      // Разворачиваем все
+      const departments = deptR?.data || [];
+      const positions = posR?.data || [];
+      
+      const allDepts = departments.reduce((acc, dept) => {
+        if (!dept.deleted) {
+          acc[dept.department_id] = true;
+        }
+        return acc;
+      }, {} as { [k: number]: boolean });
+      
+      const allPos = positions.reduce((acc, pos) => {
+        pos.departments.forEach(dept => {
+          const key = `${pos.position_id}-${dept.department_id}`;
+          acc[key] = true;
+        });
+        return acc;
+      }, {} as { [k: string]: boolean });
+      
+      setExpDept(allDepts);
+      setExpPos(allPos);
+    }
+    
+    setAllExpanded(!allExpanded);
   };
   
   const roots = departments.filter(
@@ -262,9 +324,28 @@ export default function Vacancies() {
   return (
     <div className="p-4">
       <Card>
-        <CardHeader>
-          <CardTitle>Учет вакансий</CardTitle>
-          <CardDescription>Анализ штатных единиц и занятых позиций</CardDescription>
+        <CardHeader className="flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
+          <div>
+            <CardTitle>Учет вакансий</CardTitle>
+            <CardDescription>Анализ штатных единиц и занятых позиций</CardDescription>
+          </div>
+          <Button 
+            onClick={toggleAll} 
+            variant="outline" 
+            className="flex items-center"
+          >
+            {allExpanded ? (
+              <>
+                <ChevronRight className="h-4 w-4 mr-2" />
+                Свернуть все
+              </>
+            ) : (
+              <>
+                <ChevronDown className="h-4 w-4 mr-2" />
+                Развернуть все
+              </>
+            )}
+          </Button>
         </CardHeader>
         <CardContent>
           <Table>
