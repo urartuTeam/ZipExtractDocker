@@ -1228,6 +1228,37 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
                 subordinates: [],
                 childDepartments: [], // У дочернего отдела пока нет отделов
               };
+              
+              // Специальная проверка для отдела "Управление цифрового развития" (ID=20)
+              if (childDept.department_id === 20) {
+                console.log(`Обрабатываем отдел "Управление цифрового развития" (ID=20)`);
+                
+                // Ищем должность "Начальник управления" (ID=24)
+                const position24 = positions.find(p => p.position_id === 24);
+                if (position24) {
+                  console.log(`Найдена должность "Начальник управления" (ID=24)`);
+                  
+                  // Ищем сотрудника на этой должности в этом отделе
+                  const employee24 = employees.find(e => 
+                    e.position_id === 24 && e.department_id === 20
+                  );
+                  
+                  if (employee24) {
+                    console.log(`Найден сотрудник "${employee24.full_name}" на должности "Начальник управления" в отделе "Управление цифрового развития"`);
+                  }
+                  
+                  // Создаем узел для должности
+                  const posNode: PositionHierarchyNode = {
+                    position: position24,
+                    employee: employee24 || null,
+                    subordinates: [],
+                    childDepartments: []
+                  };
+                  
+                  // Добавляем должность в отдел
+                  childDeptNode.subordinates.push(posNode);
+                }
+              }
 
               // Добавляем дочерний отдел как подчиненный к текущему отделу
               departmentNode.subordinates.push(childDeptNode);
