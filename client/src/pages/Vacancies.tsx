@@ -223,9 +223,21 @@ export default function Vacancies() {
     
     const rows = [];
     
+    // Определяем цвет фона в зависимости от наличия вакансий
+    let bgClass = '';
+    if (staffUnits > 0) {
+      if (currentCount < staffUnits) {
+        // Есть вакансии - красноватый фон
+        bgClass = 'bg-red-50';
+      } else if (currentCount >= staffUnits) {
+        // Нет вакансий - зеленоватый фон
+        bgClass = 'bg-green-50';
+      }
+    }
+    
     // Добавляем строку для текущей должности
     rows.push(
-      <TableRow key={rowId} className={parentId ? "bg-gray-50" : ""}>
+      <TableRow key={rowId} className={bgClass}>
         <TableCell className="font-medium">
           <div 
             className="flex items-center cursor-pointer" 
@@ -284,7 +296,7 @@ export default function Vacancies() {
     
     // Добавляем строку для текущего отдела
     rows.push(
-      <TableRow key={rowId} className="bg-primary/5">
+      <TableRow key={rowId}>
         <TableCell className="font-medium" colSpan={4}>
           <div 
             className="flex items-center cursor-pointer" 
