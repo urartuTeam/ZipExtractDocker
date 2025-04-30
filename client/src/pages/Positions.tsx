@@ -86,9 +86,12 @@ export default function Positions() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDepartmentDialogOpen, setIsAddDepartmentDialogOpen] = useState(false);
+  const [isEditVacanciesDialogOpen, setIsEditVacanciesDialogOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+  const [selectedPositionDepartment, setSelectedPositionDepartment] = useState<DepartmentLink | null>(null);
   const [vacanciesCount, setVacanciesCount] = useState<number>(0);
+  const [editVacanciesCount, setEditVacanciesCount] = useState<number>(0);
   const queryClient = useQueryClient();
 
   // Form для создания
@@ -258,6 +261,33 @@ export default function Positions() {
       });
     },
   });
+  
+  // Mutation для обновления связи должности с отделом (изменение количества вакансий)
+  const updatePositionDepartment = useMutation({
+    mutationFn: async ({ id, vacancies }: { id: number, vacancies: number }) => {
+      const res = await apiRequest("PUT", `/api/positiondepartments/${id}`, { vacancies });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при обновлении связи должности с отделом");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Связь обновлена",
+        description: "Количество вакансий успешно изменено",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
+      setIsEditVacanciesDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при обновлении связи",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
 
   // Запрос на получение должностей с отделами
   const { data: positionsData, isLoading, error } = useQuery<{ status: string, data: Position[] }>({
@@ -315,6 +345,23 @@ export default function Positions() {
   // Обработчик удаления связи должности с отделом
   const handleDeleteLink = (linkId: number) => {
     deletePositionDepartment.mutate(linkId);
+  };
+  
+  // Обработчик открытия диалога редактирования количества вакансий
+  const handleOpenEditVacancies = (dept: DepartmentLink) => {
+    setSelectedPositionDepartment(dept);
+    setEditVacanciesCount(dept.vacancies || 0);
+    setIsEditVacanciesDialogOpen(true);
+  };
+  
+  // Обработчик подтверждения редактирования количества вакансий
+  const handleUpdateVacancies = () => {
+    if (selectedPositionDepartment) {
+      updatePositionDepartment.mutate({
+        id: selectedPositionDepartment.position_link_id,
+        vacancies: editVacanciesCount
+      });
+    }
   };
   
   // Обработчик добавления связи должности с отделом
@@ -424,16 +471,31 @@ export default function Positions() {
                                         </span>
                                       )}
                                     </span>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-6 w-6" 
-                                      onClick={() => handleDeleteLink(dept.position_link_id)}
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
-                                        <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
-                                      </svg>
-                                    </Button>
+                                    <div className="flex gap-1">
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-6 w-6" 
+                                        onClick={() => handleOpenEditVacancies(dept)}
+                                        title="Изменить количество вакансий"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                        </svg>
+                                      </Button>
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-6 w-6" 
+                                        onClick={() => handleDeleteLink(dept.position_link_id)}
+                                        title="Удалить связь"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                                          <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
+                                        </svg>
+                                      </Button>
+                                    </div>
                                   </div>
                                 ))}
                               </div>
@@ -778,6 +840,42 @@ export default function Positions() {
                 disabled={!selectedDepartmentId || createPositionDepartment.isPending}
               >
                 {createPositionDepartment.isPending ? "Добавление..." : "Добавить связь"}
+              </Button>
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Диалог редактирования количества вакансий */}
+      <Dialog open={isEditVacanciesDialogOpen} onOpenChange={setIsEditVacanciesDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Изменить количество штатных единиц</DialogTitle>
+            <DialogDescription>
+              Укажите количество штатных единиц для отдела "{selectedPositionDepartment?.department_name}"
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Количество штатных единиц
+              </label>
+              <Input 
+                type="number" 
+                min="0" 
+                placeholder="Укажите количество штатных единиц"
+                value={editVacanciesCount}
+                onChange={(e) => setEditVacanciesCount(parseInt(e.target.value) || 0)}
+              />
+            </div>
+            
+            <DialogFooter className="mt-4">
+              <Button 
+                onClick={handleUpdateVacancies}
+                disabled={updatePositionDepartment.isPending}
+              >
+                {updatePositionDepartment.isPending ? "Сохранение..." : "Сохранить изменения"}
               </Button>
             </DialogFooter>
           </div>
