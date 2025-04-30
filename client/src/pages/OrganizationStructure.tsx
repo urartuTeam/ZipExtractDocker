@@ -147,7 +147,7 @@ export default function OrganizationStructure() {
                       key={emp.employee_id} 
                       className="flex items-center p-1 pl-4 hover:bg-gray-50 rounded-r"
                     >
-                      <User className="h-4 w-4 mr-2 text-blue-500" />
+                      <User className="h-4 w-4 mr-2 text-green-600" />
                       <span className="text-sm">{emp.full_name}</span>
                     </div>
                   ))}
