@@ -118,7 +118,7 @@ export default function OrganizationStructure() {
     const displayText = emps.length === 0 
       ? `${p.name} (Вакантная)` 
       : hasMultipleEmployees 
-        ? `${p.name} (${emps.length} ${getEmployeeWord(emps.length)})` 
+        ? `${p.name}` 
         : `${p.name} (${emps[0].full_name})`;
 
     return (
