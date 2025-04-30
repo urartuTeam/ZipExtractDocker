@@ -343,33 +343,35 @@ export default function Vacancies() {
       {/* Основной контент */}
       <div className="flex-1 p-4 bg-gray-100 overflow-auto">
         <Card>
-          <CardHeader className="flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
-            <div>
-              <Button asChild variant="default">
+          <CardHeader className="flex flex-col space-y-4">
+            <div className="flex justify-between">
+              <Button asChild variant="outline" className="flex items-center">
                 <Link href="/">
                   На главную
                 </Link>
               </Button>
-              <CardTitle className="mt-4">Учет вакансий</CardTitle>
+              <Button 
+                onClick={toggleAll} 
+                variant="outline" 
+                className="flex items-center"
+              >
+                {allExpanded ? (
+                  <>
+                    <ChevronRight className="h-4 w-4 mr-2" />
+                    Свернуть все
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                    Развернуть все
+                  </>
+                )}
+              </Button>
+            </div>
+            <div>
+              <CardTitle>Учет вакансий</CardTitle>
               <CardDescription>Анализ штатных единиц и занятых позиций</CardDescription>
             </div>
-            <Button 
-              onClick={toggleAll} 
-              variant="outline" 
-              className="flex items-center"
-            >
-              {allExpanded ? (
-                <>
-                  <ChevronRight className="h-4 w-4 mr-2" />
-                  Свернуть все
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4 mr-2" />
-                  Развернуть все
-                </>
-              )}
-            </Button>
           </CardHeader>
           <CardContent>
             <Table>
