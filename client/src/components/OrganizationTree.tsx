@@ -277,7 +277,7 @@ const DepartmentWithChildren = ({
 // Тип для построения иерархии позиций
 type PositionHierarchyNode = {
   position: Position;
-  employee: Employee | null;
+  employees: Employee[]; // Массив сотрудников на этой должности
   subordinates: PositionHierarchyNode[];
   childDepartments: Department[]; // Дочерние отделы, связанные с этой должностью
 };

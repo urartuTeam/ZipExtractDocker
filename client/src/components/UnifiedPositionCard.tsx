@@ -26,7 +26,7 @@ type Department = {
 // Типы узлов в иерархии должностей
 type PositionHierarchyNode = {
   position: Position;
-  employee: Employee | null;
+  employees: Employee[]; // Массив сотрудников на этой должности
   subordinates: PositionHierarchyNode[];
   childDepartments?: Department[]; // Добавляем поле для хранения подчиненных отделов
 };
@@ -100,17 +100,22 @@ const UnifiedPositionCard = ({
       {/* Для всех карточек добавляем разделитель */}
       <div className="position-divider"></div>
 
-      {/* Для отделов показываем слово "Отдел", для должностей - сотрудника или вакансию */}
+      {/* Для отделов показываем слово "Отдел", для должностей - сотрудников или вакансию */}
       {isDepartment ? (
         <div className="department-type">Отдел</div>
       ) : (
         <>
-          {node.employee ? (
-            <div className="employee-name">{node.employee.full_name}</div>
+          {node.employees && node.employees.length > 0 ? (
+            <div className="employee-names">
+              {node.employees.map((employee, index) => (
+                <div key={employee.employee_id} className="employee-name">
+                  {employee.full_name}
+                  {index < node.employees.length - 1 && <div className="employee-divider"></div>}
+                </div>
+              ))}
+            </div>
           ) : (
-            <>
-              <div className="position-vacant">Вакантная должность</div>
-            </>
+            <div className="position-vacant">Вакантная должность</div>
           )}
         </>
       )}
