@@ -581,6 +581,13 @@ export default function OrganizationStructure() {
     // 2. ИЛИ пользователь явно раскрыл этот отдел
     const shouldShowChildren = level < initialLevels || expandedDepartments[department.department_id] === true;
     
+    // Отладочный вывод для отдела "Управление"
+    if (department.department_id === 18) {
+      console.log(`ОТЛАДКА ОТДЕЛА "УПРАВЛЕНИЕ": ID=${department.department_id}, уровень=${level}, initialLevels=${initialLevels}`);
+      console.log(`Дочерние отделы для "Управление":`, childDepartments.map(d => d.name));
+      console.log(`Показывать дочерние? ${shouldShowChildren}, expandedDepartments[18]=${expandedDepartments[18]}`);
+    }
+    
     console.log(`Отдел ${department.name} (уровень ${level}): показывать дочерние = ${shouldShowChildren}, initialLevels = ${initialLevels}, level < initialLevels = ${level < initialLevels}`);
     
     if (childDepartments.length === 0) {
