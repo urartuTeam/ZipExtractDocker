@@ -64,8 +64,8 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
   
-  // На страницах проектов и вакансий для обычных пользователей не показываем боковое меню, но оставляем header
-  if (location === '/projects' || location.startsWith('/projects/') || location === '/vacancies') {
+  // На страницах проектов для обычных пользователей не показываем боковое меню, но оставляем header
+  if (location === '/projects' || location.startsWith('/projects/')) {
     return (
       <div className="h-screen flex flex-col overflow-hidden">
         <Header toggleSidebar={toggleSidebar} activeTab={location} />
@@ -74,6 +74,11 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         </main>
       </div>
     );
+  }
+  
+  // Для страницы вакансий используем такой же стиль как на главной
+  if (location === '/vacancies') {
+    return <>{children}</>;
   }
 
   return (
