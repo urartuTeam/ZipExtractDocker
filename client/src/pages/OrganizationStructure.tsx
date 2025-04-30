@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ChevronRight, ChevronDown, Users, Building } from "lucide-react";
+import { ChevronRight, ChevronDown, Users, Building, User } from "lucide-react";
 
 type Department = {
   department_id: number;
@@ -93,6 +93,33 @@ export default function OrganizationStructure() {
     const emps = getEmps(p.position_id, deptId);
     const childPositions = p.children || [];
     const childDepts = getChildDeptsByPosition(p.position_id);
+    
+    // Определяем, как отображать сотрудников в зависимости от их количества
+    // Если один сотрудник - показываем в скобках рядом с должностью
+    // Если несколько - показываем только должность, а сотрудников при раскрытии
+    const hasMultipleEmployees = emps.length > 1;
+    
+    // Функция для правильного склонения слова "сотрудник"
+    const getEmployeeWord = (count: number) => {
+      const lastDigit = count % 10;
+      const lastTwoDigits = count % 100;
+      
+      if (lastTwoDigits >= 11 && lastTwoDigits <= 19) {
+        return 'сотрудников';
+      } else if (lastDigit === 1) {
+        return 'сотрудник';
+      } else if (lastDigit >= 2 && lastDigit <= 4) {
+        return 'сотрудника';
+      } else {
+        return 'сотрудников';
+      }
+    };
+    
+    const displayText = emps.length === 0 
+      ? `${p.name} (Вакантная)` 
+      : hasMultipleEmployees 
+        ? `${p.name} (${emps.length} ${getEmployeeWord(emps.length)})` 
+        : `${p.name} (${emps[0].full_name})`;
 
     return (
       <div key={key}>
@@ -107,12 +134,26 @@ export default function OrganizationStructure() {
             <ChevronRight className="h-4 w-4 mr-2 text-neutral-500" />
           )}
           <Users className="h-5 w-5 mr-2 text-blue-500" />
-          <span>
-            {p.name} {emps.length ? `(${emps[0].full_name})` : "(Вакантная)"}
-          </span>
+          <span>{displayText}</span>
         </div>
         {ex && (
           <div className="ml-6 border-l-2 pl-4">
+            {/* Если несколько сотрудников, отображаем их как дочерние элементы */}
+            {hasMultipleEmployees && (
+              <div className="mt-1 mb-2">
+                <div className="border-l border-l-gray-200 ml-1">
+                  {emps.map(emp => (
+                    <div 
+                      key={emp.employee_id} 
+                      className="flex items-center p-1 pl-4 hover:bg-gray-50 rounded-r"
+                    >
+                      <User className="h-4 w-4 mr-2 text-blue-500" />
+                      <span className="text-sm">{emp.full_name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {childPositions.map((c: any) => renderPos(c, deptId, lvl + 1))}
             {childDepts.map((d) => renderDept(d, lvl + 1))}
           </div>
