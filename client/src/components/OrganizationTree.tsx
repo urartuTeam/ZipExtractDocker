@@ -146,6 +146,18 @@ const DepartmentWithChildren = ({
     // 3. Также включаем позиции, которые уже были привязаны к этому отделу через API
     department.positions.forEach(pos => positionIds.add(pos.position_id));
     
+    // 4. Проверяем positionsWithDepartmentsData для дополнительных связей
+    const posWithDepts = (window as any).positionsWithDepartmentsData || []; // Берем из глобального объекта
+    posWithDepts.forEach((pos: any) => {
+      if (pos.departments && Array.isArray(pos.departments)) {
+        // Если должность связана с текущим отделом через departments
+        if (pos.departments.some((d: any) => d.department_id === department.department_id)) {
+          positionIds.add(pos.position_id);
+          console.log(`Найдена дополнительная должность ${pos.name} (ID: ${pos.position_id}) для отдела ${department.name} через positionsWithDepartmentsData`);
+        }
+      }
+    });
+    
     // Фильтруем позиции по найденным ID
     departmentPositions = allPositions.filter(
       position => positionIds.has(position.position_id)
@@ -418,6 +430,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   
   // Используем данные о должностях с отделами из пропсов или из запроса
   const positionsWithDepartments = positionsData || positionsWithDepartmentsResponse?.data || [];
+  
+  // Сохраняем positionsWithDepartments в глобальном объекте для доступа из подкомпонентов
+  if (typeof window !== 'undefined') {
+    (window as any).positionsWithDepartmentsData = positionsWithDepartments;
+  }
   
   // Состояние для хранения истории навигации по дереву
   const [navigationHistory, setNavigationHistory] = useState<number[]>([]);
