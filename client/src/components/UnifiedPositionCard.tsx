@@ -90,20 +90,17 @@ const UnifiedPositionCard = ({
       )}
       
       <div className="position-title">
-        {isDepartment ? (
-          <>
-            {node.position.name.replace(' (отдел)', '')} 
-            <span className="department-label">Отдел</span>
-          </>
-        ) : (
-          node.position.name
-        )}
+        {isDepartment ? node.position.name.replace(' (отдел)', '') : node.position.name}
       </div>
       
-      {/* Только для должностей (не отделов) показываем сотрудника или вакансию */}
-      {!isDepartment && (
+      {/* Для всех карточек добавляем разделитель */}
+      <div className="position-divider"></div>
+      
+      {/* Для отделов показываем слово "Отдел", для должностей - сотрудника или вакансию */}
+      {isDepartment ? (
+        <div className="department-type">Отдел</div>
+      ) : (
         <>
-          <div className="position-divider"></div>
           {node.employee ? (
             <div className="employee-name">{node.employee.full_name}</div>
           ) : (
