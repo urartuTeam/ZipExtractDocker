@@ -123,8 +123,8 @@ export default function OrganizationStructure() {
 
   const renderPos = (p: any, deptId: number, lvl = 0) => {
     const key = `${p.position_id}-${deptId}`;
-    // Используем значение из expPos, если оно есть, иначе берем значение из expanded
-    const ex = expanded ? true : (expPos[key] ?? false);
+    // Если элемент явно закрыт в expPos, то используем это значение, иначе проверяем глобальное состояние expanded
+    const ex = expPos[key] === false ? false : (expanded || (expPos[key] ?? false));
     const emps = getEmps(p.position_id, deptId);
     const childPositions = p.children || [];
     const childDepts = getChildDeptsByPosition(p.position_id);
@@ -198,8 +198,8 @@ export default function OrganizationStructure() {
   };
 
   const renderDept = (d: Department, lvl = 0) => {
-    // Используем значение из expDept, если оно есть, иначе берем значение из expanded
-    const ex = expanded ? true : (expDept[d.department_id] ?? false);
+    // Если элемент явно закрыт в expDept, то используем это значение, иначе проверяем глобальное состояние expanded
+    const ex = expDept[d.department_id] === false ? false : (expanded || (expDept[d.department_id] ?? false));
     const childDepts = getChildDeptsByDept(d.department_id);
     const deptPositions = getDeptPositions(d.department_id);
 
