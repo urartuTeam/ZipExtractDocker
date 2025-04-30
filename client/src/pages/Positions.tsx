@@ -277,6 +277,7 @@ export default function Positions() {
         description: "Количество вакансий успешно изменено",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
+      setSelectedPositionDepartment(null);
     },
     onError: (error: Error) => {
       toast({
