@@ -416,7 +416,14 @@ export default function Positions() {
                               <div className="flex flex-col gap-1">
                                 {position.departments.map(dept => (
                                   <div key={dept.position_link_id} className="flex items-center gap-2">
-                                    <span className="text-sm">{dept.department_name}</span>
+                                    <span className="text-sm">
+                                      {dept.department_name}
+                                      {dept.vacancies !== undefined && dept.vacancies > 0 && (
+                                        <span className="ml-1 text-xs text-gray-500">
+                                          (штатных единиц: {dept.vacancies})
+                                        </span>
+                                      )}
+                                    </span>
                                     <Button 
                                       variant="ghost" 
                                       size="icon" 
@@ -623,7 +630,14 @@ export default function Positions() {
                   <div className="border rounded-md divide-y">
                     {selectedPosition.departments.map(dept => (
                       <div key={dept.position_link_id} className="flex items-center justify-between p-3">
-                        <span className="text-sm">{dept.department_name}</span>
+                        <span className="text-sm">
+                          {dept.department_name}
+                          {dept.vacancies !== undefined && dept.vacancies > 0 && (
+                            <span className="ml-1 text-xs text-gray-500">
+                              (штатных единиц: {dept.vacancies})
+                            </span>
+                          )}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -726,7 +740,14 @@ export default function Positions() {
                   {selectedPosition.departments.map(dept => (
                     <div key={dept.position_link_id} className="flex items-center justify-between p-3">
                       <div>
-                        <span className="font-medium">{dept.department_name}</span>
+                        <span className="font-medium">
+                          {dept.department_name}
+                          {dept.vacancies !== undefined && dept.vacancies > 0 && (
+                            <span className="ml-1 text-xs text-gray-500">
+                              (штатных единиц: {dept.vacancies})
+                            </span>
+                          )}
+                        </span>
                       </div>
                       <div className="flex items-center gap-4">
                         <Button 
