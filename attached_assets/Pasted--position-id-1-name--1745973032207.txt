@@ -1,0 +1,202 @@
+[
+    {
+        "position_id": 1,
+        "name": "ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА",
+        "department_id": 1,
+        "staff_units": 1,
+        "current_count": 1,
+        "vacancies": 0,
+        "parent_position_id": null,
+        "sort": 1,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 1,
+                "department_id": 1,
+                "department_name": "Администрация",
+                "sort": 0
+            }
+        ]
+    },
+    {
+        "position_id": 2,
+        "name": "Главный эксперт",
+        "department_id": null,
+        "staff_units": 0,
+        "current_count": 0,
+        "vacancies": 0,
+        "parent_position_id": null,
+        "sort": 2,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 2,
+                "department_id": 1,
+                "department_name": "Администрация",
+                "sort": 0
+            }
+        ]
+    },
+    {
+        "position_id": 3,
+        "name": "Главный специалист",
+        "department_id": null,
+        "staff_units": 0,
+        "current_count": 0,
+        "vacancies": 0,
+        "parent_position_id": null,
+        "sort": 3,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 3,
+                "department_id": 1,
+                "department_name": "Администрация",
+                "sort": 0
+            }
+        ]
+    },
+    {
+        "position_id": 4,
+        "name": "Исполнительный директор",
+        "department_id": null,
+        "staff_units": 0,
+        "current_count": 0,
+        "vacancies": 0,
+        "parent_position_id": 5,
+        "sort": 4,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 6,
+                "department_id": 1,
+                "department_name": "Администрация",
+                "sort": 0
+            }
+        ]
+    },
+    {
+        "position_id": 5,
+        "name": "Генеральный директор",
+        "department_id": null,
+        "staff_units": 0,
+        "current_count": 0,
+        "vacancies": 0,
+        "parent_position_id": 1,
+        "sort": 5,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 4,
+                "department_id": 1,
+                "department_name": "Администрация",
+                "sort": 0
+            }
+        ]
+    },
+    {
+        "position_id": 6,
+        "name": "Начальник управления",
+        "department_id": null,
+        "staff_units": 0,
+        "current_count": 0,
+        "vacancies": 0,
+        "parent_position_id": 1,
+        "sort": 6,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 5,
+                "department_id": 1,
+                "department_name": "Администрация",
+                "sort": 0
+            }
+        ]
+    },
+    {
+        "position_id": 7,
+        "name": "Заместитель генерального директора по координации реализации планов ОИВ",
+        "department_id": null,
+        "staff_units": 0,
+        "current_count": 0,
+        "vacancies": 0,
+        "parent_position_id": 5,
+        "sort": 7,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 7,
+                "department_id": 1,
+                "department_name": "Администрация",
+                "sort": 0
+            }
+        ]
+    },
+    {
+        "position_id": 8,
+        "name": "Заместитель генерального директора по координации аналитики",
+        "department_id": null,
+        "staff_units": 0,
+        "current_count": 0,
+        "vacancies": 0,
+        "parent_position_id": 5,
+        "sort": 8,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 8,
+                "department_id": 1,
+                "department_name": "Администрация",
+                "sort": 0
+            }
+        ]
+    },
+    {
+        "position_id": 9,
+        "name": "Заместитель генерального директора по координации разработки",
+        "department_id": null,
+        "staff_units": 0,
+        "current_count": 0,
+        "vacancies": 0,
+        "parent_position_id": 5,
+        "sort": 9,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 9,
+                "department_id": 1,
+                "department_name": "Администрация",
+                "sort": 0
+            }
+        ]
+    },
+    {
+        "position_id": 10,
+        "name": "Начальник отдела. Руководитель команды",
+        "department_id": null,
+        "staff_units": 0,
+        "current_count": 0,
+        "vacancies": 0,
+        "parent_position_id": null,
+        "sort": 0,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 10,
+                "department_id": 7,
+                "department_name": "ОТДЕЛ КООРДИНАЦИИ РАЗРАБОТКИ",
+                "sort": 0
+            }
+        ]
+    }
+]
