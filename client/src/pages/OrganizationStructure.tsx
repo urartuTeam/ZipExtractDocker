@@ -495,28 +495,39 @@ export default function OrganizationStructure() {
   const getAllChildDepartments = (parentDepartmentId: number) => {
     // Получаем прямых дочерних отделов по parent_department_id
     const directChildDeps = departments?.filter(
-      dept => dept.parent_department_id === parentDepartmentId
+      dept => dept.parent_department_id === parentDepartmentId && !dept.deleted
     ) || [];
     
-    // Получаем должность "Начальник управления" из отдела "Администрация"
-    const managerPosition = positions.find(pos => 
-      pos.name === "Начальник управления" && pos.department_id === parentDepartmentId
+    console.log(`Прямые дочерние отделы для отдела ID:${parentDepartmentId}:`, 
+      directChildDeps.map(d => `${d.name} (ID: ${d.department_id})`));
+    
+    // Получаем все должности отдела
+    const departmentPositions = positions.filter(pos => 
+      pos.department_id === parentDepartmentId
     );
     
-    if (!managerPosition) {
-      return directChildDeps;
-    }
+    console.log(`Должности отдела ID:${parentDepartmentId}:`, 
+      departmentPositions.map(p => `${p.name} (ID: ${p.position_id})`));
     
-    // Получаем отделы, которые подчиняются этой должности через parent_position_id
-    const positionChildDeps = departments.filter(dept => 
-      dept.parent_position_id === managerPosition.position_id
-    );
+    // Для каждой должности ищем подчиненные отделы
+    let allPositionChildDeps: Department[] = [];
     
-    console.log(`Дочерние отделы для отдела ${parentDepartmentId} через должность ${managerPosition.position_id}:`, 
-      positionChildDeps.map(d => `${d.name} (ID: ${d.department_id})`));
+    departmentPositions.forEach(position => {
+      // Получаем отделы, которые подчиняются этой должности через parent_position_id
+      const positionChildDeps = departments.filter(dept => 
+        dept.parent_position_id === position.position_id && !dept.deleted
+      );
+      
+      if (positionChildDeps.length > 0) {
+        console.log(`Дочерние отделы для должности "${position.name}" (ID: ${position.position_id}):`, 
+          positionChildDeps.map(d => `${d.name} (ID: ${d.department_id})`));
+        
+        allPositionChildDeps = [...allPositionChildDeps, ...positionChildDeps];
+      }
+    });
     
     // Объединяем все дочерние отделы
-    return [...directChildDeps, ...positionChildDeps];
+    return [...directChildDeps, ...allPositionChildDeps];
   };
   
   // Рекурсивно рендерит отделы и их дочерние отделы
