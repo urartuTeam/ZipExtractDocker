@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronDown, Users, Building } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-type Department = { department_id: number; name: string; parent_department_id: number | null; parent_position_id: number | null; deleted: boolean; deleted_at?: string | null; };
+type Department = { department_id: number; name: string; parent_department_id: number | null; parent_position_id: number | null; deleted: boolean; };
 type Position = { position_id: number; name: string; parent_position_id: number | null; departments: { department_id: number }[]; };
 type Employee = { employee_id: number; full_name: string; position_id: number; department_id: number; };
 
