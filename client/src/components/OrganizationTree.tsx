@@ -681,8 +681,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       return null;
     }
     
-    // Ищем сотрудника на этой должности в этом отделе
-    const employee = employees.find(e => 
+    // Ищем всех сотрудников на этой должности в этом отделе
+    const positionEmployees = employees.filter(e => 
       e.position_id === positionNode.position_id && e.department_id === departmentId
     );
     
@@ -694,7 +694,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         parent_position_id: positionNode.parent_position_id,
         department_id: departmentId
       },
-      employee: employee || null,
+      employees: positionEmployees,
       subordinates: [],
       childDepartments: []
     };
@@ -918,10 +918,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       ) || position;
       
       // Находим сотрудника на этой должности, если есть
-      const positionEmployee = employees.find(emp => {
-        // Смотрим по position_id и department_id
+      // Находим всех сотрудников на этой должности
+      const positionEmployees = employees.filter(emp => {
+        // Смотрим по position_id
         return emp.position_id === position.position_id;
-      }) || null;
+      });
 
       // Если position.departments нет, а в positionWithDepts есть, используем его
       const positionData = {
@@ -931,7 +932,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
       positionNodes[position.position_id] = {
         position: positionData,
-        employee: positionEmployee,
+        employees: positionEmployees,
         subordinates: [],
         childDepartments: []
       };
@@ -985,17 +986,21 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
             // Находим соответствующий отдел
             const department = departments.find(d => d.department_id === dept.department_id);
             if (department) {
-              // Находим сотрудника в этом отделе для этой должности
-              const deptEmployee = employees.find(e => 
+              // Находим сотрудников в этом отделе для этой должности
+              const deptEmployees = employees.filter(e => 
                 e.position_id === pos.position_id && e.department_id === dept.department_id
               );
               
-              if (deptEmployee) {
-                // Обновляем информацию о сотруднике для этой должности, если связь с этим отделом
-                if (positionNode.employee === null) {
-                  positionNode.employee = deptEmployee;
-                  console.log(`Привязан сотрудник "${deptEmployee.full_name}" к должности "${pos.name}" в отделе "${department.name}"`);
-                }
+              if (deptEmployees.length > 0) {
+                // Обновляем информацию о сотрудниках для этой должности, если связь с этим отделом
+                // Добавляем сотрудников к существующему массиву
+                deptEmployees.forEach(deptEmployee => {
+                  // Проверяем, не добавлен ли уже этот сотрудник
+                  if (!positionNode.employees.some(e => e.employee_id === deptEmployee.employee_id)) {
+                    positionNode.employees.push(deptEmployee);
+                    console.log(`Привязан сотрудник "${deptEmployee.full_name}" к должности "${pos.name}" в отделе "${department.name}"`);
+                  }
+                });
               }
             }
           });
@@ -1159,17 +1164,17 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
     // Инициализация узлов для всех должностей корневого отдела
     adminPositions.forEach((position) => {
-      const employee =
-        employees.find(
-          (emp) =>
-            emp.position_id === position.position_id &&
-            emp.department_id === rootDepartment.department_id,
-        ) || null;
+      // Находим всех сотрудников для этой должности в корневом отделе
+      const positionEmployees = employees.filter(
+        (emp) =>
+          emp.position_id === position.position_id &&
+          emp.department_id === rootDepartment.department_id
+      );
 
       // Создаем новый узел-должность
       positionMap[position.position_id] = {
         position,
-        employee,
+        employees: positionEmployees,
         subordinates: [],
         childDepartments: [],
       };
@@ -1259,7 +1264,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           // Создаем узел для отдела в виде должности
           const departmentNode: PositionHierarchyNode = {
             position: deptAsPosition,
-            employee: null, // У отдела нет сотрудника
+            employees: [], // У отдела нет сотрудников
             subordinates: [],
             childDepartments: [], // Нет дочерних отделов у этого узла
           };
@@ -1290,7 +1295,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
               // Создаем узел для дочернего отдела
               const childDeptNode: PositionHierarchyNode = {
                 position: childDeptAsPosition,
-                employee: null, // У отдела нет сотрудника
+                employees: [], // У отдела нет сотрудников
                 subordinates: [],
                 childDepartments: [], // У дочернего отдела пока нет отделов
               };
