@@ -857,6 +857,38 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
             childDepartments: [] // Нет дочерних отделов у этого узла
           };
           
+          // Находим дочерние отделы для текущего отдела (рекурсивно)
+          const childDeptDepartments = departments.filter(d => 
+            d.parent_department_id === department.department_id
+          );
+          
+          if (childDeptDepartments.length > 0) {
+            console.log(`Отдел "${department.name}" (ID: ${department.department_id}) имеет дочерние отделы:`, 
+              childDeptDepartments.map(d => `${d.name} (ID: ${d.department_id})`));
+              
+            // Для каждого дочернего отдела создаем узел-отдел
+            childDeptDepartments.forEach(childDept => {
+              // Создаем псевдо-должность для дочернего отдела
+              const childDeptAsPosition: Position = {
+                position_id: childDept.department_id * 1000, // Уникальный ID
+                name: childDept.name + " (отдел)",
+                parent_position_id: deptAsPosition.position_id, // Связываем с родительским отделом
+                department_id: childDept.department_id
+              };
+              
+              // Создаем узел для дочернего отдела
+              const childDeptNode: PositionHierarchyNode = {
+                position: childDeptAsPosition,
+                employee: null, // У отдела нет сотрудника
+                subordinates: [],
+                childDepartments: [] // У дочернего отдела пока нет отделов
+              };
+              
+              // Добавляем дочерний отдел как подчиненный к текущему отделу
+              departmentNode.subordinates.push(childDeptNode);
+            });
+          }
+          
           // Добавляем отдел как подчиненный элемент к должности-родителю
           positionMap[position.position_id].subordinates.push(departmentNode);
         });
