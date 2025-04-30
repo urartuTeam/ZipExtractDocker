@@ -6,7 +6,6 @@ type Position = {
   name: string;
   parent_position_id?: number | null;
   department_id?: number | null;
-  isDepartment?: boolean; // Флаг, указывающий, что это отдел, а не должность
 }
 
 type Employee = {
@@ -44,8 +43,7 @@ const UnifiedPositionCard = ({
   isTopLevel?: boolean,
   showVacancies?: boolean
 }) => {
-  // Проверяем, является ли это отделом по свойству isDepartment или по названию
-  const isDepartment = node.position.isDepartment || node.position.name.includes('(отдел)');
+  const isDepartment = node.position.name.includes('(отдел)');
   
   // Определяем класс на основе типа узла и положения в дереве
   const cardClass = isDepartment 

@@ -18,7 +18,6 @@ type Position = {
   name: string;
   parent_position_id?: number | null;
   department_id?: number | null;
-  isDepartment?: boolean; // Флаг, указывающий, что это отдел, а не должность
 }
 
 type Employee = {
@@ -1030,6 +1029,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   
   return (
     <div className="org-tree-container">
+      {/* Убрали отображение отдела Администрация */}
+      
       {/* Отображаем иерархию должностей как горизонтальное дерево */}
       <div className="position-hierarchy">
         <div className="organization-controls">
