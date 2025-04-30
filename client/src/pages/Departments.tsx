@@ -321,6 +321,11 @@ export default function Departments() {
                       const parentPosition = department.parent_position_id 
                         ? positionsData?.data.find(p => p.position_id === department.parent_position_id)
                         : null;
+                      
+                      // Найдем имя родительского отдела
+                      const parentDepartment = department.parent_department_id 
+                        ? departmentsData?.data.find(d => d.department_id === department.parent_department_id)
+                        : null;
 
                       // Проверка зависимостей для предупреждения
                       const hasEmployees = hasDependentEmployees(department.department_id);
@@ -332,6 +337,9 @@ export default function Departments() {
                           <TableCell className="font-medium">{department.name}</TableCell>
                           <TableCell>
                             {parentPosition ? parentPosition.name : '—'}
+                          </TableCell>
+                          <TableCell>
+                            {parentDepartment ? parentDepartment.name : '—'}
                           </TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
