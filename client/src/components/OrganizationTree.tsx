@@ -761,9 +761,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   
   // Функция для построения структуры на основе данных о должностях
   const buildRootDepartmentHierarchy = () => {
-    // Проверяем, есть ли данные о должностях и отделах
-    if (positions.length === 0 || departments.length === 0) {
-      console.error('Нет данных о должностях или отделах');
+    // Проверяем, есть ли данные об отделах
+    if (departments.length === 0) {
+      console.error('Нет данных об отделах');
       return [];
     }
     
@@ -951,7 +951,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // Строим дерево, когда данные загружены
   useEffect(() => {
-    if (departments.length > 0 && (positions.length > 0 || positionsWithDepartments.length > 0)) {
+    if (departments.length > 0) {
       // Находим корневые отделы (без родительской должности)
       const rootDepartments = departments.filter(d => d.parent_department_id === null);
       
@@ -967,12 +967,15 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       
       // Строим иерархию должностей для корневого отдела
       const rootDepartmentHierarchy = buildRootDepartmentHierarchy();
-      if (rootDepartmentHierarchy) {
+      if (rootDepartmentHierarchy && rootDepartmentHierarchy.length > 0) {
         setPositionHierarchy(rootDepartmentHierarchy);
-      } else {
+      } else if (positions.length > 0) {
         // Резервный вариант - строим на основе manager_id
         const hierarchy = buildPositionHierarchy();
         setPositionHierarchy(hierarchy);
+      } else {
+        // Если нет должностей, создаем пустой массив
+        setPositionHierarchy([]);
       }
     }
   }, [departments, positions, employees, positionsWithDepartments]);
@@ -1017,7 +1020,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   }, [selectedPositionId, positionHierarchy]);
 
   // Если данные еще не загружены, показываем загрузку
-  if (departments.length === 0 || (positions.length === 0 && positionsWithDepartments.length === 0)) {
+  if (departments.length === 0) {
     return <div className="loading-message">Загрузка организационной структуры...</div>;
   }
 
