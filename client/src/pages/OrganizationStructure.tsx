@@ -337,12 +337,28 @@ export default function OrganizationStructure() {
     const isPositionExpanded = expandedPositions[positionDeptKey] || false;
     const positionEmployees = getEmployeesForPositionInDepartment(position.position_id, departmentId);
     
-    // Находим подчиненные отделы для этой должности
-    // Теперь мы используем связь через должность-отдел
-    const positionChildDepartments = departments?.filter(dept => 
-      dept.parent_department_id === departmentId && 
-      employees.some(emp => emp.position_id === position.position_id && emp.employee_id === dept.parent_department_id)
+    // Находим подчиненные отделы для этой должности через связь parent_position_id
+    const positionChildDepartmentsByParentPosition = departments?.filter(dept => 
+      dept.parent_position_id === position.position_id && !dept.deleted
     ) || [];
+    
+    // Находим подчиненные отделы через менеджеров (логика из прежней версии)
+    const positionChildDepartmentsByEmployee = departments?.filter(dept => 
+      dept.parent_department_id === departmentId && 
+      employees.some(emp => emp.position_id === position.position_id && emp.employee_id === dept.parent_department_id) &&
+      !dept.deleted
+    ) || [];
+    
+    // Объединяем оба списка
+    const positionChildDepartments = [
+      ...positionChildDepartmentsByParentPosition, 
+      ...positionChildDepartmentsByEmployee.filter(dept => 
+        !positionChildDepartmentsByParentPosition.some(d => d.department_id === dept.department_id)
+      )
+    ];
+    
+    console.log(`Дочерние отделы для должности "${position.positionName}" (ID: ${position.position_id}):`, 
+      positionChildDepartments.map(d => `${d.name} (ID: ${d.department_id})`));
     
     return (
       <div key={positionDeptKey} className="mb-2">
