@@ -304,13 +304,14 @@ export default function Departments() {
                     <TableHead className="w-[80px]">ID</TableHead>
                     <TableHead>Название</TableHead>
                     <TableHead>Родительская должность</TableHead>
+                    <TableHead>Родительский отдел</TableHead>
                     <TableHead className="w-[150px]">Действия</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredDepartments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center h-24">
+                      <TableCell colSpan={5} className="text-center h-24">
                         Отделы не найдены
                       </TableCell>
                     </TableRow>
