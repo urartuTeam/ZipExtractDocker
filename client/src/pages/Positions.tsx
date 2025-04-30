@@ -86,7 +86,6 @@ export default function Positions() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddDepartmentDialogOpen, setIsAddDepartmentDialogOpen] = useState(false);
-  const [isEditVacanciesDialogOpen, setIsEditVacanciesDialogOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
   const [selectedPositionDepartment, setSelectedPositionDepartment] = useState<DepartmentLink | null>(null);
@@ -278,7 +277,6 @@ export default function Positions() {
         description: "Количество вакансий успешно изменено",
       });
       queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
-      setIsEditVacanciesDialogOpen(false);
     },
     onError: (error: Error) => {
       toast({
