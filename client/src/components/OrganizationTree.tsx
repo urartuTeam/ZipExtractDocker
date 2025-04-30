@@ -630,12 +630,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       return [];
     }
     
-    // Получаем данные о связях position_department
-    const { data: positionDepartmentsResponse } = useQuery<{status: string, data: any[]}>({
-      queryKey: [`/api/positiondepartments`],
-      staleTime: 60000 // Используем кэш в течение минуты
-    });
-    const positionDepartments = positionDepartmentsResponse?.data || [];
+    // Вместо хука useQuery используем уже загруженные данные из positionDepartmentsData
+    const positionDepartments = positionDepartmentsData || [];
     
     // Сначала создаем узлы для всех должностей
     const positionNodes: Record<number, PositionHierarchyNode> = {};
