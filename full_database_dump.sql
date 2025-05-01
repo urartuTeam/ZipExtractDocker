@@ -237,7 +237,9 @@ CREATE TABLE public.settings (
     data_key text NOT NULL,
     data_value text,
     description text,
-    data_type text DEFAULT 'string'::text
+    data_type text DEFAULT 'string'::text,
+    created_at timestamp without time zone DEFAULT now(),
+    updated_at timestamp without time zone DEFAULT now()
 );
 
 CREATE SEQUENCE public.settings_id_seq
@@ -342,6 +344,10 @@ CREATE VIEW public.active_users AS
     deleted_at
    FROM public.users
   WHERE (deleted = false);
+
+-- Insert settings
+INSERT INTO settings (id, data_key, data_value, description, data_type, created_at, updated_at) 
+VALUES (1, 'hierarchy_initial_levels', '2', 'Уровни иерархии, показываемые изначально', 'number', '2025-04-27 10:36:15.699481', '2025-04-30 09:04:44.087');
 
 -- Insert data
 -- Users table
@@ -488,5 +494,5 @@ SELECT setval('position_position_position_relation_id_seq', (SELECT MAX(position
 SELECT setval('employees_employee_id_seq', (SELECT MAX(employee_id) FROM employees));
 SELECT setval('position_department_position_link_id_seq', (SELECT MAX(position_link_id) FROM position_department));
 SELECT setval('projects_project_id_seq', (SELECT MAX(project_id) FROM projects));
-SELECT setval('leaves_leave_id_seq', (SELECT COALESCE(MAX(leave_id), 0) FROM leaves));
-SELECT setval('settings_id_seq', (SELECT COALESCE(MAX(id), 0) FROM settings));
+SELECT setval('leaves_leave_id_seq', GREATEST((SELECT COALESCE(MAX(leave_id), 0) FROM leaves), 1));
+SELECT setval('settings_id_seq', GREATEST((SELECT COALESCE(MAX(id), 0) FROM settings), 1));
