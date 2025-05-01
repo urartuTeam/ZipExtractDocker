@@ -295,22 +295,35 @@ export default function OrganizationStructure() {
     if (!sortItemForDraggedElement) {
       console.log("Создаем новую запись сортировки для элемента:", { itemType, itemId, parentId });
       
-      // Создаем новую запись сортировки
-      const newSortItem = {
-        type: itemType,
-        type_id: itemId,
-        parent_id: parentId,
-        sort: 0 // Временное значение, будет обновлено ниже
-      };
+      // Проверяем, существует ли уже такая запись в БД
+      const exists = sortItems.some(item => 
+        item.type === itemType && 
+        item.type_id === itemId && 
+        ((item.parent_id === null && parentId === null) || item.parent_id === parentId)
+      );
       
-      // Вызываем API для создания записи в базе
-      createSortItemMutation.mutate(newSortItem);
+      // Если запись не существует, создаем её
+      if (!exists) {
+        // Создаем новую запись сортировки
+        const newSortItem = {
+          type: itemType,
+          type_id: itemId,
+          parent_id: parentId,
+          sort: 0 // Временное значение, будет обновлено ниже
+        };
+        
+        // Вызываем API для создания записи в базе
+        createSortItemMutation.mutate(newSortItem);
+      }
       
-      // Добавляем временную запись в local state с временным ID
+      // Добавляем временную запись в local state с временным ID, даже если запись существует в БД
       // Реальный ID будет получен при следующей загрузке данных
       const tempRecord = {
         id: -1 * (sortItems.length + 1), // Отрицательное временное ID
-        ...newSortItem
+        type: itemType,
+        type_id: itemId,
+        parent_id: parentId,
+        sort: 0
       };
       
       // Добавляем запись во временный массив sortItems
@@ -434,7 +447,15 @@ export default function OrganizationStructure() {
   const createMissingSortRecords = () => {
     // Создаем записи для корневых отделов, которых еще нет в базе
     for (const dept of roots) {
-      if (!checkSortTreeItemExists('department', dept.department_id, null)) {
+      // Проверяем, существует ли уже запись в sortItems
+      const exists = sortItems.some(item => 
+        item.type === 'department' && 
+        item.type_id === dept.department_id && 
+        item.parent_id === null
+      );
+      
+      if (!exists) {
+        console.log(`Создаем запись сортировки для корневого отдела ${dept.department_id} - ${dept.name}`);
         createSortItemMutation.mutate({
           type: 'department',
           type_id: dept.department_id,
