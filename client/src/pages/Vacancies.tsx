@@ -23,6 +23,7 @@ type Department = {
   department_id: number;
   name: string;
   parent_department_id: number | null;
+  parent_position_id: number | null;
   deleted: boolean;
 };
 
@@ -164,14 +165,15 @@ export default function Vacancies() {
   const roots = departments.filter(
     (d) =>
       !d.deleted &&
-      d.parent_department_id === null,
+      d.parent_department_id === null &&
+      d.parent_position_id === null,
   );
   
   const getChildDeptsByDept = (deptId: number) =>
     departments.filter((d) => !d.deleted && d.parent_department_id === deptId);
   
-  // Эта функция больше не нужна, так как parent_position_id удален из Department
-  const getChildDeptsByPosition = (posId: number) => [];
+  const getChildDeptsByPosition = (posId: number) =>
+    departments.filter((d) => !d.deleted && d.parent_position_id === posId);
   
   const getDeptPositions = (deptId: number) => {
     const linked = positions.filter((p) =>

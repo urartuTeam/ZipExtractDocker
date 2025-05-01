@@ -17,11 +17,13 @@ type Department = {
   department_id: number;
   name: string;
   parent_department_id: number | null;
+  parent_position_id: number | null;
   deleted: boolean;
 };
 type Position = {
   position_id: number;
   name: string;
+  parent_position_id: number | null;
   departments: { department_id: number }[];
 };
 type Employee = {
@@ -445,7 +447,8 @@ export default function OrganizationStructure() {
   const roots = departments.filter(
     (d) =>
       !d.deleted &&
-      d.parent_department_id === null,
+      d.parent_department_id === null &&
+      d.parent_position_id === null,
   );
   
   // Проверка существования записи сортировки
@@ -484,13 +487,8 @@ export default function OrganizationStructure() {
   const getChildDeptsByDept = (deptId: number) =>
     departments.filter((d) => !d.deleted && d.parent_department_id === deptId);
 
-  // Это функция теперь должна получать отделы из других таблиц, 
-  // так как в departments больше нет поля parent_position_id
-  const getChildDeptsByPosition = (posId: number) => {
-    // Получаем отделы, где должность указана как руководящая
-    // В реальности нужно использовать другую логику, так как parent_position_id удален
-    return []; // Пока возвращаем пустой массив
-  };
+  const getChildDeptsByPosition = (posId: number) =>
+    departments.filter((d) => !d.deleted && d.parent_position_id === posId);
 
   const getDeptPositions = (deptId: number) => {
     console.log(`Получаем должности для отдела ${deptId}`);

@@ -19,6 +19,7 @@ type Department = {
   department_id: number;
   name: string;
   parent_department_id: number | null;
+  parent_position_id: number | null;
 };
 
 // Типы узлов в иерархии должностей
@@ -118,7 +119,17 @@ const UnifiedPositionCard = ({
         </>
       )}
 
-
+      {/* Отображаем дочерние отделы для должности */}
+      {node.childDepartments && node.childDepartments.length > 0 && (
+        <div className="child-departments">
+          <div className="child-departments-title">Подчиненные отделы:</div>
+          {node.childDepartments.map((dept) => (
+            <div key={dept.department_id} className="child-department-name">
+              {dept.name}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Индикатор в правом нижнем углу, показывается только если включены вакансии */}
       {showVacancies && (

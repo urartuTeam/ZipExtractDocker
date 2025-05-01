@@ -66,6 +66,7 @@ interface Position {
   position_id: number;
   name: string;
   departments?: DepartmentLink[];
+  parent_position_id?: number | null;
   department_id?: number | null;
 }
 
@@ -77,8 +78,8 @@ interface Employee {
 // Схема валидации для формы
 const positionFormSchema = z.object({
   name: z.string().min(2, "Название должно содержать минимум 2 символа").max(100, "Название не должно превышать 100 символов"),
-  // Удалили поле parent_position_id - теперь используем таблицу position_position
-  // Убираем поле department_id, т.к. связываем должности с отделами через таблицу position_department
+  parent_position_id: z.number().nullable().optional(),
+  // Убираем поле department_id, т.к. теперь будем связывать должности с отделами через таблицу position_department
 });
 
 type PositionFormValues = z.infer<typeof positionFormSchema>;
@@ -106,6 +107,7 @@ export default function Positions() {
     resolver: zodResolver(positionFormSchema),
     defaultValues: {
       name: "",
+      parent_position_id: null,
     },
   });
 
@@ -114,6 +116,7 @@ export default function Positions() {
     resolver: zodResolver(positionFormSchema),
     defaultValues: {
       name: "",
+      parent_position_id: null,
     },
   });
 
@@ -353,6 +356,7 @@ export default function Positions() {
     setSelectedPosition(position);
     editForm.reset({
       name: position.name,
+      parent_position_id: position.parent_position_id || null,
     });
     setIsEditDialogOpen(true);
   };
@@ -666,7 +670,39 @@ export default function Positions() {
                 )}
               />
               
-              {/* Родительская должность теперь выбирается при связывании с отделом */}
+              <FormField
+                control={form.control}
+                name="parent_position_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Родительская должность</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value === "null" ? null : parseInt(value));
+                      }}
+                      value={field.value?.toString() || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите родительскую должность" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="null">Нет (верхний уровень)</SelectItem>
+                        {positionsData?.data.map((position) => (
+                          <SelectItem 
+                            key={position.position_id} 
+                            value={position.position_id.toString()}
+                          >
+                            {position.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Убрали поле department_id, теперь связь с отделами управляется через таблицу position_department */}
               <div className="text-sm text-muted-foreground mt-2">
@@ -712,7 +748,42 @@ export default function Positions() {
                 )}
               />
               
-              {/* Родительская должность теперь выбирается при связывании с отделом */}
+              <FormField
+                control={editForm.control}
+                name="parent_position_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Родительская должность</FormLabel>
+                    <Select
+                      onValueChange={(value) => {
+                        field.onChange(value === "null" ? null : parseInt(value));
+                      }}
+                      value={field.value?.toString() || undefined}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите родительскую должность" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="null">Нет (верхний уровень)</SelectItem>
+                        {positionsData?.data
+                          .filter(pos => pos.position_id !== selectedPosition?.position_id) // Исключаем текущую должность
+                          .map((position) => (
+                            <SelectItem 
+                              key={position.position_id} 
+                              value={position.position_id.toString()}
+                            >
+                              {position.name}
+                            </SelectItem>
+                          ))
+                        }
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               {/* Информацию о связях с отделами отображаем и управляем через отдельный интерфейс */}
               
