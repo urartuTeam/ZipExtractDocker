@@ -193,6 +193,13 @@ export default function OrganizationStructure() {
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
     
+    console.log("DragEnd:", { 
+      destination, 
+      source, 
+      draggableId,
+      type: result.type
+    });
+    
     // Если нет места назначения или оно совпадает с источником, ничего не делаем
     if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) {
       return;
@@ -209,21 +216,120 @@ export default function OrganizationStructure() {
       return;
     }
     
-    // Обновляем локальное состояние, пересчитывая порядок сортировки
-    const newSortItems = [...sortItems];
-    const itemsInSameContainer = newSortItems.filter(item => 
-      item.parent_id === parseInt(destination.droppableId.split('-')[1] || '0')
+    let itemId: number;
+    let itemType: 'department' | 'position';
+    
+    // Обрабатываем случай с временным ID
+    if (draggableId.startsWith('temp-')) {
+      const parts = draggableId.split('-');
+      if (parts.length < 3) {
+        console.error("Неверный формат временного ID:", draggableId);
+        return;
+      }
+      
+      itemType = parts[1] === 'pos' ? 'position' : 'department';
+      itemId = parseInt(parts[2]);
+      
+      console.log("Получен временный ID, извлекаем данные:", { itemType, itemId });
+    } else {
+      // Это реальный ID записи сортировки
+      const draggedItem = sortItems.find(item => item.id.toString() === draggableId);
+      if (!draggedItem) {
+        console.error("Не найден перетаскиваемый элемент с ID:", draggableId);
+        toast({
+          title: 'Ошибка перемещения',
+          description: 'Не удалось найти перетаскиваемый элемент',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      itemType = draggedItem.type;
+      itemId = draggedItem.type_id;
+    }
+    
+    // Определяем parentId из контекста перетаскивания
+    let parentId: number | null = null;
+    
+    if (destination.droppableId === "root-depts") {
+      parentId = null; // Корневые отделы
+    } else if (destination.droppableId.startsWith("depts-")) {
+      // Отделы внутри отдела, формат: "depts-{deptId}"
+      parentId = parseInt(destination.droppableId.substring(6));
+    } else if (destination.droppableId.startsWith("positions-")) {
+      // Должности внутри отдела, формат: "positions-{deptId}"
+      parentId = parseInt(destination.droppableId.substring(10));
+    } else if (destination.droppableId.startsWith("childpos-")) {
+      // Подчиненные должности, формат: "childpos-{posId}-{deptId}"
+      const parts = destination.droppableId.split('-');
+      if (parts.length >= 3) {
+        parentId = parseInt(parts[2]);
+      }
+    } else if (destination.droppableId.startsWith("pos-depts-")) {
+      // Отделы подчиненные должности, формат: "pos-depts-{posId}"
+      parentId = parseInt(destination.droppableId.substring(10));
+    }
+    
+    console.log("Определили parentId:", parentId);
+    
+    // Получаем или создаем запись сортировки для элемента
+    // Сначала проверяем, есть ли уже запись сортировки
+    let sortItemForDraggedElement = sortItems.find(item => 
+      item.type === itemType && 
+      item.type_id === itemId && 
+      ((item.parent_id === null && parentId === null) || item.parent_id === parentId)
     );
     
-    // Находим элемент, который перетаскиваем
-    const draggedItem = newSortItems.find(item => item.id === parseInt(draggableId));
-    if (!draggedItem) return;
+    console.log("Поиск записи сортировки для элемента:", { itemType, itemId, parentId });
     
-    // Удаляем элемент из текущей позиции
-    const updatedItems = itemsInSameContainer.filter(item => item.id !== draggedItem.id);
+    // Если записи сортировки нет, создаем её
+    if (!sortItemForDraggedElement) {
+      console.log("Создаем новую запись сортировки для элемента:", { itemType, itemId, parentId });
+      
+      // Создаем новую запись сортировки
+      const newSortItem = {
+        type: itemType,
+        type_id: itemId,
+        parent_id: parentId,
+        sort: 0 // Временное значение, будет обновлено ниже
+      };
+      
+      // Вызываем API для создания записи в базе
+      createSortItemMutation.mutate(newSortItem);
+      
+      // Добавляем временную запись в local state с временным ID
+      // Реальный ID будет получен при следующей загрузке данных
+      const tempRecord = {
+        id: -1 * (sortItems.length + 1), // Отрицательное временное ID
+        ...newSortItem
+      };
+      
+      // Добавляем запись во временный массив sortItems
+      setSortItems([...sortItems, tempRecord]);
+      
+      // Используем эту запись для дальнейшей обработки
+      sortItemForDraggedElement = tempRecord;
+    }
+    
+    // Находим все элементы в том же контейнере
+    const itemsInSameContainer = sortItems.filter(item => 
+      item.type === itemType && 
+      ((item.parent_id === null && parentId === null) || item.parent_id === parentId)
+    );
+    
+    console.log("Элементы в том же контейнере:", itemsInSameContainer);
+    
+    // Переупорядочиваем индексы в этом контейнере
+    // Удаляем перетаскиваемый элемент из текущей позиции
+    const updatedItems = itemsInSameContainer.filter(item => 
+      !(item.type === itemType && item.type_id === itemId)
+    );
+    
+    // Создаем элемент для вставки
+    const itemToInsert = sortItemForDraggedElement;
     
     // Вставляем элемент в новую позицию
-    updatedItems.splice(destination.index, 0, draggedItem);
+    updatedItems.splice(destination.index, 0, itemToInsert);
     
     // Обновляем значения sort для всех элементов в контейнере
     const reorderedItems = updatedItems.map((item, index) => ({
@@ -231,16 +337,33 @@ export default function OrganizationStructure() {
       sort: index,
     }));
     
+    console.log("Переупорядоченные элементы:", reorderedItems);
+    
     // Обновляем общий массив с новыми значениями sort
-    const finalSortItems = newSortItems.map(item => {
-      const reorderedItem = reorderedItems.find(ri => ri.id === item.id);
+    const finalSortItems = sortItems.map(item => {
+      const reorderedItem = reorderedItems.find(ri => 
+        ri.type === item.type && 
+        ri.type_id === item.type_id && 
+        ((ri.parent_id === null && item.parent_id === null) || ri.parent_id === item.parent_id)
+      );
       return reorderedItem || item;
     });
     
     setSortItems(finalSortItems);
     
-    // Отправляем обновленные значения на сервер
-    reorderMutation.mutate(reorderedItems.map(item => ({ id: item.id, sort: item.sort })));
+    // Отправляем обновленные значения на сервер для тех записей, которые уже существуют в БД
+    const itemsToSend = reorderedItems
+      .filter(item => item.id > 0) // Только те, у которых есть реальный ID
+      .map(item => ({ id: item.id, sort: item.sort }));
+    
+    if (itemsToSend.length > 0) {
+      reorderMutation.mutate(itemsToSend);
+    }
+    
+    // После перетаскивания обновим данные сортировки с сервера
+    setTimeout(() => {
+      invalidateSortTree();
+    }, 200);
   };
   
   if (ld || lp || le || lpd || (dragEnabled && lst)) return <div>Загрузка...</div>;
