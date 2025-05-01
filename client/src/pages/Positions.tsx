@@ -666,39 +666,7 @@ export default function Positions() {
                 )}
               />
               
-              <FormField
-                control={form.control}
-                name="parent_position_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Родительская должность</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value === "null" ? null : parseInt(value));
-                      }}
-                      value={field.value?.toString() || undefined}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите родительскую должность" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">Нет (верхний уровень)</SelectItem>
-                        {positionsData?.data.map((position) => (
-                          <SelectItem 
-                            key={position.position_id} 
-                            value={position.position_id.toString()}
-                          >
-                            {position.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Родительская должность теперь выбирается при связывании с отделом */}
 
               {/* Убрали поле department_id, теперь связь с отделами управляется через таблицу position_department */}
               <div className="text-sm text-muted-foreground mt-2">
