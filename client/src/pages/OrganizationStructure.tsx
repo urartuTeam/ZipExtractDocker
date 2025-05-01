@@ -187,7 +187,7 @@ export default function OrganizationStructure() {
         
         // Сразу создаем записи сортировки для корневых отделов, если их нет
         setTimeout(() => {
-          if (sortTreeR?.data) {
+          if (sortTreeR.length > 0) {
             createMissingSortRecords();
           }
         }, 100);
@@ -432,8 +432,6 @@ export default function OrganizationStructure() {
   
   // Создает недостающие записи сортировки для всех корневых элементов
   const createMissingSortRecords = () => {
-    if (!sortTreeR?.data) return;
-    
     // Создаем записи для корневых отделов, которых еще нет в базе
     for (const dept of roots) {
       if (!checkSortTreeItemExists('department', dept.department_id, null)) {
