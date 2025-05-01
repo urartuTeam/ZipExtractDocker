@@ -566,9 +566,8 @@ export default function Positions() {
                                     <div key={dept.position_link_id} className="p-2">
                                       <div className="grid grid-cols-[1fr,1fr,auto] gap-2 items-center">
                                         <div className="text-sm font-medium">
-                                          {position.parent_position_id ? (
-                                            positionsData?.data.find(p => p.position_id === position.parent_position_id)?.name || 
-                                            <span className="text-gray-500">ID: {position.parent_position_id}</span>
+                                          {dept.parent_position ? (
+                                            <span>{dept.parent_position.name}</span>
                                           ) : (
                                             <span className="text-gray-500">Нет родительской должности</span>
                                           )}

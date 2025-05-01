@@ -261,6 +261,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const positionDepartments = await storage.getAllPositionDepartments();
       const departments = await storage.getAllDepartments();
       
+      // Получаем данные о связях position_position
+      const positionPositions = await storage.getAllPositionPositions();
+      
       // Получаем данные сортировки для должностей
       const sortItems = await db.select()
         .from(sort_tree)
@@ -282,12 +285,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Находим соответствующие отделы из связей в таблице position_department
         const linkedDepartments = links.map(link => {
           const dept = departments.find(d => d.department_id === link.department_id);
+          
+          // Находим родительскую должность для этой должности в этом отделе
+          const parentPositionRelation = positionPositions.find(pp => 
+            pp.position_id === position.position_id && 
+            pp.department_id === link.department_id
+          );
+          
+          // Информация о родительской должности, если есть
+          let parentPositionInfo = null;
+          if (parentPositionRelation) {
+            const parentPosition = positions.find(p => p.position_id === parentPositionRelation.parent_position_id);
+            if (parentPosition) {
+              parentPositionInfo = {
+                position_id: parentPosition.position_id,
+                name: parentPosition.name
+              };
+            }
+          }
+          
           return {
             position_link_id: link.position_link_id,
             department_id: link.department_id,
             department_name: dept?.name || 'Неизвестный отдел',
             sort: link.sort,
-            vacancies: link.vacancies || 0
+            vacancies: link.vacancies || 0,
+            parent_position: parentPositionInfo
           };
         });
         
@@ -425,11 +448,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
+      // Проверяем, что такой связи еще нет
+      const existingRelations = await storage.getPositionPositionsByDepartment(relationData.department_id);
+      const duplicateRelation = existingRelations.find(
+        rel => rel.position_id === relationData.position_id && 
+               rel.parent_position_id === relationData.parent_position_id &&
+               rel.department_id === relationData.department_id
+      );
+      
+      if (duplicateRelation) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Связь между этими должностями в данном отделе уже существует' 
+        });
+      }
+      
       // Создаем связь
       const relation = await storage.createPositionPosition(relationData);
       res.status(201).json({ status: 'success', data: relation });
     } catch (error) {
       console.error('Error creating position hierarchy relation:', error);
+      // Проверяем, не ошибка ли это с дублированием
+      if (error instanceof Error && error.message.includes('duplicate key value violates unique constraint')) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Связь между этими должностями в данном отделе уже существует' 
+        });
+      }
+      
       res.status(500).json({ 
         status: 'error', 
         message: 'Failed to create position hierarchy relation' 
