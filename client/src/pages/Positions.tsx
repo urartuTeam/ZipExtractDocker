@@ -944,13 +944,16 @@ export default function Positions() {
                                   className="h-8 w-8"
                                   onClick={async () => {
                                     try {
-                                      // Получаем детали связи
-                                      const linkRes = await fetch(`/api/pd/${dept.position_link_id}`);
-                                      const linkData = await linkRes.json();
+                                      // Формируем данные для запроса без предварительного получения деталей связи
+                                      // Используем данные, которые уже есть на клиенте
+                                      const linkData = {
+                                        position_id: selectedPosition?.position_id,
+                                        department_id: dept.department_id,
+                                        vacancies: modifiedVacancies[dept.position_link_id],
+                                        sort: dept.sort || 0
+                                      };
                                       
-                                      if (linkData.status !== 'success' || !linkData.data) {
-                                        throw new Error("Не удалось получить данные о связи");
-                                      }
+                                      console.log(`Обновляем связь position_link_id=${dept.position_link_id} с данными:`, linkData);
                                       
                                       // Отправляем запрос на сохранение 
                                       const res = await fetch(`/api/pd/${dept.position_link_id}`, {
@@ -958,12 +961,7 @@ export default function Positions() {
                                         headers: {
                                           'Content-Type': 'application/json',
                                         },
-                                        body: JSON.stringify({
-                                          position_id: linkData.data.position_id,
-                                          department_id: linkData.data.department_id,
-                                          vacancies: modifiedVacancies[dept.position_link_id],
-                                          sort: linkData.data.sort || 0
-                                        }),
+                                        body: JSON.stringify(linkData),
                                       });
                                       
                                       if (!res.ok) {
