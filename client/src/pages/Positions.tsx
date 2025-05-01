@@ -474,7 +474,7 @@ export default function Positions() {
                                   <div key={dept.position_link_id} className="flex items-center gap-2">
                                     <span className="text-sm">
                                       {dept.department_name}
-                                      {dept.vacancies !== undefined && dept.vacancies > 0 && (
+                                      {dept.vacancies !== undefined && (
                                         <span className="ml-1 text-xs text-gray-500">
                                           (штатных единиц: {dept.vacancies})
                                         </span>
