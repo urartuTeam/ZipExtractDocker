@@ -848,7 +848,7 @@ export default function Positions() {
           <DialogHeader>
             <DialogTitle>{selectedPosition?.name}</DialogTitle>
             <DialogDescription>
-              Выберите отделы, к которым нужно привязать должность и укажите количество вакансий для каждого отдела
+              Выберите отделы, к которым нужно привязать должность, укажите родительскую должность в этом отделе и количество вакансий
             </DialogDescription>
           </DialogHeader>
           
@@ -879,12 +879,12 @@ export default function Positions() {
               {selectedDepartmentId && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
-                    Родительская должность
+                    Родительская должность в этом отделе
                   </label>
                   <select 
                     className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     value={selectedParentPositionId || ""}
-                    onChange={(e) => setSelectedParentPositionId(Number(e.target.value) || null)}
+                    onChange={(e) => setSelectedParentPositionId(e.target.value ? Number(e.target.value) : null)}
                   >
                     <option value="">Нет (верхний уровень)</option>
                     {departmentPositions
