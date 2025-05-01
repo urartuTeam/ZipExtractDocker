@@ -932,6 +932,13 @@ export default function Positions() {
                               />
                             </div>
                             
+                            {/* Отладочная информация */}
+                            {dept.position_link_id === 0 && (
+                              <div className="text-xs text-red-600 mb-1">
+                                Внимание! position_link_id=0. Полные данные: {JSON.stringify(dept)}
+                              </div>
+                            )}
+                              
                             {/* Контейнер для кнопок */}
                             {modifiedVacancies[dept.position_link_id] !== undefined && 
                              modifiedVacancies[dept.position_link_id] !== dept.vacancies ? (
@@ -944,6 +951,12 @@ export default function Positions() {
                                   className="h-8 w-8"
                                   onClick={async () => {
                                     try {
+                                      // Проверяем корректность position_link_id
+                                      if (!dept.position_link_id) {
+                                        console.error("Ошибка: position_link_id равен 0 или не определен", dept);
+                                        throw new Error("Ошибка: некорректный ID связи position_link_id");
+                                      }
+                                      
                                       // Формируем данные для запроса без предварительного получения деталей связи
                                       // Используем данные, которые уже есть на клиенте
                                       const linkData = {
@@ -953,7 +966,7 @@ export default function Positions() {
                                         sort: dept.sort || 0
                                       };
                                       
-                                      console.log(`Обновляем связь position_link_id=${dept.position_link_id} с данными:`, linkData);
+                                      console.log(`Обновляем связь position_link_id=${dept.position_link_id} с данными:`, linkData, "Полные данные dept:", dept);
                                       
                                       // Отправляем запрос на сохранение 
                                       const res = await fetch(`/api/pd/${dept.position_link_id}`, {
