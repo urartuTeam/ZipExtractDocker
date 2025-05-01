@@ -533,7 +533,8 @@ export default function OrganizationStructure() {
 
   // Функция для сортировки элементов с учетом значений из таблицы sort_tree
   const sortByCustomOrder = (items: any[], itemType: 'department' | 'position', parentId: number | null = null) => {
-    if (!dragEnabled || sortItems.length === 0) {
+    // Всегда используем сортировку из sort_tree, независимо от режима перетаскивания
+    if (sortItems.length === 0) {
       return items;
     }
     
@@ -541,8 +542,11 @@ export default function OrganizationStructure() {
       const typeIdA = itemType === 'department' ? a.department_id : a.position_id;
       const typeIdB = itemType === 'department' ? b.department_id : b.position_id;
       
-      const sortItemA = sortItems.find(si => si.type === itemType && si.type_id === typeIdA && si.parent_id === parentId);
-      const sortItemB = sortItems.find(si => si.type === itemType && si.type_id === typeIdB && si.parent_id === parentId);
+      const sortItemA = sortItems.find(si => si.type === itemType && si.type_id === typeIdA && 
+        ((si.parent_id === null && parentId === null) || si.parent_id === parentId));
+      
+      const sortItemB = sortItems.find(si => si.type === itemType && si.type_id === typeIdB && 
+        ((si.parent_id === null && parentId === null) || si.parent_id === parentId));
       
       // Если оба элемента имеют записи сортировки, сравниваем их
       if (sortItemA && sortItemB) {
@@ -748,9 +752,14 @@ export default function OrganizationStructure() {
   const renderDept = (d: Department, lvl = 0, parentId: number | null = null) => {
     // Если элемент явно закрыт в expDept, то используем это значение, иначе проверяем глобальное состояние expanded
     const ex = expDept[d.department_id] === false ? false : (expanded || (expDept[d.department_id] ?? false));
+    
+    // Получаем и сортируем дочерние элементы
     const childDepts = getChildDeptsByDept(d.department_id);
+    // Всегда применяем сортировку вне зависимости от режима перетаскивания
     const sortedChildDepts = sortByCustomOrder(childDepts, 'department', d.department_id);
+    
     const deptPositions = getDeptPositions(d.department_id);
+    // Всегда применяем сортировку вне зависимости от режима перетаскивания
     const sortedDeptPositions = sortByCustomOrder(deptPositions, 'position', d.department_id);
     
     // При перетаскивании нам нужно знать, существует ли запись сортировки
