@@ -862,16 +862,16 @@ export default function Positions() {
                                     // Вызываем API напрямую вместо использования мутации
                                     (async () => {
                                       try {
-                                        // Получаем детали связи
-                                        const linkRes = await fetch(`/api/positiondepartments/${dept.position_link_id}`);
+                                        // Получаем детали связи через новый API-маршрут
+                                        const linkRes = await fetch(`/api/pd/${dept.position_link_id}`);
                                         const linkData = await linkRes.json();
                                         
                                         if (linkData.status !== 'success' || !linkData.data) {
                                           throw new Error("Не удалось получить данные о связи");
                                         }
                                         
-                                        // Отправляем обновление с полными данными
-                                        const res = await fetch(`/api/positiondepartments/${dept.position_link_id}`, {
+                                        // Отправляем обновление с полными данными через новый API-маршрут
+                                        const res = await fetch(`/api/pd/${dept.position_link_id}`, {
                                           method: 'PUT',
                                           headers: {
                                             'Content-Type': 'application/json',
