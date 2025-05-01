@@ -361,8 +361,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Получение информации о связи должности с отделом по ID
-  app.get('/api/positiondepartments/:id', async (req: Request, res: Response) => {
+  // API для работы с связями должностей и отделов - прямой доступ с коротким URL
+  app.get('/api/pd/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -381,18 +381,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.json({ status: 'success', data: link });
+      return res.json({ status: 'success', data: link });
     } catch (error) {
       console.error('Error fetching position-department link:', error);
-      res.status(500).json({ 
+      return res.status(500).json({ 
         status: 'error', 
         message: 'Failed to fetch position-department link' 
       });
     }
   });
-
-  // Обновление связи должности с отделом
-  app.put('/api/positiondepartments/:id', async (req: Request, res: Response) => {
+  
+  app.put('/api/pd/:id', async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -402,7 +401,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      console.log('Updating position-department link:', id, 'with data:', req.body);
+
       const updateData = req.body;
+      
       const updatedLink = await storage.updatePositionDepartment(id, updateData);
       
       if (!updatedLink) {
@@ -412,10 +414,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.json({ status: 'success', data: updatedLink });
+      return res.json({ status: 'success', data: updatedLink });
     } catch (error) {
       console.error('Error updating position-department link:', error);
-      res.status(500).json({ 
+      return res.status(500).json({ 
         status: 'error', 
         message: 'Failed to update position-department link' 
       });
