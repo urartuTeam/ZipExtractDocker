@@ -61,7 +61,7 @@ export default function OrganizationStructure() {
   const { data: posDeptR, isLoading: lpd } = useQuery<{
     data: PositionDepartment[];
   }>({
-    queryKey: ["/api/positiondepartments"],
+    queryKey: ["/api/pd"],
   });
   
   if (ld || lp || le || lpd) return <div>Загрузка...</div>;
@@ -142,10 +142,23 @@ export default function OrganizationStructure() {
       pd => pd.position_id === posId && pd.department_id === deptId && !pd.deleted
     );
     
+    // Получаем список сотрудников для этой позиции и отдела
+    const emps = getEmps(posId, deptId);
+    
+    // Общее количество мест - это значение vacancies из БД (новая интерпретация)
+    const staffUnits = positionDept?.vacancies || 0;
+    
+    // Текущее количество сотрудников - это фактическое количество сотрудников в этой должности
+    const currentCount = emps.length;
+    
+    // Свободные места - это разница между общим количеством и занятыми местами
+    // Если отрицательное значение (сотрудников больше чем мест), то считаем что вакансий нет (0)
+    const vacancies = Math.max(0, staffUnits - currentCount);
+    
     return {
-      staffUnits: positionDept?.staff_units || 0, // Общее количество мест
-      vacancies: positionDept?.vacancies || 0,     // Количество свободных мест
-      currentCount: positionDept?.current_count || 0 // Текущее количество сотрудников
+      staffUnits, // Общее количество мест
+      vacancies,  // Количество свободных мест
+      currentCount // Текущее количество сотрудников
     };
   };
 
