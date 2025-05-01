@@ -132,9 +132,11 @@ export default function OrganizationStructure() {
     },
   });
 
-  // Мутация для создания записи сортировки
+  // Мутация для создания или получения существующей записи сортировки
   const createSortItemMutation = useMutation({
     mutationFn: async (item: { type: 'department' | 'position'; type_id: number; parent_id: number | null; sort: number }) => {
+      console.log('Вызов API для создания/получения записи сортировки:', item);
+      
       const response = await fetch('/api/sort-tree', {
         method: 'POST',
         headers: {
@@ -143,26 +145,29 @@ export default function OrganizationStructure() {
         body: JSON.stringify(item),
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        // Если ошибка 409 (конфликт), это означает, что запись уже существует
-        // В этом случае не считаем это ошибкой
-        if (response.status === 409) {
-          return null;
-        }
-        throw new Error(errorData.message || 'Не удалось создать запись сортировки');
-      }
+      const data = await response.json();
       
-      return await response.json();
+      // Независимо от статуса (создана новая запись или найдена существующая),
+      // сервер возвращает данные в одинаковом формате
+      if (data.status === 'success') {
+        console.log('Успешный ответ API sort-tree:', data);
+        return data;
+      } else {
+        console.error('Ошибка API sort-tree:', data);
+        throw new Error(data.message || 'Не удалось получить запись сортировки');
+      }
     },
     onSuccess: (data) => {
-      if (data) {
-        // Только если был возвращен результат (не было 409 конфликта)
-        queryClient.invalidateQueries({ queryKey: ['/api/sort-tree'] });
-      }
+      // Обновляем кэш запросов после успешного создания/получения записи
+      queryClient.invalidateQueries({ queryKey: ['/api/sort-tree'] });
     },
     onError: (error: Error) => {
-      console.error('Ошибка создания записи сортировки:', error);
+      console.error('Ошибка создания/получения записи сортировки:', error);
+      toast({
+        title: 'Ошибка',
+        description: error.message || 'Не удалось получить запись сортировки',
+        variant: 'destructive',
+      });
     },
   });
 

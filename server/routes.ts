@@ -1230,18 +1230,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const sortItemData = insertSortTreeSchema.parse(req.body);
       
-      // Проверяем, что не существует записи с таким же type и type_id
+      // Проверяем, что не существует записи с таким же type, type_id и parent_id
+      // Учитываем случай, когда parent_id может быть null
+      let queryCondition;
+      if (sortItemData.parent_id === null) {
+        queryCondition = and(
+          eq(sort_tree.type, sortItemData.type),
+          eq(sort_tree.type_id, sortItemData.type_id),
+          isNull(sort_tree.parent_id)
+        );
+      } else {
+        queryCondition = and(
+          eq(sort_tree.type, sortItemData.type),
+          eq(sort_tree.type_id, sortItemData.type_id),
+          eq(sort_tree.parent_id, sortItemData.parent_id)
+        );
+      }
+      
       const existingSortItem = await db.select()
         .from(sort_tree)
-        .where(and(
-          eq(sort_tree.type, sortItemData.type),
-          eq(sort_tree.type_id, sortItemData.type_id)
-        ));
+        .where(queryCondition);
 
       if (existingSortItem.length > 0) {
-        return res.status(409).json({ 
-          status: 'error', 
-          message: 'Запись с такими параметрами уже существует' 
+        // Вместо ошибки 409, возвращаем существующую запись
+        return res.status(200).json({ 
+          status: 'success', 
+          data: existingSortItem[0],
+          message: 'Запись уже существует' 
         });
       }
 
