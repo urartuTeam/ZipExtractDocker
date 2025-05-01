@@ -314,18 +314,7 @@ export default function Positions() {
 
   // Запрос на получение должностей с отделами
   const { data: positionsData, isLoading, error } = useQuery<{ status: string, data: Position[] }>({
-    queryKey: ['/api/positions/with-departments'],
-    onSuccess: (data) => {
-      // Ищем position_id = 28 и проверяем его отделы на наличие position_link_id = 0
-      const position28 = data?.data?.find(p => p.position_id === 28);
-      if (position28 && position28.departments) {
-        const invalidLinks = position28.departments.filter(d => d.position_link_id === 0);
-        if (invalidLinks.length > 0) {
-          console.error("НАЙДЕНЫ НЕВАЛИДНЫЕ ЗАПИСИ с position_link_id = 0:", invalidLinks);
-          console.error("Полные данные position_id = 28:", position28);
-        }
-      }
-    }
+    queryKey: ['/api/positions/with-departments']
   });
 
   // Запрос на получение отделов
@@ -966,12 +955,7 @@ export default function Positions() {
                               />
                             </div>
                             
-                            {/* Отладочная информация */}
-                            {dept.position_link_id === 0 && (
-                              <div className="text-xs text-red-600 mb-1">
-                                Внимание! position_link_id=0. Полные данные: {JSON.stringify(dept)}
-                              </div>
-                            )}
+                            {/* Для position_link_id = 0 не показываем кнопки редактирования */}
                               
                             {/* Контейнер для кнопок */}
                             {modifiedVacancies[dept.position_link_id] !== undefined && 
