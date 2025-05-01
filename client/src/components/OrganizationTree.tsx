@@ -904,6 +904,16 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Используем глобальный доступ к positionsWithDepartmentsData
     const positionsWithDepartments = window.positionsWithDepartmentsData || [];
     
+    console.log("Построение иерархии должностей из", positions.length, "должностей");
+    console.log("Должности с отделами:", positionsWithDepartments.length);
+    
+    // Выводим отладочную информацию для проверки связей
+    positions.forEach(position => {
+      if (position.parent_position_id) {
+        console.log(`Должность "${position.name}" (ID: ${position.position_id}) имеет родительскую должность с ID: ${position.parent_position_id}`);
+      }
+    });
+    
     // В функциях нельзя использовать хуки, поэтому используем positionsWithDepartments
     // для получения информации о связях должностей и отделов
 
@@ -917,10 +927,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         p => p.position_id === position.position_id
       ) || position;
       
-      // Находим сотрудника на этой должности, если есть
-      // Находим всех сотрудников на этой должности
+      // Находим сотрудников на этой должности
       const positionEmployees = employees.filter(emp => {
-        // Смотрим по position_id
         return emp.position_id === position.position_id;
       });
 
@@ -951,7 +959,13 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
         if (parentNode && currentNode) {
           // Добавляем текущую должность как подчиненную к родительской
-          parentNode.subordinates.push(currentNode);
+          // Проверяем, не добавлен ли уже этот узел
+          if (!parentNode.subordinates.some(sub => sub.position.position_id === currentNode.position.position_id)) {
+            parentNode.subordinates.push(currentNode);
+            console.log(`Добавлена должность "${currentNode.position.name}" (ID: ${currentNode.position.position_id}) как подчиненная к "${parentNode.position.name}" (ID: ${parentNode.position.position_id}) по parent_position_id`);
+          }
+        } else {
+          console.log(`Не найдена родительская должность с ID: ${position.parent_position_id} для должности "${position.name}" (ID: ${position.position_id})`);
         }
       }
     });
@@ -1098,6 +1112,51 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
       if (!isSubordinate) {
         rootNodes.push(node);
+      }
+    });
+
+    // Когда есть связь между должностью "Генеральный директор" (ID 25) и "Заместитель руководителя департамента" (ID 23),
+    // мы должны убедиться, что эта связь отображается правильно
+    const generalDirectorPosition = positions.find(p => p.name === "Генеральный директор");
+    const deputyPosition = positions.find(p => p.name === "Заместитель руководителя департамента");
+
+    if (generalDirectorPosition && deputyPosition) {
+      console.log(`Найдены должности "Генеральный директор" (ID: ${generalDirectorPosition.position_id}) и "Заместитель руководителя департамента" (ID: ${deputyPosition.position_id})`);
+      
+      // Проверяем, является ли Генеральный директор подчиненным Заместителя
+      const directorNode = positionNodes[generalDirectorPosition.position_id];
+      const deputyNode = positionNodes[deputyPosition.position_id];
+
+      if (directorNode && deputyNode) {
+        // Проверяем текущую иерархию
+        const directorIsSubordinateToDeputy = deputyNode.subordinates.some(
+          sub => sub.position.position_id === generalDirectorPosition.position_id
+        );
+        
+        if (!directorIsSubordinateToDeputy && generalDirectorPosition.parent_position_id === deputyPosition.position_id) {
+          console.log(`Добавляем "Генеральный директор" как подчиненного "Заместителю руководителя департамента"`);
+          deputyNode.subordinates.push(directorNode);
+          
+          // Удаляем Генерального директора из корневых узлов, если он там есть
+          const directorIndex = rootNodes.findIndex(node => 
+            node.position.position_id === generalDirectorPosition.position_id
+          );
+          if (directorIndex !== -1) {
+            rootNodes.splice(directorIndex, 1);
+          }
+        }
+      }
+    }
+
+    console.log(`Построено ${rootNodes.length} корневых узлов`);
+    // Выводим информацию о корневых узлах
+    rootNodes.forEach(node => {
+      console.log(`Корневой узел: "${node.position.name}" (ID: ${node.position.position_id}) с ${node.subordinates.length} подчиненными`);
+      // Выводим информацию о подчиненных
+      if (node.subordinates.length > 0) {
+        node.subordinates.forEach(sub => {
+          console.log(`- Подчиненный: "${sub.position.name}" (ID: ${sub.position.position_id}), родительская должность: ${sub.position.parent_position_id}`);
+        });
       }
     });
 
