@@ -91,6 +91,8 @@ export default function Positions() {
   const [selectedPositionDepartment, setSelectedPositionDepartment] = useState<DepartmentLink | null>(null);
   const [vacanciesCount, setVacanciesCount] = useState<number>(0);
   const [editVacanciesCount, setEditVacanciesCount] = useState<number>(0);
+  // Словарь измененных значений вакансий (ключ: id связи, значение: кол-во вакансий)
+  const [modifiedVacancies, setModifiedVacancies] = useState<Record<number, number>>({});
   const queryClient = useQueryClient();
 
   // Form для создания
@@ -374,6 +376,7 @@ export default function Positions() {
   const handleOpenAddDepartment = (position: Position) => {
     setSelectedPosition(position);
     setVacanciesCount(1); // Устанавливаем значение по умолчанию - 1 вакансия при создании новой связи
+    setModifiedVacancies({}); // Сбрасываем измененные вакансии при открытии окна
     setIsAddDepartmentDialogOpen(true);
   };
   
