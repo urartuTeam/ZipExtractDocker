@@ -455,8 +455,7 @@ export default function Positions() {
                   <TableRow>
                     <TableHead className="w-[80px]">ID</TableHead>
                     <TableHead>Название</TableHead>
-                    <TableHead>Родительская должность</TableHead>
-                    <TableHead>Отдел</TableHead>
+                    <TableHead>Родительская должность - Отдел</TableHead>
                     <TableHead className="w-[150px]">Действия</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -476,44 +475,48 @@ export default function Positions() {
                           <TableCell>{position.position_id}</TableCell>
                           <TableCell className="font-medium">{position.name}</TableCell>
                           <TableCell>
-                            {position.parent_position_id ? (
-                              positionsData?.data.find(p => p.position_id === position.parent_position_id)?.name || 
-                              <span className="text-gray-500">ID: {position.parent_position_id}</span>
-                            ) : (
-                              <span className="text-gray-500">Нет</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
                             {position.departments && position.departments.length > 0 ? (
-                              <div className="flex flex-col gap-1">
-                                {position.departments.map(dept => (
-                                  <div key={dept.position_link_id} className="flex items-center gap-2">
-                                    <span className="text-sm">
-                                      {dept.department_name}
-                                      {dept.vacancies !== undefined && (
-                                        <span className="ml-1 text-xs text-gray-500">
-                                          (штатных единиц: {dept.vacancies})
-                                        </span>
-                                      )}
-                                    </span>
-                                    {(
-                                      <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-6 w-6 ml-auto" 
-                                        onClick={() => handleDeleteLink(dept.position_link_id)}
-                                        title="Удалить связь"
-                                      >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
-                                          <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
-                                        </svg>
-                                      </Button>
-                                    )}
-                                  </div>
-                                ))}
+                              <div className="border rounded-md divide-y">
+                                {position.departments.map(dept => {
+                                  // Для каждого отдела найдем соответствующую родительскую должность
+                                  // В будущем здесь можно получать parent_position из position_position где department_id = dept.department_id
+                                  return (
+                                    <div key={dept.position_link_id} className="p-2">
+                                      <div className="grid grid-cols-[1fr,1fr,auto] gap-2 items-center">
+                                        <div className="text-sm font-medium">
+                                          {position.parent_position_id ? (
+                                            positionsData?.data.find(p => p.position_id === position.parent_position_id)?.name || 
+                                            <span className="text-gray-500">ID: {position.parent_position_id}</span>
+                                          ) : (
+                                            <span className="text-gray-500">Нет родительской должности</span>
+                                          )}
+                                        </div>
+                                        <div className="text-sm">
+                                          {dept.department_name}
+                                          {dept.vacancies !== undefined && (
+                                            <span className="ml-1 text-xs text-gray-500">
+                                              (штатных единиц: {dept.vacancies})
+                                            </span>
+                                          )}
+                                        </div>
+                                        <Button 
+                                          variant="ghost" 
+                                          size="icon" 
+                                          className="h-6 w-6" 
+                                          onClick={() => handleDeleteLink(dept.position_link_id)}
+                                          title="Удалить связь"
+                                        >
+                                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                                            <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
+                                          </svg>
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             ) : (
-                              <span className="text-gray-500">Нет привязанных отделов</span>
+                              <span className="text-gray-500">Нет родительской должности и отделов</span>
                             )}
                           </TableCell>
                           <TableCell>
