@@ -222,14 +222,10 @@ export default function OrganizationStructure() {
           <Users className="h-5 w-5 mr-2 text-blue-500" />
           <span>{displayText}</span>
           
-          {/* Статистика по вакансиям в едином формате, отображается рядом */}
-          {staffUnits > 0 && (
-            <div className="ml-2 flex items-center text-xs">
-              <span className="text-gray-600 mr-1">{staffUnits} мест,</span>
-              <span className="text-blue-600 mr-1">{currentCount} занято</span>
-              {vacancies > 0 && (
-                <span className="text-green-600">(+{vacancies} вакансий)</span>
-              )}
+          {/* Показываем только количество вакансий в правом верхнем углу */}
+          {vacancies > 0 && (
+            <div className="absolute top-0 right-0 m-1 px-1.5 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded">
+              вакансий: {vacancies}
             </div>
           )}
         </div>
