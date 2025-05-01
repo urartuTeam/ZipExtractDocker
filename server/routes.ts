@@ -623,21 +623,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
       
-      // Если должность имеет department_id, но нет соответствующей записи в таблице position_department,
-      // добавляем его тоже
-      if (position.department_id && 
-          !linkedDepartments.some(link => link.department_id === position.department_id)) {
-        const dept = departments.find(d => d.department_id === position.department_id);
-        if (dept) {
-          linkedDepartments.push({
-            position_link_id: 0, // Используем 0 как признак того, что это связь из поля department_id без записи в position_department
-            department_id: position.department_id,
-            department_name: dept.name || 'Неизвестный отдел',
-            sort: 0,
-            vacancies: 0
-          });
-        }
-      }
+      // ВАЖНО: Убираем добавление "неявных" связей должность-отдел
+      // Должны отображаться только те связи, которые явно указаны в таблице position_department
       
       const positionWithDepts = {
         ...position,

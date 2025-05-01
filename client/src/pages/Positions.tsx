@@ -488,7 +488,7 @@ export default function Positions() {
                               <div className="flex flex-col gap-1">
                                 {position.departments.map(dept => (
                                   <div key={dept.position_link_id} className="flex items-center gap-2">
-                                    <span className={`text-sm ${dept.position_link_id === 0 ? 'text-gray-500 italic' : ''}`}>
+                                    <span className="text-sm">
                                       {dept.department_name}
                                       {dept.vacancies !== undefined && (
                                         <span className="ml-1 text-xs text-gray-500">
@@ -496,7 +496,7 @@ export default function Positions() {
                                         </span>
                                       )}
                                     </span>
-                                    {dept.position_link_id !== 0 && (
+                                    {(
                                       <Button 
                                         variant="ghost" 
                                         size="icon" 
