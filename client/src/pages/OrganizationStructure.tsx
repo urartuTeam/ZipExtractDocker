@@ -481,9 +481,28 @@ export default function OrganizationStructure() {
     console.log(`Получаем должности для отдела ${deptId}`);
     
     // Получаем все должности, связанные с этим отделом
+    // Ищем все должности, которые имеют deptId в своем массиве departments
     const linked = positions.filter((p) =>
+      p.departments && Array.isArray(p.departments) && 
       p.departments.some((dd) => dd.department_id === deptId),
     );
+    
+    // Проверка на случай, если дочерние должности не появляются
+    // Специальный случай для начальника управления (ID=24) и его подчиненных
+    if (deptId === 19 || deptId === 20) {
+      console.log(`Проверка подчиненных для начальника управления в отделе ${deptId}`);
+      
+      // Проверяем наличие начальника управления (ID=24) среди должностей
+      const managerPosition = linked.find(p => p.position_id === 24);
+      if (managerPosition) {
+        console.log(`Найден начальник управления (ID=24) в отделе ${deptId}`);
+        
+        // Все подчиненные начальника управления в базе данных
+        const allSubordinates = positions.filter(p => p.parent_position_id === 24);
+        console.log(`Все подчиненные начальника управления в БД:`, 
+          allSubordinates.map(p => `${p.name} (ID: ${p.position_id})`));
+      }
+    }
     
     // Логгируем для отладки
     console.log(`Все должности отдела ${deptId} до построения иерархии:`, 
