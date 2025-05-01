@@ -61,7 +61,7 @@ export default function OrganizationStructure() {
   const { data: posDeptR, isLoading: lpd } = useQuery<{
     data: PositionDepartment[];
   }>({
-    queryKey: ["/api/pd"],
+    queryKey: ["/api/positiondepartments"],
   });
   
   if (ld || lp || le || lpd) return <div>Загрузка...</div>;

@@ -81,7 +81,7 @@ export default function Vacancies() {
   const { data: posDeptR } = useQuery<{
     data: PositionDepartment[];
   }>({
-    queryKey: ["/api/pd"],
+    queryKey: ["/api/positiondepartments"],
   });
   
   console.log("Данные о вакансиях:", posDeptR?.data);
