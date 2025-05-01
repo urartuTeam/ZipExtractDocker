@@ -81,6 +81,19 @@ export default function OrganizationStructure() {
   }>({
     queryKey: ["/api/positiondepartments"],
   });
+  
+  // Получаем данные о иерархии должностей (связи родитель-дочерний элемент)
+  const { data: positionPositionsR, isLoading: lpp } = useQuery<{ 
+    data: { 
+      position_position_id: number;
+      position_id: number;
+      parent_position_id: number;
+      department_id: number;
+      deleted: boolean;
+    }[] 
+  }>({
+    queryKey: ["/api/positionpositions"],
+  });
 
   // Получаем данные о порядке сортировки элементов
   const { data: sortTreeResponse, isLoading: lst, refetch: refetchSortTree } = useQuery<{ data: SortTreeItem[] }>({
