@@ -56,6 +56,10 @@ interface DepartmentLink {
   department_name: string;
   sort: number;
   vacancies?: number; // Количество вакансий (штатных единиц) в этом отделе
+  parent_position?: {
+    position_id: number;
+    name: string;
+  } | null;
 }
 
 interface Position {
