@@ -813,19 +813,76 @@ export default function Positions() {
                               type="number"
                               min="0"
                               className="w-20 h-8"
-                              value={editVacanciesCount}
-                              onChange={(e) => setEditVacanciesCount(parseInt(e.target.value) || 0)}
+                              value={modifiedVacancies[dept.position_link_id] !== undefined 
+                                ? modifiedVacancies[dept.position_link_id] 
+                                : dept.vacancies || 0}
+                              onChange={(e) => {
+                                const value = e.target.value ? parseInt(e.target.value) : 0;
+                                setModifiedVacancies((prev) => ({
+                                  ...prev,
+                                  [dept.position_link_id]: value
+                                }));
+                              }}
                             />
                             <Button
                               variant="outline"
                               size="sm"
                               className="h-8"
-                              onClick={() => {
-                                updatePositionDepartment.mutate({
-                                  id: dept.position_link_id,
-                                  vacancies: editVacanciesCount
-                                });
-                                setSelectedPositionDepartment(null);
+                              onClick={async () => {
+                                try {
+                                  // Получаем детали связи
+                                  const linkRes = await fetch(`/api/pd/${dept.position_link_id}`);
+                                  const linkData = await linkRes.json();
+                                  
+                                  if (linkData.status !== 'success' || !linkData.data) {
+                                    throw new Error("Не удалось получить данные о связи");
+                                  }
+                                  
+                                  // Отправляем запрос на сохранение
+                                  const res = await fetch(`/api/pd/${dept.position_link_id}`, {
+                                    method: 'PUT',
+                                    headers: {
+                                      'Content-Type': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                      position_id: linkData.data.position_id,
+                                      department_id: linkData.data.department_id,
+                                      vacancies: modifiedVacancies[dept.position_link_id],
+                                      sort: linkData.data.sort || 0
+                                    }),
+                                  });
+                                  
+                                  if (!res.ok) {
+                                    const text = await res.text();
+                                    console.error("Ошибка при обновлении:", text);
+                                    throw new Error("Ошибка при обновлении количества вакансий");
+                                  }
+                                  
+                                  // Убираем запись из словаря измененных значений после успешного сохранения
+                                  setModifiedVacancies((prev) => {
+                                    const newValues = {...prev};
+                                    delete newValues[dept.position_link_id];
+                                    return newValues;
+                                  });
+                                  
+                                  // Обновляем данные в UI
+                                  queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
+                                  
+                                  // Закрываем режим редактирования
+                                  setSelectedPositionDepartment(null);
+                                  
+                                  toast({
+                                    title: "Изменения сохранены",
+                                    description: "Количество вакансий обновлено успешно",
+                                  });
+                                } catch (error) {
+                                  console.error("Ошибка:", error);
+                                  toast({
+                                    title: "Ошибка",
+                                    description: error instanceof Error ? error.message : "Неизвестная ошибка",
+                                    variant: "destructive",
+                                  });
+                                }
                               }}
                               disabled={updatePositionDepartment.isPending}
                             >
@@ -835,7 +892,16 @@ export default function Positions() {
                               variant="ghost"
                               size="sm"
                               className="h-8"
-                              onClick={() => setSelectedPositionDepartment(null)}
+                              onClick={() => {
+                                // Удаляем любые сделанные изменения для этой связи
+                                setModifiedVacancies((prev) => {
+                                  const newValues = {...prev};
+                                  delete newValues[dept.position_link_id];
+                                  return newValues;
+                                });
+                                // Закрываем режим редактирования
+                                setSelectedPositionDepartment(null);
+                              }}
                             >
                               Отмена
                             </Button>
@@ -847,68 +913,86 @@ export default function Positions() {
                                 type="number"
                                 min="0"
                                 className="w-20 h-8"
-                                value={dept.vacancies}
+                                value={modifiedVacancies[dept.position_link_id] !== undefined 
+                                  ? modifiedVacancies[dept.position_link_id] 
+                                  : dept.vacancies || 0}
                                 onChange={(e) => {
-                                  setSelectedPositionDepartment(dept);
-                                  // Используем текущее значение из базы данных, если поле пустое
+                                  // Только сохраняем измененное значение, НЕ отправляем запрос сразу
                                   const value = e.target.value ? parseInt(e.target.value) : 0;
-                                  setEditVacanciesCount(value);
-                                  
-                                  // Обновляем количество вакансий сразу при изменении значения
-                                  // Используем setTimeout для предотвращения слишком частых запросов
-                                  setTimeout(() => {
-                                    console.log("Обновление вакансий для связи:", {
-                                      id: dept.position_link_id,
-                                      vacancies: value
-                                    });
-                                    
-                                    // Вызываем API напрямую вместо использования мутации
-                                    (async () => {
-                                      try {
-                                        // Получаем детали связи через новый API-маршрут
-                                        const linkRes = await fetch(`/api/pd/${dept.position_link_id}`);
-                                        const linkData = await linkRes.json();
-                                        
-                                        if (linkData.status !== 'success' || !linkData.data) {
-                                          throw new Error("Не удалось получить данные о связи");
-                                        }
-                                        
-                                        // Отправляем обновление с полными данными через новый API-маршрут
-                                        const res = await fetch(`/api/pd/${dept.position_link_id}`, {
-                                          method: 'PUT',
-                                          headers: {
-                                            'Content-Type': 'application/json',
-                                          },
-                                          body: JSON.stringify({
-                                            position_id: linkData.data.position_id,
-                                            department_id: linkData.data.department_id,
-                                            vacancies: value,
-                                            sort: linkData.data.sort || 0
-                                          }),
-                                        });
-                                        
-                                        if (!res.ok) {
-                                          const text = await res.text();
-                                          console.error("Ошибка при обновлении:", text);
-                                          throw new Error("Ошибка при обновлении количества вакансий");
-                                        }
-                                        
-                                        // Обновляем данные в UI
-                                        queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
-                                      } catch (error) {
-                                        console.error("Ошибка:", error);
-                                        toast({
-                                          title: "Ошибка",
-                                          description: error instanceof Error ? error.message : "Неизвестная ошибка",
-                                          variant: "destructive",
-                                        });
-                                      }
-                                    })();
-                                  }, 300);
+                                  setModifiedVacancies((prev) => ({
+                                    ...prev,
+                                    [dept.position_link_id]: value
+                                  }));
                                 }}
                                 title="Количество штатных единиц"
                               />
                             </div>
+                            
+                            {/* Кнопка сохранения появляется только если значение было изменено */}
+                            {modifiedVacancies[dept.position_link_id] !== undefined && 
+                             modifiedVacancies[dept.position_link_id] !== dept.vacancies && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-8 px-2"
+                                onClick={async () => {
+                                  try {
+                                    // Получаем детали связи
+                                    const linkRes = await fetch(`/api/pd/${dept.position_link_id}`);
+                                    const linkData = await linkRes.json();
+                                    
+                                    if (linkData.status !== 'success' || !linkData.data) {
+                                      throw new Error("Не удалось получить данные о связи");
+                                    }
+                                    
+                                    // Отправляем запрос на сохранение ТОЛЬКО при нажатии кнопки
+                                    const res = await fetch(`/api/pd/${dept.position_link_id}`, {
+                                      method: 'PUT',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                      },
+                                      body: JSON.stringify({
+                                        position_id: linkData.data.position_id,
+                                        department_id: linkData.data.department_id,
+                                        vacancies: modifiedVacancies[dept.position_link_id],
+                                        sort: linkData.data.sort || 0
+                                      }),
+                                    });
+                                    
+                                    if (!res.ok) {
+                                      const text = await res.text();
+                                      console.error("Ошибка при обновлении:", text);
+                                      throw new Error("Ошибка при обновлении количества вакансий");
+                                    }
+                                    
+                                    // Убираем запись из словаря измененных значений после успешного сохранения
+                                    setModifiedVacancies((prev) => {
+                                      const newValues = {...prev};
+                                      delete newValues[dept.position_link_id];
+                                      return newValues;
+                                    });
+                                    
+                                    // Обновляем данные в UI
+                                    queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
+                                    
+                                    toast({
+                                      title: "Изменения сохранены",
+                                      description: "Количество вакансий обновлено успешно",
+                                    });
+                                  } catch (error) {
+                                    console.error("Ошибка:", error);
+                                    toast({
+                                      title: "Ошибка",
+                                      description: error instanceof Error ? error.message : "Неизвестная ошибка",
+                                      variant: "destructive",
+                                    });
+                                  }
+                                }}
+                              >
+                                Сохранить
+                              </Button>
+                            )}
+                            
                             <Button 
                               variant="ghost" 
                               size="icon" 
