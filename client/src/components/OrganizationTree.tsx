@@ -201,7 +201,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   }, [showThreeLevels]);
 
   // Обработчики для изменения настроек отображения
-  const handleThreeLevelsChange = (value: boolean) => {
+  const handleShowThreeLevelsChange = (value: boolean) => {
     setShowThreeLevels(value);
   };
 
@@ -853,11 +853,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     return (
       <div className="flex flex-col items-center">
         <UnifiedPositionCard
-          data={{
-            position: node.position,
-            employees: node.employees,
-          }}
-          onClick={() => handlePositionClick(node.position.position_id)}
+          node={node}
+          onPositionClick={handlePositionClick}
+          showVacancies={showVacancies}
         />
 
         {/* Дочерние отделы */}
@@ -947,7 +945,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         <DisplaySettings
           showThreeLevels={showThreeLevels}
           showVacancies={showVacancies}
-          onThreeLevelsChange={handleThreeLevelsChange}
+          onShowThreeLevelsChange={handleThreeLevelsChange}
           onShowVacanciesChange={handleShowVacanciesChange}
         />
       </div>
@@ -957,7 +955,10 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         <div className="flex items-center overflow-x-auto whitespace-nowrap mb-4 p-2 bg-gray-50 rounded-md">
           <span
             className="text-sm text-blue-600 cursor-pointer hover:underline"
-            onClick={handleReset}
+            onClick={() => {
+              setNavigationHistory([]);
+              setSelectedPositionId(undefined);
+            }}
           >
             Корень
           </span>
