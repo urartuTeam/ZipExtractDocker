@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -164,6 +164,8 @@ export default function OrganizationStructure() {
     }
   }, [sortTreeR]);
 
+
+
   // Функция для включения/отключения режима перетаскивания
   const toggleDragMode = () => {
     const newDragEnabled = !dragEnabled;
@@ -179,6 +181,8 @@ export default function OrganizationStructure() {
     } else {
       setDragEnabled(false);
       setDragMessage(null);
+      // Очищаем кэш, чтобы при следующем включении режима все работало корректно
+      createdItemsCache.clear();
     }
   };
 
@@ -280,6 +284,36 @@ export default function OrganizationStructure() {
       d.parent_department_id === null &&
       d.parent_position_id === null,
   );
+  
+  // Эффект для создания всех необходимых записей сортировки при включении режима перетаскивания
+  useEffect(() => {
+    if (dragEnabled && sortTreeR?.data && !lst) {
+      // Создаем множество для отслеживания уже существующих записей
+      const existingItems = new Set<string>();
+      
+      // Заполняем множество ключами существующих записей
+      sortItems.forEach(item => {
+        const key = `${item.type}-${item.type_id}-${item.parent_id ?? 'null'}`;
+        existingItems.add(key);
+      });
+      
+      // Создаем записи для корневых отделов
+      for (const dept of roots) {
+        const key = `department-${dept.department_id}-null`;
+        if (!existingItems.has(key) && !createdItemsCache.has(key)) {
+          // Добавляем в кэш, чтобы избежать повторных попыток создания
+          createdItemsCache.add(key);
+          
+          createSortItemMutation.mutate({
+            type: 'department',
+            type_id: dept.department_id,
+            parent_id: null,
+            sort: dept.department_id // Используем ID как начальный порядок
+          });
+        }
+      }
+    }
+  }, [dragEnabled, sortTreeR, lst, sortItems, roots]);
 
   const getChildDeptsByDept = (deptId: number) =>
     departments.filter((d) => !d.deleted && d.parent_department_id === deptId);
@@ -557,38 +591,25 @@ export default function OrganizationStructure() {
     });
   };
   
+  // Кэш для отслеживания уже созданных или создающихся записей в этой сессии рендеринга
+  const createdItemsCache = new Set<string>();
+  
   // Функция для создания записи сортировки, если её ещё нет
   // Она вызывается при рендере каждого элемента, поэтому нужно избегать множественных вызовов
   const ensureSortTreeItem = (type: 'department' | 'position', typeId: number, parentId: number | null = null) => {
+    // Создаем ключ для кэширования этой записи
+    const cacheKey = `${type}-${typeId}-${parentId ?? 'null'}`;
+    
+    // Если уже пытались создать этот элемент в текущей сессии, ничего не делаем
+    if (createdItemsCache.has(cacheKey)) {
+      return true;
+    }
+    
     // Проверяем, существует ли уже запись в БД
     const exists = sortItems.some(item => 
       item.type === type && item.type_id === typeId && 
       ((item.parent_id === null && parentId === null) || item.parent_id === parentId)
     );
-    
-    // Если запись не существует и включен режим перетаскивания
-    // Также проверяем, что данные сортировки уже загружены с сервера
-    if (!exists && dragEnabled && !lst && sortTreeR?.data) {
-      try {
-        // Определяем следующее значение сортировки для этого родителя
-        const siblingItems = sortItems.filter(item => 
-          item.type === type && 
-          ((item.parent_id === null && parentId === null) || item.parent_id === parentId)
-        );
-        const maxSort = siblingItems.length > 0 ? Math.max(...siblingItems.map(i => i.sort)) : -1;
-        const nextSort = maxSort + 1;
-        
-        // Создаем новую запись сортировки
-        createSortItemMutation.mutate({
-          type,
-          type_id: typeId,
-          parent_id: parentId,
-          sort: nextSort
-        });
-      } catch (error) {
-        console.error('Ошибка при создании записи сортировки:', error);
-      }
-    }
     
     return exists;
   };
