@@ -927,7 +927,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
   };
 
-  // Функция для построения иерархии должностей на основе parent_position_id
+  // Функция для построения иерархии должностей на основе новой таблицы position_position
   const buildPositionHierarchy = () => {
     if (positions.length === 0) {
       return [];
