@@ -315,6 +315,17 @@ export default function Positions() {
   // Запрос на получение должностей с отделами
   const { data: positionsData, isLoading, error } = useQuery<{ status: string, data: Position[] }>({
     queryKey: ['/api/positions/with-departments'],
+    onSuccess: (data) => {
+      // Ищем position_id = 28 и проверяем его отделы на наличие position_link_id = 0
+      const position28 = data?.data?.find(p => p.position_id === 28);
+      if (position28 && position28.departments) {
+        const invalidLinks = position28.departments.filter(d => d.position_link_id === 0);
+        if (invalidLinks.length > 0) {
+          console.error("НАЙДЕНЫ НЕВАЛИДНЫЕ ЗАПИСИ с position_link_id = 0:", invalidLinks);
+          console.error("Полные данные position_id = 28:", position28);
+        }
+      }
+    }
   });
 
   // Запрос на получение отделов
@@ -488,25 +499,32 @@ export default function Positions() {
                               <div className="flex flex-col gap-1">
                                 {position.departments.map(dept => (
                                   <div key={dept.position_link_id} className="flex items-center gap-2">
-                                    <span className="text-sm">
+                                    <span className={`text-sm ${dept.position_link_id === 0 ? 'text-gray-500 italic' : ''}`}>
                                       {dept.department_name}
                                       {dept.vacancies !== undefined && (
                                         <span className="ml-1 text-xs text-gray-500">
                                           (штатных единиц: {dept.vacancies})
                                         </span>
                                       )}
+                                      {dept.position_link_id === 0 && (
+                                        <span className="ml-1 text-xs text-amber-500">
+                                          [Унаследовано]
+                                        </span>
+                                      )}
                                     </span>
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      className="h-6 w-6 ml-auto" 
-                                      onClick={() => handleDeleteLink(dept.position_link_id)}
-                                      title="Удалить связь"
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
-                                        <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
-                                      </svg>
-                                    </Button>
+                                    {dept.position_link_id !== 0 && (
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-6 w-6 ml-auto" 
+                                        onClick={() => handleDeleteLink(dept.position_link_id)}
+                                        title="Удалить связь"
+                                      >
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                                          <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
+                                        </svg>
+                                      </Button>
+                                    )}
                                   </div>
                                 ))}
                               </div>
