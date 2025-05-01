@@ -119,12 +119,18 @@ export function registerPositionEndpoints(app: Express) {
       
       // Проверяем, существуют ли должности
       const position = await storage.getPosition(positionPositionData.position_id);
-      const parentPosition = await storage.getPosition(positionPositionData.parent_position_id);
-      
-      if (!position || !parentPosition) {
+      if (!position) {
         return res.status(404).json({ 
           status: 'error', 
-          message: 'Одна из должностей не найдена' 
+          message: 'Должность не найдена' 
+        });
+      }
+      
+      const parentPosition = await storage.getPosition(positionPositionData.parent_position_id);
+      if (!parentPosition) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Родительская должность не найдена' 
         });
       }
       

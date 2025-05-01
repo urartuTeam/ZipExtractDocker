@@ -1,6 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { registerPositionEndpoints } from "./api/position_endpoints";
 import { 
   insertUserSchema, 
   insertDepartmentSchema, 
@@ -31,6 +32,9 @@ function isAuthenticated(req: Request, res: Response, next: NextFunction) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Настройка авторизации
   setupAuth(app);
+  
+  // Регистрация эндпоинтов для position_position и others
+  registerPositionEndpoints(app);
   
   // API routes
   const apiRouter = app.route('/api');
