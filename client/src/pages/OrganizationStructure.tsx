@@ -64,6 +64,7 @@ export default function OrganizationStructure() {
   const [sortItems, setSortItems] = useState<SortTreeItem[]>([]);
   const [dragMessage, setDragMessage] = useState<string | null>(null);
 
+
   const { data: deptR, isLoading: ld } = useQuery<{ data: Department[] }>({
     queryKey: ["/api/departments"],
   });
@@ -133,30 +134,15 @@ export default function OrganizationStructure() {
         body: JSON.stringify(item),
       });
       
-      // Создаем ключ для отслеживания создания
-      const itemKey = `${item.type}-${item.type_id}-${item.parent_id ?? 'null'}`;
-      
       if (!response.ok) {
         const errorData = await response.json();
         // Если ошибка 409 (конфликт), это означает, что запись уже существует
-        // В этом случае не считаем это ошибкой, а просто удаляем элемент из ожидающих
+        // В этом случае не считаем это ошибкой
         if (response.status === 409) {
-          setPendingCreations(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(itemKey);
-            return newSet;
-          });
           return null;
         }
         throw new Error(errorData.message || 'Не удалось создать запись сортировки');
       }
-      
-      // Успешное создание - удаляем элемент из ожидающих
-      setPendingCreations(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(itemKey);
-        return newSet;
-      });
       
       return await response.json();
     },
@@ -166,15 +152,8 @@ export default function OrganizationStructure() {
         queryClient.invalidateQueries({ queryKey: ['/api/sort-tree'] });
       }
     },
-    onError: (error: Error, variables) => {
+    onError: (error: Error) => {
       console.error('Ошибка создания записи сортировки:', error);
-      // В случае ошибки удаляем элемент из ожидающих создания
-      const itemKey = `${variables.type}-${variables.type_id}-${variables.parent_id ?? 'null'}`;
-      setPendingCreations(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(itemKey);
-        return newSet;
-      });
     },
   });
 
@@ -200,8 +179,6 @@ export default function OrganizationStructure() {
     } else {
       setDragEnabled(false);
       setDragMessage(null);
-      // Очищаем список ожидающих создания при отключении режима
-      setPendingCreations(new Set());
     }
   };
 
@@ -580,33 +557,19 @@ export default function OrganizationStructure() {
     });
   };
   
-  // Используем Set для отслеживания элементов, для которых уже отправлены запросы на создание
-  const [pendingCreations, setPendingCreations] = useState(new Set<string>());
-  
   // Функция для создания записи сортировки, если её ещё нет
   // Она вызывается при рендере каждого элемента, поэтому нужно избегать множественных вызовов
   const ensureSortTreeItem = (type: 'department' | 'position', typeId: number, parentId: number | null = null) => {
-    // Создаем уникальный ключ для этого элемента
-    const itemKey = `${type}-${typeId}-${parentId ?? 'null'}`;
-    
-    // Проверяем, существует ли уже запись в БД или находится в процессе создания
+    // Проверяем, существует ли уже запись в БД
     const exists = sortItems.some(item => 
       item.type === type && item.type_id === typeId && 
       ((item.parent_id === null && parentId === null) || item.parent_id === parentId)
     );
-    const isPending = pendingCreations.has(itemKey);
     
-    // Если запись не существует, не находится в процессе создания и включен режим перетаскивания
+    // Если запись не существует и включен режим перетаскивания
     // Также проверяем, что данные сортировки уже загружены с сервера
-    if (!exists && !isPending && dragEnabled && !lst && sortTreeR?.data) {
+    if (!exists && dragEnabled && !lst && sortTreeR?.data) {
       try {
-        // Добавляем элемент в список ожидающих создания
-        setPendingCreations(prev => {
-          const newSet = new Set(prev);
-          newSet.add(itemKey);
-          return newSet;
-        });
-        
         // Определяем следующее значение сортировки для этого родителя
         const siblingItems = sortItems.filter(item => 
           item.type === type && 
