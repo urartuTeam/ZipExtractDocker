@@ -12,7 +12,7 @@ import {
   type Setting, type InsertSetting
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, or } from "drizzle-orm";
 
 export interface IStorage {
   // Пользователи
@@ -301,16 +301,33 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
     
-    // Получаем сами должности
-    const subordinatePositions = await db.select()
-      .from(positions)
-      .where(
-        and(
-          // Проверяем, что ID должности есть в списке подчиненных
-          inArray(positions.position_id, subordinateIds),
-          eq(positions.deleted, false)
-        )
+    // Пустой placeholder, так как мы уже не используем условия
+    
+    // Простой подход - если только один ID, используем eq
+    // Для нескольких ID - фильтруем в JavaScript
+    let subordinatePositions: Position[] = [];
+    
+    if (subordinateIds.length === 1) {
+      // Для одного ID используем простой запрос
+      subordinatePositions = await db.select()
+        .from(positions)
+        .where(
+          and(
+            eq(positions.position_id, subordinateIds[0]),
+            eq(positions.deleted, false)
+          )
+        );
+    } else {
+      // Для многих ID - сначала получаем все неудаленные должности, потом фильтруем
+      const allPositions = await db.select()
+        .from(positions)
+        .where(eq(positions.deleted, false));
+      
+      // Фильтруем в памяти
+      subordinatePositions = allPositions.filter(pos => 
+        subordinateIds.includes(pos.position_id)
       );
+    }
     
     return subordinatePositions;
   }

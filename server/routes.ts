@@ -322,9 +322,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const aSort = getSortValue(a, currentDeptId);
         const bSort = getSortValue(b, currentDeptId);
         
-        // Если есть родительская должность, учитываем это в сортировке
-        if (a.parent_position_id === b.position_id) return 1;
-        if (b.parent_position_id === a.position_id) return -1;
+        // В новой схеме parent_position_id не содержится в таблице positions
+        // Эту логику нужно переработать через запрос к position_position
         
         return aSort - bSort;
       });
@@ -406,6 +405,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error fetching department position hierarchy:', error);
       res.status(500).json({ status: 'error', message: 'Failed to fetch department position hierarchy' });
+    }
+  });
+  
+  // Создание связи между должностями (иерархия)
+  app.post('/api/positionpositions', async (req: Request, res: Response) => {
+    try {
+      const relationData = req.body;
+      
+      // Проверка наличия обязательных полей
+      if (!relationData.position_id || !relationData.parent_position_id || !relationData.department_id) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Position ID, Parent Position ID and Department ID are required' 
+        });
+      }
+      
+      // Создаем связь
+      const relation = await storage.createPositionPosition(relationData);
+      res.status(201).json({ status: 'success', data: relation });
+    } catch (error) {
+      console.error('Error creating position hierarchy relation:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Failed to create position hierarchy relation' 
+      });
+    }
+  });
+  
+  // Обновление связи между должностями
+  app.put('/api/positionpositions/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Invalid position relation ID' 
+        });
+      }
+
+      console.log('Updating position relation:', id, 'with data:', req.body);
+
+      const updateData = req.body;
+      
+      const updatedRelation = await storage.updatePositionPosition(id, updateData);
+      
+      if (!updatedRelation) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Position relation not found' 
+        });
+      }
+
+      return res.json({ status: 'success', data: updatedRelation });
+    } catch (error) {
+      console.error('Error updating position relation:', error);
+      return res.status(500).json({ 
+        status: 'error', 
+        message: 'Failed to update position relation' 
+      });
+    }
+  });
+
+  // Удаление связи между должностями
+  app.delete('/api/positionpositions/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid relation ID' });
+      }
+      
+      const deleted = await storage.deletePositionPosition(id);
+      if (!deleted) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Position relation not found' 
+        });
+      }
+      
+      res.json({ status: 'success', message: 'Position relation deleted successfully' });
+    } catch (error) {
+      console.error('Error deleting position relation:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Failed to delete position relation' 
+      });
     }
   });
   
