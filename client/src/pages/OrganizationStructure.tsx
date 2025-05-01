@@ -478,19 +478,38 @@ export default function OrganizationStructure() {
     departments.filter((d) => !d.deleted && d.parent_position_id === posId);
 
   const getDeptPositions = (deptId: number) => {
+    // Получаем все должности, связанные с этим отделом
     const linked = positions.filter((p) =>
       p.departments.some((dd) => dd.department_id === deptId),
     );
+    
+    // Логгируем для отладки
+    if (deptId === 19 || deptId === 20) {
+      console.log(`Должности для отдела ${deptId}:`, linked.map(p => `${p.name} (ID: ${p.position_id}, parent: ${p.parent_position_id})`));
+    }
+    
+    // Создаем карту всех должностей этого отдела для построения иерархии
     const map: { [k: number]: any } = {};
     linked.forEach((p) => (map[p.position_id] = { ...p, children: [] }));
+    
+    // Строим иерархию - добавляем дочерние должности к родительским
     linked.forEach((p) => {
+      // Проверяем, что родительская должность существует И принадлежит этому же отделу
       if (p.parent_position_id && map[p.parent_position_id]) {
         map[p.parent_position_id].children.push(map[p.position_id]);
       }
     });
-    return linked.filter(
+    
+    // Возвращаем только корневые должности (без родителей или с родителями вне этого отдела)
+    const rootPositions = linked.filter(
       (p: any) => p.parent_position_id === null || !map[p.parent_position_id],
     );
+    
+    if (deptId === 19 || deptId === 20) {
+      console.log(`Корневые должности для отдела ${deptId}:`, rootPositions.map(p => `${p.name} (ID: ${p.position_id})`));
+    }
+    
+    return rootPositions;
   };
 
   const getEmps = (posId: number, deptId: number) =>
@@ -533,34 +552,89 @@ export default function OrganizationStructure() {
 
   // Функция для сортировки элементов с учетом значений из таблицы sort_tree
   const sortByCustomOrder = (items: any[], itemType: 'department' | 'position', parentId: number | null = null) => {
-    // Всегда используем сортировку из sort_tree, независимо от режима перетаскивания
-    if (sortItems.length === 0) {
+    // Проверяем входящие данные для отладки
+    if (items.length === 0) {
       return items;
     }
+
+    // Делаем копию для сортировки
+    const itemsToSort = [...items];
     
-    return [...items].sort((a, b) => {
-      const typeIdA = itemType === 'department' ? a.department_id : a.position_id;
-      const typeIdB = itemType === 'department' ? b.department_id : b.position_id;
+    // Специальная обработка для иерархии должностей
+    if (itemType === 'position') {
+      // Логируем для отладки, если это один из проблемных отделов
+      const someItemId = itemType === 'department' 
+        ? itemsToSort[0]?.department_id 
+        : itemsToSort[0]?.position_id;
+        
+      if (parentId === 19 || parentId === 20) {
+        console.log(`Сортировка должностей для отдела ${parentId}:`, 
+          itemsToSort.map(p => `${p.name} (ID: ${p.position_id}, parent: ${p.parent_position_id})`));
+      }
       
-      const sortItemA = sortItems.find(si => si.type === itemType && si.type_id === typeIdA && 
-        ((si.parent_id === null && parentId === null) || si.parent_id === parentId));
+      // Для должностей учитываем родительско-дочерние отношения в сортировке
+      // Сначала выводим родительские должности, затем дочерние
+      return itemsToSort.sort((a, b) => {
+        // Если b является родителем a, то b должен быть выше
+        if (a.parent_position_id === b.position_id) return 1;
+        // Если a является родителем b, то a должен быть выше
+        if (b.parent_position_id === a.position_id) return -1;
+        
+        // Если у элементов нет родительско-дочерних отношений, используем sort_tree
+        const sortItemA = sortItems.find(si => 
+          si.type === itemType && 
+          si.type_id === a.position_id && 
+          (si.parent_id === parentId || (si.parent_id === null && parentId === null))
+        );
+        
+        const sortItemB = sortItems.find(si => 
+          si.type === itemType && 
+          si.type_id === b.position_id && 
+          (si.parent_id === parentId || (si.parent_id === null && parentId === null))
+        );
+        
+        // Если у обоих есть записи сортировки, используем их
+        if (sortItemA && sortItemB) {
+          return sortItemA.sort - sortItemB.sort;
+        }
+        
+        // Если только у одного есть запись сортировки, он идет первым
+        if (sortItemA) return -1;
+        if (sortItemB) return 1;
+        
+        // Если ни у одного нет записи сортировки, используем ID
+        return a.position_id - b.position_id;
+      });
+    }
+    
+    // Сортировка для отделов
+    return itemsToSort.sort((a, b) => {
+      const typeIdA = a.department_id;
+      const typeIdB = b.department_id;
       
-      const sortItemB = sortItems.find(si => si.type === itemType && si.type_id === typeIdB && 
-        ((si.parent_id === null && parentId === null) || si.parent_id === parentId));
+      const sortItemA = sortItems.find(si => 
+        si.type === 'department' && 
+        si.type_id === typeIdA && 
+        (si.parent_id === parentId || (si.parent_id === null && parentId === null))
+      );
       
-      // Если оба элемента имеют записи сортировки, сравниваем их
+      const sortItemB = sortItems.find(si => 
+        si.type === 'department' && 
+        si.type_id === typeIdB && 
+        (si.parent_id === parentId || (si.parent_id === null && parentId === null))
+      );
+      
+      // Если у обоих есть записи сортировки, используем их
       if (sortItemA && sortItemB) {
         return sortItemA.sort - sortItemB.sort;
       }
       
-      // Если только один элемент имеет запись сортировки, он идет первым
+      // Если только у одного есть запись сортировки, он идет первым
       if (sortItemA) return -1;
       if (sortItemB) return 1;
       
-      // Если ни один элемент не имеет записи сортировки, используем стандартную сортировку
-      const aId = itemType === 'department' ? a.department_id : a.position_id;
-      const bId = itemType === 'department' ? b.department_id : b.position_id;
-      return aId - bId;
+      // Если ни у одного нет записи сортировки, используем ID
+      return typeIdA - typeIdB;
     });
   };
 
