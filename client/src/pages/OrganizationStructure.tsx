@@ -45,7 +45,7 @@ type PositionDepartment = {
   deleted_at: string | null;
 };
 
-// Структура для хранения порядка сортировки элементов
+// Интерфейс для элемента сортировки
 type SortTreeItem = {
   id: number;
   type: 'department' | 'position';
@@ -55,15 +55,6 @@ type SortTreeItem = {
 };
 
 export default function OrganizationStructure() {
-  // Объявляем функцию проверки существования элемента сортировки в самом начале компонента
-  const checkSortTreeItemExists = (type: 'department' | 'position', typeId: number, parentId: number | null = null) => {
-    // Проверяем, существует ли уже запись в БД
-    return sortItems.some(item => 
-      item.type === type && 
-      item.type_id === typeId && 
-      ((item.parent_id === null && parentId === null) || item.parent_id === parentId)
-    );
-  };
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [expDept, setExpDept] = useState<{ [k: number]: boolean }>({});
@@ -297,6 +288,16 @@ export default function OrganizationStructure() {
       d.parent_position_id === null,
   );
   
+  // Проверка существования записи сортировки
+  const checkSortTreeItemExists = (type: 'department' | 'position', typeId: number, parentId: number | null = null) => {
+    // Проверяем, существует ли уже запись в БД
+    return sortItems.some(item => 
+      item.type === type && 
+      item.type_id === typeId && 
+      ((item.parent_id === null && parentId === null) || item.parent_id === parentId)
+    );
+  };
+  
   // Создает недостающие записи сортировки для всех корневых элементов
   const createMissingSortRecords = () => {
     if (!sortTreeR?.data) return;
@@ -331,7 +332,7 @@ export default function OrganizationStructure() {
         map[p.parent_position_id].children.push(map[p.position_id]);
       }
     });
-    return Object.values(map).filter(
+    return linked.filter(
       (p: any) => p.parent_position_id === null || !map[p.parent_position_id],
     );
   };
@@ -372,6 +373,35 @@ export default function OrganizationStructure() {
       vacancies,  // Количество свободных мест
       currentCount // Текущее количество сотрудников
     };
+  };
+
+  // Функция для сортировки элементов с учетом значений из таблицы sort_tree
+  const sortByCustomOrder = (items: any[], itemType: 'department' | 'position', parentId: number | null = null) => {
+    if (!dragEnabled || sortItems.length === 0) {
+      return items;
+    }
+    
+    return [...items].sort((a, b) => {
+      const typeIdA = itemType === 'department' ? a.department_id : a.position_id;
+      const typeIdB = itemType === 'department' ? b.department_id : b.position_id;
+      
+      const sortItemA = sortItems.find(si => si.type === itemType && si.type_id === typeIdA && si.parent_id === parentId);
+      const sortItemB = sortItems.find(si => si.type === itemType && si.type_id === typeIdB && si.parent_id === parentId);
+      
+      // Если оба элемента имеют записи сортировки, сравниваем их
+      if (sortItemA && sortItemB) {
+        return sortItemA.sort - sortItemB.sort;
+      }
+      
+      // Если только один элемент имеет запись сортировки, он идет первым
+      if (sortItemA) return -1;
+      if (sortItemB) return 1;
+      
+      // Если ни один элемент не имеет записи сортировки, используем стандартную сортировку
+      const aId = itemType === 'department' ? a.department_id : a.position_id;
+      const bId = itemType === 'department' ? b.department_id : b.position_id;
+      return aId - bId;
+    });
   };
 
   const renderPos = (
@@ -559,35 +589,6 @@ export default function OrganizationStructure() {
     );
   };
 
-  // Функция для сортировки элементов с учетом значений из таблицы sort_tree
-  const sortByCustomOrder = (items: any[], itemType: 'department' | 'position', parentId: number | null = null) => {
-    if (!dragEnabled || sortItems.length === 0) {
-      return items;
-    }
-    
-    return [...items].sort((a, b) => {
-      const typeIdA = itemType === 'department' ? a.department_id : a.position_id;
-      const typeIdB = itemType === 'department' ? b.department_id : b.position_id;
-      
-      const sortItemA = sortItems.find(si => si.type === itemType && si.type_id === typeIdA && si.parent_id === parentId);
-      const sortItemB = sortItems.find(si => si.type === itemType && si.type_id === typeIdB && si.parent_id === parentId);
-      
-      // Если оба элемента имеют записи сортировки, сравниваем их
-      if (sortItemA && sortItemB) {
-        return sortItemA.sort - sortItemB.sort;
-      }
-      
-      // Если только один элемент имеет запись сортировки, он идет первым
-      if (sortItemA) return -1;
-      if (sortItemB) return 1;
-      
-      // Если ни один элемент не имеет записи сортировки, используем стандартную сортировку
-      const aId = itemType === 'department' ? a.department_id : a.position_id;
-      const bId = itemType === 'department' ? b.department_id : b.position_id;
-      return aId - bId;
-    });
-  };
-  
   const renderDept = (d: Department, lvl = 0, parentId: number | null = null) => {
     // Если элемент явно закрыт в expDept, то используем это значение, иначе проверяем глобальное состояние expanded
     const ex = expDept[d.department_id] === false ? false : (expanded || (expDept[d.department_id] ?? false));
@@ -729,9 +730,6 @@ export default function OrganizationStructure() {
     );
   };
 
-  // Обнуляем неверный аргумент в renderPos - строка 535 вызывает ошибку
-  // Правильная сигнатура функции: renderPos(p, deptId, lvl, parentDeptId, isDragging)
-  
   // Сортируем корневые отделы, если включен режим перетаскивания
   const sortedRoots = sortByCustomOrder(roots, 'department', null);
   
