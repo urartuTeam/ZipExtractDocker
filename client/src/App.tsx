@@ -9,7 +9,7 @@ import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 import Home from "./pages/Home";
 import Departments from "./pages/Departments";
-import Positions from "./pages/Positions";
+import Positions from "./pages/PositionsPage";
 import Employees from "./pages/Employees";
 import UserProjects from "./pages/UserProjects";
 import AdminProjects from "./pages/AdminProjects";
