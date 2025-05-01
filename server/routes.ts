@@ -1232,17 +1232,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Проверяем, что не существует записи с таким же type, type_id и parent_id
       // Учитываем случай, когда parent_id может быть null
+      // Преобразуем parent_id в null, если значение не определено
+      if (sortItemData.parent_id === undefined) {
+        sortItemData.parent_id = null;
+      }
+      
+      // Формируем условие выборки
+      const baseCondition = and(
+        eq(sort_tree.type, sortItemData.type),
+        eq(sort_tree.type_id, sortItemData.type_id)
+      );
+      
       let queryCondition;
       if (sortItemData.parent_id === null) {
         queryCondition = and(
-          eq(sort_tree.type, sortItemData.type),
-          eq(sort_tree.type_id, sortItemData.type_id),
+          baseCondition,
           isNull(sort_tree.parent_id)
         );
       } else {
         queryCondition = and(
-          eq(sort_tree.type, sortItemData.type),
-          eq(sort_tree.type_id, sortItemData.type_id),
+          baseCondition,
           eq(sort_tree.parent_id, sortItemData.parent_id)
         );
       }
@@ -1260,6 +1269,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      console.log("Создаем новую запись сортировки:", sortItemData);
+      
       const [sortItem] = await db.insert(sort_tree)
         .values(sortItemData)
         .returning();

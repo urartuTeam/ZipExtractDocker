@@ -266,9 +266,10 @@ export const sort_tree = pgTable("sort_tree", {
   sort: integer("sort").notNull(),
   type: text("type").notNull(),
   type_id: integer("type_id").notNull(),
+  parent_id: integer("parent_id"),
 }, (table) => ({
-  // Уникальное ограничение на тип и id элемента
-  unique_type_entity: unique().on(table.type, table.type_id)
+  // Уникальное ограничение на тип, id элемента и parent_id
+  unique_type_entity: unique().on(table.type, table.type_id, table.parent_id)
 }));
 
 // Схема Zod для sort_tree
