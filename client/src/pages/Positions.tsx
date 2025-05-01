@@ -907,27 +907,33 @@ export default function Positions() {
                             </Button>
                           </div>
                         ) : (
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center">
+                          <div className="flex items-center">
+                            {/* Фиксированная структура для поля ввода с ограничением до 100 */}
+                            <div style={{ width: "70px", marginRight: "4px" }}>
                               <Input
                                 type="number"
                                 min="0"
-                                className="w-20 h-8"
+                                max="100"
+                                className="h-8"
                                 value={modifiedVacancies[dept.position_link_id] !== undefined 
                                   ? modifiedVacancies[dept.position_link_id] 
                                   : dept.vacancies || 0}
                                 onChange={(e) => {
-                                  // Только сохраняем измененное значение, НЕ отправляем запрос сразу
-                                  const value = e.target.value ? parseInt(e.target.value) : 0;
+                                  // Ограничиваем значение до 100
+                                  let value = e.target.value ? parseInt(e.target.value) : 0;
+                                  if (value > 100) value = 100;
+                                  
                                   setModifiedVacancies((prev) => ({
                                     ...prev,
                                     [dept.position_link_id]: value
                                   }));
                                 }}
-                                title="Количество штатных единиц"
+                                title="Количество штатных единиц (максимум 100)"
                               />
-                              
-                              {/* Показываем иконки сохранить/отменить только если значение было изменено */}
+                            </div>
+                            
+                            {/* Фиксированное место для кнопок */}
+                            <div style={{ width: "80px", display: "flex", justifyContent: "flex-start" }}>
                               {modifiedVacancies[dept.position_link_id] !== undefined && 
                                modifiedVacancies[dept.position_link_id] !== dept.vacancies ? (
                                 <>
