@@ -88,11 +88,14 @@ export default function Positions() {
   const [isAddDepartmentDialogOpen, setIsAddDepartmentDialogOpen] = useState(false);
   const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+  const [selectedParentPositionId, setSelectedParentPositionId] = useState<number | null>(null);
   const [selectedPositionDepartment, setSelectedPositionDepartment] = useState<DepartmentLink | null>(null);
   const [vacanciesCount, setVacanciesCount] = useState<number>(0);
   const [editVacanciesCount, setEditVacanciesCount] = useState<number>(0);
   // Словарь измененных значений вакансий (ключ: id связи, значение: кол-во вакансий)
   const [modifiedVacancies, setModifiedVacancies] = useState<Record<number, number>>({});
+  // Список доступных должностей в выбранном отделе для выбора родительской
+  const [departmentPositions, setDepartmentPositions] = useState<Position[]>([]);
   const queryClient = useQueryClient();
 
   // Form для создания
@@ -388,21 +391,100 @@ export default function Positions() {
   
 
   
+  // Загрузить должности в выбранном отделе
+  const loadDepartmentPositions = async (departmentId: number) => {
+    try {
+      // Загружаем должности, которые привязаны к этому отделу
+      const response = await fetch(`/api/positions-by-department/${departmentId}`);
+      if (!response.ok) {
+        throw new Error("Не удалось загрузить должности отдела");
+      }
+      
+      const data = await response.json();
+      if (data.status === "success" && data.data) {
+        setDepartmentPositions(data.data);
+      } else {
+        setDepartmentPositions([]);
+      }
+    } catch (error) {
+      console.error("Ошибка при загрузке должностей отдела:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить должности для выбранного отдела",
+        variant: "destructive",
+      });
+      setDepartmentPositions([]);
+    }
+  };
+
   // Обработчик добавления связи должности с отделом
   const handleOpenAddDepartment = (position: Position) => {
     setSelectedPosition(position);
     setVacanciesCount(1); // Устанавливаем значение по умолчанию - 1 вакансия при создании новой связи
     setModifiedVacancies({}); // Сбрасываем измененные вакансии при открытии окна
+    setSelectedDepartmentId(null); // Сбрасываем выбранный отдел
+    setSelectedParentPositionId(null); // Сбрасываем выбранную родительскую должность
+    setDepartmentPositions([]); // Очищаем список должностей отдела
     setIsAddDepartmentDialogOpen(true);
+  };
+  
+  // Обработчик выбора отдела
+  const handleDepartmentSelect = (departmentId: number) => {
+    setSelectedDepartmentId(departmentId);
+    setSelectedParentPositionId(null); // Сбрасываем родительскую должность при смене отдела
+    // Загружаем должности в этом отделе для выбора родительской
+    loadDepartmentPositions(departmentId);
   };
   
   // Обработчик подтверждения добавления связи
   const handleAddDepartment = () => {
     if (selectedPosition && selectedDepartmentId) {
+      // Создаем связь должности с отделом
       createPositionDepartment.mutate({
         position_id: selectedPosition.position_id,
         department_id: selectedDepartmentId,
         vacancies: vacanciesCount
+      });
+      
+      // Если выбрана родительская должность, создаем также связь position_position
+      if (selectedParentPositionId) {
+        // Здесь нужно будет создать связь в новой таблице position_position
+        createPositionPosition(
+          selectedPosition.position_id,
+          selectedParentPositionId,
+          selectedDepartmentId
+        );
+      }
+    }
+  };
+  
+  // Функция для создания связи должности с родительской должностью в конкретном отделе
+  const createPositionPosition = async (positionId: number, parentPositionId: number, departmentId: number) => {
+    try {
+      const res = await apiRequest("POST", "/api/positionpositions", {
+        position_id: positionId,
+        parent_position_id: parentPositionId,
+        department_id: departmentId
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при создании иерархии должностей");
+      }
+      
+      // Обновляем данные в UI
+      queryClient.invalidateQueries({ queryKey: ['/api/positionpositions'] });
+      
+      toast({
+        title: "Связь создана",
+        description: "Иерархия должностей обновлена",
+      });
+    } catch (error) {
+      console.error("Ошибка при создании связи:", error);
+      toast({
+        title: "Ошибка",
+        description: error instanceof Error ? error.message : "Не удалось создать иерархию должностей",
+        variant: "destructive",
       });
     }
   };
@@ -771,7 +853,7 @@ export default function Positions() {
           </DialogHeader>
           
           <div className="py-4 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">
                   Отдел
@@ -779,7 +861,7 @@ export default function Positions() {
                 <select 
                   className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   value={selectedDepartmentId || ""}
-                  onChange={(e) => setSelectedDepartmentId(Number(e.target.value))}
+                  onChange={(e) => handleDepartmentSelect(Number(e.target.value))}
                 >
                   <option value="" disabled>Выберите отдел</option>
                   {departmentsData?.data
@@ -793,6 +875,33 @@ export default function Positions() {
                   }
                 </select>
               </div>
+              
+              {selectedDepartmentId && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Родительская должность
+                  </label>
+                  <select 
+                    className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={selectedParentPositionId || ""}
+                    onChange={(e) => setSelectedParentPositionId(Number(e.target.value) || null)}
+                  >
+                    <option value="">Нет (верхний уровень)</option>
+                    {departmentPositions
+                      // Исключаем текущую должность из списка родительских
+                      .filter(pos => pos.position_id !== selectedPosition?.position_id)
+                      .map(pos => (
+                        <option key={pos.position_id} value={pos.position_id}>
+                          {pos.name}
+                        </option>
+                      ))
+                    }
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Выберите должность, которая будет родительской для текущей должности в этом отделе
+                  </p>
+                </div>
+              )}
               
               <div className="space-y-2">
                 <label className="text-sm font-medium">
