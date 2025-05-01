@@ -83,10 +83,19 @@ export default function OrganizationStructure() {
   });
 
   // Получаем данные о порядке сортировки элементов
-  const { data: sortTreeR, isLoading: lst } = useQuery<{ data: SortTreeItem[] }>({
+  const { data: sortTreeResponse, isLoading: lst, refetch: refetchSortTree } = useQuery<{ data: SortTreeItem[] }>({
     queryKey: ["/api/sort-tree"],
-    enabled: dragEnabled, // Загружаем только когда включен режим перетаскивания
+    enabled: dragEnabled || true, // Загружаем данные сортировки в любом случае
   });
+  
+  // Для более удобного доступа к данным
+  const sortTreeR = sortTreeResponse?.data || [];
+  
+  // Функция для принудительного обновления данных сортировки
+  const invalidateSortTree = () => {
+    refetchSortTree();
+    queryClient.invalidateQueries({ queryKey: ['/api/sort-tree'] });
+  };
 
   // Мутация для обновления порядка сортировки
   const reorderMutation = useMutation({
@@ -159,8 +168,8 @@ export default function OrganizationStructure() {
 
   // Обновляем локальное состояние sortItems при получении данных с сервера
   useEffect(() => {
-    if (sortTreeR?.data) {
-      setSortItems(sortTreeR.data);
+    if (sortTreeR.length > 0) {
+      setSortItems(sortTreeR);
     }
   }, [sortTreeR]);
 
