@@ -132,7 +132,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/departments', async (req: Request, res: Response) => {
     try {
       const departments = await storage.getAllDepartments();
-      res.json({ status: 'success', data: departments });
+      
+      // Получаем данные сортировки для отделов
+      const sortItems = await db.select()
+        .from(sort_tree)
+        .where(eq(sort_tree.type, 'department'))
+        .orderBy(asc(sort_tree.sort));
+      
+      // Создаем индекс для быстрого поиска sort значения по id отдела и parent_id
+      const sortMap = new Map();
+      for (const sortItem of sortItems) {
+        const key = `${sortItem.type_id}_${sortItem.parent_id || 'null'}`;
+        sortMap.set(key, sortItem.sort);
+      }
+      
+      // Сортируем отделы по sort_tree
+      const sortedDepartments = [...departments].sort((a, b) => {
+        const aKey = `${a.department_id}_${a.parent_department_id || 'null'}`;
+        const bKey = `${b.department_id}_${b.parent_department_id || 'null'}`;
+        
+        const aSort = sortMap.has(aKey) ? sortMap.get(aKey) : 999999;
+        const bSort = sortMap.has(bKey) ? sortMap.get(bKey) : 999999;
+        
+        return aSort - bSort;
+      });
+      
+      res.json({ status: 'success', data: sortedDepartments });
     } catch (error) {
       console.error('Error fetching departments:', error);
       res.status(500).json({ status: 'error', message: 'Failed to fetch departments' });
@@ -232,6 +257,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const positionDepartments = await storage.getAllPositionDepartments();
       const departments = await storage.getAllDepartments();
       
+      // Получаем данные сортировки для должностей
+      const sortItems = await db.select()
+        .from(sort_tree)
+        .where(eq(sort_tree.type, 'position'))
+        .orderBy(asc(sort_tree.sort));
+      
+      // Создаем индекс для быстрого поиска sort значения по id должности и parent_id
+      const sortMap = new Map();
+      for (const sortItem of sortItems) {
+        const key = `${sortItem.type_id}_${sortItem.parent_id || 'null'}`;
+        sortMap.set(key, sortItem.sort);
+      }
+      
       // Создаем обогащенный список должностей с отделами
       const positionsWithDepts = positions.map(position => {
         // Находим все связи position_department для данной должности
@@ -271,7 +309,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
       
-      res.json({ status: 'success', data: positionsWithDepts });
+      // Сортируем должности по sort_tree
+      const sortedPositions = [...positionsWithDepts].sort((a, b) => {
+        // Функция для поиска значения сортировки
+        const getSortValue = (position, departmentId) => {
+          // Ключ с учетом отдела, если он есть
+          const keyWithDept = `${position.position_id}_${departmentId || 'null'}`;
+          if (sortMap.has(keyWithDept)) {
+            return sortMap.get(keyWithDept);
+          }
+          
+          // Общий ключ для позиции без привязки к отделу
+          const keyGeneral = `${position.position_id}_null`;
+          if (sortMap.has(keyGeneral)) {
+            return sortMap.get(keyGeneral);
+          }
+          
+          return 999999; // Значение по умолчанию, если нет сортировки
+        };
+        
+        // Используем departmentId текущего выбранного отдела для сортировки
+        // или null, если мы на странице всех должностей
+        const currentDeptId = null; // По умолчанию null, можно получить из запроса
+        
+        const aSort = getSortValue(a, currentDeptId);
+        const bSort = getSortValue(b, currentDeptId);
+        
+        // Если есть родительская должность, учитываем это в сортировке
+        if (a.parent_position_id === b.position_id) return 1;
+        if (b.parent_position_id === a.position_id) return -1;
+        
+        return aSort - bSort;
+      });
+      
+      res.json({ status: 'success', data: sortedPositions });
     } catch (error) {
       console.error('Error fetching positions with departments:', error);
       res.status(500).json({ status: 'error', message: 'Failed to fetch positions with departments' });
