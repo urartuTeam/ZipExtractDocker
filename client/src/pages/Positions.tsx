@@ -826,7 +826,8 @@ export default function Positions() {
                                 onChange={(e) => {
                                   setSelectedPositionDepartment(dept);
                                   // Используем текущее значение из базы данных, если поле пустое
-                                  setEditVacanciesCount(parseInt(e.target.value) || dept.vacancies);
+                                  const value = e.target.value ? parseInt(e.target.value) : 0;
+                                  setEditVacanciesCount(value);
                                 }}
                                 title="Количество штатных единиц"
                               />
