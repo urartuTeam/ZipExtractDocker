@@ -178,7 +178,7 @@ export default function OrganizationStructure() {
     const childDepts = getChildDeptsByPosition(p.position_id);
     
     // Получаем информацию о вакансиях для данной позиции в отделе
-    const { staffUnits, vacancies } = getPositionDepartmentInfo(p.position_id, deptId);
+    const { staffUnits, vacancies, currentCount } = getPositionDepartmentInfo(p.position_id, deptId);
     
     // Определяем, как отображать сотрудников в зависимости от их количества
     // Если один сотрудник - показываем в скобках рядом с должностью
