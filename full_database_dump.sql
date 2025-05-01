@@ -1,12 +1,356 @@
--- Database dump as INSERT statements
+-- Full database dump with schema and data using INSERT statements
 
+-- Drop existing tables if any
+DROP TABLE IF EXISTS _dummy_position_references CASCADE;
+DROP TABLE IF EXISTS active_departments CASCADE;
+DROP TABLE IF EXISTS active_employeeprojects CASCADE;
+DROP TABLE IF EXISTS active_employees CASCADE;
+DROP TABLE IF EXISTS active_leaves CASCADE;
+DROP TABLE IF EXISTS active_position_department CASCADE;
+DROP TABLE IF EXISTS active_projects CASCADE;
+DROP TABLE IF EXISTS active_users CASCADE;
+DROP TABLE IF EXISTS departments CASCADE;
+DROP TABLE IF EXISTS employeeprojects CASCADE;
+DROP TABLE IF EXISTS employees CASCADE;
+DROP TABLE IF EXISTS leaves CASCADE;
+DROP TABLE IF EXISTS position_department CASCADE;
+DROP TABLE IF EXISTS position_position CASCADE;
+DROP TABLE IF EXISTS positions CASCADE;
+DROP TABLE IF EXISTS projects CASCADE;
+DROP TABLE IF EXISTS settings CASCADE;
+DROP TABLE IF EXISTS sort_tree CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+-- Create Users table
+CREATE TABLE public.users (
+    id integer NOT NULL,
+    username text NOT NULL,
+    email text NOT NULL,
+    password text NOT NULL,
+    created_at timestamp without time zone DEFAULT now(),
+    deleted boolean DEFAULT false,
+    deleted_at timestamp without time zone
+);
+
+CREATE SEQUENCE public.users_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
+ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
+ALTER TABLE ONLY public.users ADD CONSTRAINT users_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.users ADD CONSTRAINT users_username_key UNIQUE (username);
+ALTER TABLE ONLY public.users ADD CONSTRAINT users_email_key UNIQUE (email);
+
+-- Create Positions table
+CREATE TABLE public.positions (
+    position_id integer NOT NULL,
+    name text NOT NULL,
+    sort integer DEFAULT 0,
+    deleted boolean DEFAULT false,
+    deleted_at timestamp without time zone
+);
+
+CREATE SEQUENCE public.positions_position_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.positions_position_id_seq OWNED BY public.positions.position_id;
+ALTER TABLE ONLY public.positions ALTER COLUMN position_id SET DEFAULT nextval('public.positions_position_id_seq'::regclass);
+ALTER TABLE ONLY public.positions ADD CONSTRAINT positions_pkey PRIMARY KEY (position_id);
+
+-- Create Departments table
+CREATE TABLE public.departments (
+    department_id integer NOT NULL,
+    name text NOT NULL,
+    parent_department_id integer,
+    parent_position_id integer,
+    deleted boolean DEFAULT false,
+    deleted_at timestamp without time zone
+);
+
+CREATE SEQUENCE public.departments_department_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.departments_department_id_seq OWNED BY public.departments.department_id;
+ALTER TABLE ONLY public.departments ALTER COLUMN department_id SET DEFAULT nextval('public.departments_department_id_seq'::regclass);
+ALTER TABLE ONLY public.departments ADD CONSTRAINT departments_pkey PRIMARY KEY (department_id);
+
+-- Create Position_Position table
+CREATE TABLE public.position_position (
+    position_relation_id integer NOT NULL,
+    position_id integer,
+    parent_position_id integer,
+    department_id integer,
+    sort integer DEFAULT 0,
+    deleted boolean DEFAULT false,
+    deleted_at timestamp without time zone,
+    created_at timestamp with time zone DEFAULT now(),
+    updated_at timestamp with time zone DEFAULT now()
+);
+
+CREATE SEQUENCE public.position_position_position_relation_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.position_position_position_relation_id_seq OWNED BY public.position_position.position_relation_id;
+ALTER TABLE ONLY public.position_position ALTER COLUMN position_relation_id SET DEFAULT nextval('public.position_position_position_relation_id_seq'::regclass);
+ALTER TABLE ONLY public.position_position ADD CONSTRAINT position_position_pkey PRIMARY KEY (position_relation_id);
+ALTER TABLE ONLY public.position_position ADD CONSTRAINT position_position_position_id_positions_position_id_fk FOREIGN KEY (position_id) REFERENCES public.positions(position_id);
+ALTER TABLE ONLY public.position_position ADD CONSTRAINT position_position_parent_position_id_positions_position_id_fk FOREIGN KEY (parent_position_id) REFERENCES public.positions(position_id);
+ALTER TABLE ONLY public.position_position ADD CONSTRAINT position_position_department_id_departments_department_id_fk FOREIGN KEY (department_id) REFERENCES public.departments(department_id);
+
+-- Create Employees table
+CREATE TABLE public.employees (
+    employee_id integer NOT NULL,
+    full_name text NOT NULL,
+    position_id integer,
+    phone text,
+    email text,
+    manager_id integer,
+    department_id integer,
+    deleted boolean DEFAULT false,
+    deleted_at timestamp without time zone
+);
+
+CREATE SEQUENCE public.employees_employee_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.employees_employee_id_seq OWNED BY public.employees.employee_id;
+ALTER TABLE ONLY public.employees ALTER COLUMN employee_id SET DEFAULT nextval('public.employees_employee_id_seq'::regclass);
+ALTER TABLE ONLY public.employees ADD CONSTRAINT employees_pkey PRIMARY KEY (employee_id);
+ALTER TABLE ONLY public.employees ADD CONSTRAINT employees_position_id_positions_position_id_fk FOREIGN KEY (position_id) REFERENCES public.positions(position_id);
+ALTER TABLE ONLY public.employees ADD CONSTRAINT employees_department_id_departments_department_id_fk FOREIGN KEY (department_id) REFERENCES public.departments(department_id);
+
+-- Create Position_Department table
+CREATE TABLE public.position_department (
+    position_link_id integer NOT NULL,
+    position_id integer,
+    department_id integer,
+    staff_units integer DEFAULT 0,
+    current_count integer DEFAULT 0,
+    vacancies integer DEFAULT 0,
+    sort integer DEFAULT 0,
+    deleted boolean DEFAULT false,
+    deleted_at timestamp without time zone
+);
+
+CREATE SEQUENCE public.position_department_position_link_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.position_department_position_link_id_seq OWNED BY public.position_department.position_link_id;
+ALTER TABLE ONLY public.position_department ALTER COLUMN position_link_id SET DEFAULT nextval('public.position_department_position_link_id_seq'::regclass);
+ALTER TABLE ONLY public.position_department ADD CONSTRAINT position_department_pkey PRIMARY KEY (position_link_id);
+ALTER TABLE ONLY public.position_department ADD CONSTRAINT position_department_position_id_positions_position_id_fk FOREIGN KEY (position_id) REFERENCES public.positions(position_id);
+ALTER TABLE ONLY public.position_department ADD CONSTRAINT position_department_department_id_departments_department_id_fk FOREIGN KEY (department_id) REFERENCES public.departments(department_id);
+
+-- Create Projects table
+CREATE TABLE public.projects (
+    project_id integer NOT NULL,
+    name text NOT NULL,
+    description text,
+    department_id integer,
+    deleted boolean DEFAULT false,
+    deleted_at timestamp without time zone
+);
+
+CREATE SEQUENCE public.projects_project_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.projects_project_id_seq OWNED BY public.projects.project_id;
+ALTER TABLE ONLY public.projects ALTER COLUMN project_id SET DEFAULT nextval('public.projects_project_id_seq'::regclass);
+ALTER TABLE ONLY public.projects ADD CONSTRAINT projects_pkey PRIMARY KEY (project_id);
+ALTER TABLE ONLY public.projects ADD CONSTRAINT projects_department_id_departments_department_id_fk FOREIGN KEY (department_id) REFERENCES public.departments(department_id);
+
+-- Create EmployeeProjects table
+CREATE TABLE public.employeeprojects (
+    employee_id integer NOT NULL,
+    project_id integer NOT NULL,
+    role text NOT NULL,
+    deleted boolean DEFAULT false,
+    deleted_at timestamp without time zone
+);
+
+ALTER TABLE ONLY public.employeeprojects ADD CONSTRAINT employeeprojects_pkey PRIMARY KEY (employee_id, project_id);
+ALTER TABLE ONLY public.employeeprojects ADD CONSTRAINT employeeprojects_employee_id_employees_employee_id_fk FOREIGN KEY (employee_id) REFERENCES public.employees(employee_id);
+ALTER TABLE ONLY public.employeeprojects ADD CONSTRAINT employeeprojects_project_id_projects_project_id_fk FOREIGN KEY (project_id) REFERENCES public.projects(project_id);
+
+-- Create Leaves table
+CREATE TABLE public.leaves (
+    leave_id integer NOT NULL,
+    employee_id integer,
+    start_date date NOT NULL,
+    end_date date,
+    type text NOT NULL,
+    deleted boolean DEFAULT false,
+    deleted_at timestamp without time zone
+);
+
+CREATE SEQUENCE public.leaves_leave_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.leaves_leave_id_seq OWNED BY public.leaves.leave_id;
+ALTER TABLE ONLY public.leaves ALTER COLUMN leave_id SET DEFAULT nextval('public.leaves_leave_id_seq'::regclass);
+ALTER TABLE ONLY public.leaves ADD CONSTRAINT leaves_pkey PRIMARY KEY (leave_id);
+ALTER TABLE ONLY public.leaves ADD CONSTRAINT leaves_employee_id_employees_employee_id_fk FOREIGN KEY (employee_id) REFERENCES public.employees(employee_id);
+
+-- Create Settings table
+CREATE TABLE public.settings (
+    id integer NOT NULL,
+    data_key text NOT NULL,
+    data_value text,
+    description text,
+    data_type text DEFAULT 'string'::text
+);
+
+CREATE SEQUENCE public.settings_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.settings_id_seq OWNED BY public.settings.id;
+ALTER TABLE ONLY public.settings ALTER COLUMN id SET DEFAULT nextval('public.settings_id_seq'::regclass);
+ALTER TABLE ONLY public.settings ADD CONSTRAINT settings_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.settings ADD CONSTRAINT settings_data_key_key UNIQUE (data_key);
+
+-- Create Sort Tree table
+CREATE TABLE public.sort_tree (
+    id integer NOT NULL,
+    sort integer,
+    department_id integer,
+    parent_id integer,
+    level integer,
+    name text
+);
+
+ALTER TABLE ONLY public.sort_tree ADD CONSTRAINT sort_tree_pkey PRIMARY KEY (id);
+
+-- Create Views
+CREATE VIEW public.active_departments AS
+ SELECT department_id,
+    name,
+    parent_department_id,
+    parent_position_id,
+    deleted,
+    deleted_at
+   FROM public.departments
+  WHERE (deleted = false);
+
+CREATE VIEW public.active_employees AS
+ SELECT employee_id,
+    full_name,
+    position_id,
+    phone,
+    email,
+    manager_id,
+    department_id,
+    deleted,
+    deleted_at
+   FROM public.employees
+  WHERE (deleted = false);
+
+CREATE VIEW public.active_employeeprojects AS
+ SELECT employee_id,
+    project_id,
+    role,
+    deleted,
+    deleted_at
+   FROM public.employeeprojects
+  WHERE (deleted = false);
+
+CREATE VIEW public.active_leaves AS
+ SELECT leave_id,
+    employee_id,
+    start_date,
+    end_date,
+    type,
+    deleted,
+    deleted_at
+   FROM public.leaves
+  WHERE (deleted = false);
+
+CREATE VIEW public.active_position_department AS
+ SELECT position_link_id,
+    position_id,
+    department_id,
+    sort,
+    deleted,
+    deleted_at,
+    staff_units,
+    current_count,
+    vacancies
+   FROM public.position_department
+  WHERE (deleted = false);
+
+CREATE VIEW public.active_projects AS
+ SELECT project_id,
+    name,
+    description,
+    department_id,
+    deleted,
+    deleted_at
+   FROM public.projects
+  WHERE (deleted = false);
+
+CREATE VIEW public.active_users AS
+ SELECT id,
+    username,
+    email,
+    password,
+    created_at,
+    deleted,
+    deleted_at
+   FROM public.users
+  WHERE (deleted = false);
+
+-- Insert data
 -- Users table
-INSERT INTO users (id, username, email, password, created_at, deleted, deleted_at) VALUES (1, 'admin', 'admin@example.com', '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', '2025-04-24 07:52:25.855195', false, NULL);
+INSERT INTO users (id, username, email, password, created_at, deleted, deleted_at) VALUES (1, 'admin', 'admin@example.com', '4ec86d813dc530a40745900a6439209e6c1f6357b8ade99cb85f5e4dda8fc0d4927b840f8ae5710ef1ce55b7b4b8b9cf2a8c832d3be46a15a9082a4fb4e9751b.3c30567107e13e47c160c7456b9acade', '2025-04-24 07:52:25.855195', false, NULL);
 
 -- Positions table 
 INSERT INTO positions (position_id, name, sort, deleted, deleted_at) VALUES (11, 'Обновленная тестовая должность', 100, true, '2025-04-27 22:45:45.385');
 INSERT INTO positions (position_id, name, sort, deleted, deleted_at) VALUES (21, 'Директор по развитию', 10, true, '2025-04-30 08:11:43.105495');
-INSERT INTO positions (position_id, name, sort, deleted, deleted_at) VALUES (1, 'Заместитель руководителя департамента', 1, true, '2025-04-30 08:13:11.604396');
+INSERT INTO positions (position_id, name, sort, deleted, deleted_at) VALUES (1, 'ЗАМЕСТИТЕЛЬ РУКОВОДИТЕЛЯ ДЕПАРТАМЕНТА', 1, true, '2025-04-30 08:13:11.604396');
 INSERT INTO positions (position_id, name, sort, deleted, deleted_at) VALUES (2, 'Главный эксперт', 2, true, '2025-04-30 08:13:11.604396');
 INSERT INTO positions (position_id, name, sort, deleted, deleted_at) VALUES (3, 'Главный специалист', 3, true, '2025-04-30 08:13:11.604396');
 INSERT INTO positions (position_id, name, sort, deleted, deleted_at) VALUES (5, 'Генеральный директор', 5, true, '2025-04-30 08:13:11.604396');
@@ -135,3 +479,14 @@ INSERT INTO position_department (position_link_id, position_id, department_id, s
 INSERT INTO position_department (position_link_id, position_id, department_id, staff_units, current_count, vacancies, sort, deleted, deleted_at) VALUES (21, 23, 17, 0, 0, 1, 0, true, '2025-05-01 17:13:01.803343');
 INSERT INTO position_department (position_link_id, position_id, department_id, staff_units, current_count, vacancies, sort, deleted, deleted_at) VALUES (40, 25, 17, 0, 0, 1, 0, false, NULL);
 INSERT INTO position_department (position_link_id, position_id, department_id, staff_units, current_count, vacancies, sort, deleted, deleted_at) VALUES (41, 23, 17, 0, 0, 1, 0, false, NULL);
+
+-- Reset sequences
+SELECT setval('users_id_seq', (SELECT MAX(id) FROM users));
+SELECT setval('positions_position_id_seq', (SELECT MAX(position_id) FROM positions));
+SELECT setval('departments_department_id_seq', (SELECT MAX(department_id) FROM departments));
+SELECT setval('position_position_position_relation_id_seq', (SELECT MAX(position_relation_id) FROM position_position));
+SELECT setval('employees_employee_id_seq', (SELECT MAX(employee_id) FROM employees));
+SELECT setval('position_department_position_link_id_seq', (SELECT MAX(position_link_id) FROM position_department));
+SELECT setval('projects_project_id_seq', (SELECT MAX(project_id) FROM projects));
+SELECT setval('leaves_leave_id_seq', (SELECT COALESCE(MAX(leave_id), 0) FROM leaves));
+SELECT setval('settings_id_seq', (SELECT COALESCE(MAX(id), 0) FROM settings));
