@@ -652,6 +652,26 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     
     console.log(`getDeptPositionsHierarchy для отдела ${deptId}: найдено ${linkedPositions.length} должностей`);
     
+    // Отладочный вывод - список найденных должностей и их родительских связей
+    linkedPositions.forEach(p => {
+      console.log(`- Должность в отделе ${deptId}: "${p.name}" (ID: ${p.position_id}), родительская должность ID: ${p.parent_position_id || 'нет'}`);
+    });
+    
+    // Специальная проверка для должности "Начальник управления" (ID=24)
+    if (deptId === 19 || deptId === 20) {
+      const managerPosition = linkedPositions.find(p => p.position_id === 24);
+      if (managerPosition) {
+        console.log(`В отделе ${deptId} найдена должность "Начальник управления" (ID=24)`);
+        
+        // Проверяем, какие должности должны быть подчинены "Начальнику управления"
+        linkedPositions.forEach(p => {
+          if (p.parent_position_id === 24) {
+            console.log(`  - Должность "${p.name}" (ID: ${p.position_id}) подчиняется "Начальнику управления" в отделе ${deptId}`);
+          }
+        });
+      }
+    }
+    
     // Создаем словарь для быстрого доступа к должностям и их дочерним элементам
     const positionsMap: { [k: number]: any } = {};
     
@@ -664,6 +684,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     linkedPositions.forEach(p => {
       if (p.parent_position_id && positionsMap[p.parent_position_id]) {
         positionsMap[p.parent_position_id].children.push(positionsMap[p.position_id]);
+        console.log(`Создана связь: "${p.name}" (ID: ${p.position_id}) подчиняется "${positionsMap[p.parent_position_id].name}" (ID: ${p.parent_position_id}) в отделе ${deptId}`);
       }
     });
     
@@ -671,6 +692,17 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     const rootPositions = Object.values(positionsMap).filter(
       (p: any) => p.parent_position_id === null || !positionsMap[p.parent_position_id]
     );
+    
+    console.log(`Найдено ${rootPositions.length} корневых должностей для отдела ${deptId}:`);
+    rootPositions.forEach((p: any) => {
+      console.log(`- Корневая должность: "${p.name}" (ID: ${p.position_id}) с ${p.children.length} подчиненными`);
+      // Выводим подчиненных, если есть
+      if (p.children.length > 0) {
+        p.children.forEach((child: any) => {
+          console.log(`  - Подчиненный: "${child.name}" (ID: ${child.position_id})`);
+        });
+      }
+    });
     
     return rootPositions;
   };
