@@ -47,30 +47,20 @@ import { apiRequest } from "@/lib/queryClient";
 interface Department {
   department_id: number;
   name: string;
-  parent_position_id: number | null;
   parent_department_id: number | null;
 }
 
 // Схема валидации для формы
 const departmentFormSchema = z.object({
   name: z.string().min(2, "Название должно содержать минимум 2 символа").max(100, "Название не должно превышать 100 символов"),
+  // Сохраняем parent_position_id для совместимости с существующими формами и API,
+  // но эти данные теперь будут обрабатываться в другом месте вместо таблицы departments
   parent_position_id: z.string().nullable().transform(val => 
     val && val !== "null" ? Number(val) : null
   ),
   parent_department_id: z.string().nullable().transform(val => 
     val && val !== "null" ? Number(val) : null
   ),
-}).refine(data => {
-  // Проверяем, что только одно из полей заполнено (или оба пустые для корневого отдела)
-  const hasParentPosition = data.parent_position_id !== null;
-  const hasParentDepartment = data.parent_department_id !== null;
-  
-  return (!hasParentPosition && !hasParentDepartment) || // корневой отдел
-         (hasParentPosition && !hasParentDepartment) ||  // только родительская должность
-         (!hasParentPosition && hasParentDepartment);    // только родительский отдел
-}, {
-  message: "Выберите либо родительскую должность, либо родительский отдел, но не оба одновременно",
-  path: ["parent_selection"], // указывает, к какому полю относится ошибка
 });
 
 type DepartmentFormValues = z.infer<typeof departmentFormSchema>;
@@ -223,15 +213,15 @@ export default function Departments() {
 
   const handleEdit = (department: Department) => {
     setSelectedDepartment(department);
+    // Получаем родительскую должность из другой таблицы, если она существует
+    // Для совместимости временно устанавливаем parent_position_id в null
     editForm.reset({
       name: department.name,
-      parent_position_id: department.parent_position_id ? 
-        department.parent_position_id.toString() : 
-        "null",
+      parent_position_id: "null", // parent_position_id больше не часть Department
       parent_department_id: department.parent_department_id ? 
         department.parent_department_id.toString() : 
         "null",
-    } as any);
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -317,10 +307,9 @@ export default function Departments() {
                     </TableRow>
                   ) : (
                     filteredDepartments.map((department) => {
-                      // Найдем имя родительской должности
-                      const parentPosition = department.parent_position_id 
-                        ? positionsData?.data.find(p => p.position_id === department.parent_position_id)
-                        : null;
+                      // Здесь должна быть логика получения родительской должности
+                      // из связей в других таблицах, так как в departments больше нет поля parent_position_id
+                      const parentPosition = null; // Временное решение
                       
                       // Найдем имя родительского отдела
                       const parentDepartment = department.parent_department_id 
