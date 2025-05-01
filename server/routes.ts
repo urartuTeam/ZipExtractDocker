@@ -1182,6 +1182,164 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API для работы с сортировкой элементов в дереве организации
+  app.get('/api/sort-tree', async (req: Request, res: Response) => {
+    try {
+      const sortItems = await db.select().from(sort_tree).orderBy(asc(sort_tree.sort));
+      res.json({ status: 'success', data: sortItems });
+    } catch (error) {
+      console.error('Error fetching sort tree items:', error);
+      res.status(500).json({ status: 'error', message: 'Не удалось получить данные о сортировке' });
+    }
+  });
+
+  app.get('/api/sort-tree/:type/:typeId', async (req: Request, res: Response) => {
+    try {
+      const { type, typeId } = req.params;
+      const id = parseInt(typeId);
+      
+      if (isNaN(id) || !['department', 'position'].includes(type)) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Некорректные параметры запроса' 
+        });
+      }
+
+      const [sortItem] = await db.select()
+        .from(sort_tree)
+        .where(and(eq(sort_tree.type, type), eq(sort_tree.type_id, id)));
+
+      if (!sortItem) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Запись сортировки не найдена' 
+        });
+      }
+
+      res.json({ status: 'success', data: sortItem });
+    } catch (error) {
+      console.error('Error fetching sort tree item:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Не удалось получить данные о сортировке' 
+      });
+    }
+  });
+
+  app.post('/api/sort-tree', async (req: Request, res: Response) => {
+    try {
+      const sortItemData = insertSortTreeSchema.parse(req.body);
+      
+      // Проверяем, что не существует записи с таким же type и type_id
+      const existingSortItem = await db.select()
+        .from(sort_tree)
+        .where(and(
+          eq(sort_tree.type, sortItemData.type),
+          eq(sort_tree.type_id, sortItemData.type_id)
+        ));
+
+      if (existingSortItem.length > 0) {
+        return res.status(409).json({ 
+          status: 'error', 
+          message: 'Запись с такими параметрами уже существует' 
+        });
+      }
+
+      const [sortItem] = await db.insert(sort_tree)
+        .values(sortItemData)
+        .returning();
+
+      res.status(201).json({ status: 'success', data: sortItem });
+    } catch (error) {
+      if (error instanceof ZodError) {
+        const validationError = fromZodError(error);
+        return res.status(400).json({ status: 'error', message: validationError.message });
+      }
+      
+      console.error('Error creating sort tree item:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Не удалось создать запись сортировки' 
+      });
+    }
+  });
+
+  app.put('/api/sort-tree/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Некорректный ID записи сортировки' 
+        });
+      }
+
+      const { sort } = req.body;
+      if (typeof sort !== 'number') {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Значение сортировки должно быть числом' 
+        });
+      }
+
+      const [updated] = await db.update(sort_tree)
+        .set({ sort })
+        .where(eq(sort_tree.id, id))
+        .returning();
+
+      if (!updated) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Запись сортировки не найдена' 
+        });
+      }
+
+      res.json({ status: 'success', data: updated });
+    } catch (error) {
+      console.error('Error updating sort tree item:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Не удалось обновить запись сортировки' 
+      });
+    }
+  });
+
+  // API для обновления порядка элементов после перетаскивания
+  app.post('/api/sort-tree/reorder', async (req: Request, res: Response) => {
+    try {
+      const { items } = req.body;
+      
+      if (!Array.isArray(items) || items.some(item => !item.id || typeof item.sort !== 'number')) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Некорректные данные сортировки' 
+        });
+      }
+
+      // Используем транзакцию для атомарного обновления всех записей
+      const result = await db.transaction(async (tx) => {
+        const updated = await Promise.all(
+          items.map(async (item) => {
+            const [updated] = await tx.update(sort_tree)
+              .set({ sort: item.sort })
+              .where(eq(sort_tree.id, item.id))
+              .returning();
+            return updated;
+          })
+        );
+        return updated;
+      });
+
+      res.json({ status: 'success', data: result });
+    } catch (error) {
+      console.error('Error reordering sort tree items:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Не удалось обновить порядок сортировки' 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
