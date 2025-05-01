@@ -249,15 +249,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deletePositionDepartment(id: number): Promise<boolean> {
-    const [updated] = await db
-      .update(position_department)
-      .set({ 
-        deleted: true, 
-        deleted_at: new Date() 
-      })
+    // Полностью удаляем запись, вместо установки флага deleted
+    const [deleted] = await db
+      .delete(position_department)
       .where(eq(position_department.position_link_id, id))
       .returning({ id: position_department.position_link_id });
-    return !!updated;
+    return !!deleted;
   }
 
   // Методы для работы с сотрудниками
