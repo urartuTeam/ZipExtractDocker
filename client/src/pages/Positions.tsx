@@ -351,7 +351,7 @@ export default function Positions() {
   // Обработчик добавления связи должности с отделом
   const handleOpenAddDepartment = (position: Position) => {
     setSelectedPosition(position);
-    setVacanciesCount(1); // Устанавливаем значение по умолчанию - 1 вакансия
+    setVacanciesCount(1); // Устанавливаем значение по умолчанию - 1 вакансия при создании новой связи
     setIsAddDepartmentDialogOpen(true);
   };
   
@@ -822,10 +822,11 @@ export default function Positions() {
                                 type="number"
                                 min="0"
                                 className="w-20 h-8"
-                                value={dept.vacancies || 1}
+                                value={dept.vacancies}
                                 onChange={(e) => {
                                   setSelectedPositionDepartment(dept);
-                                  setEditVacanciesCount(parseInt(e.target.value) || 1);
+                                  // Используем текущее значение из базы данных, если поле пустое
+                                  setEditVacanciesCount(parseInt(e.target.value) || dept.vacancies);
                                 }}
                                 title="Количество штатных единиц"
                               />
