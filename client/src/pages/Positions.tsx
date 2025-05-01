@@ -908,8 +908,8 @@ export default function Positions() {
                           </div>
                         ) : (
                           <div className="flex items-center">
-                            {/* Фиксированная структура для поля ввода с ограничением до 100 */}
-                            <div style={{ width: "70px", marginRight: "4px" }}>
+                            {/* Поле ввода */}
+                            <div style={{ width: "60px" }}>
                               <Input
                                 type="number"
                                 min="0"
@@ -932,113 +932,121 @@ export default function Positions() {
                               />
                             </div>
                             
-                            {/* Фиксированное место для кнопок */}
-                            <div style={{ width: "80px", display: "flex", justifyContent: "flex-start" }}>
-                              {modifiedVacancies[dept.position_link_id] !== undefined && 
-                               modifiedVacancies[dept.position_link_id] !== dept.vacancies ? (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={async () => {
-                                      try {
-                                        // Получаем детали связи
-                                        const linkRes = await fetch(`/api/pd/${dept.position_link_id}`);
-                                        const linkData = await linkRes.json();
-                                        
-                                        if (linkData.status !== 'success' || !linkData.data) {
-                                          throw new Error("Не удалось получить данные о связи");
-                                        }
-                                        
-                                        // Отправляем запрос на сохранение ТОЛЬКО при нажатии кнопки
-                                        const res = await fetch(`/api/pd/${dept.position_link_id}`, {
-                                          method: 'PUT',
-                                          headers: {
-                                            'Content-Type': 'application/json',
-                                          },
-                                          body: JSON.stringify({
-                                            position_id: linkData.data.position_id,
-                                            department_id: linkData.data.department_id,
-                                            vacancies: modifiedVacancies[dept.position_link_id],
-                                            sort: linkData.data.sort || 0
-                                          }),
+                            {/* Контейнер для кнопок */}
+                            {modifiedVacancies[dept.position_link_id] !== undefined && 
+                             modifiedVacancies[dept.position_link_id] !== dept.vacancies ? (
+                              // Режим редактирования - показываем кнопки "Сохранить" и "Отменить"
+                              <div className="flex ml-4">
+                                {/* Кнопка сохранить */}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={async () => {
+                                    try {
+                                      // Получаем детали связи
+                                      const linkRes = await fetch(`/api/pd/${dept.position_link_id}`);
+                                      const linkData = await linkRes.json();
+                                      
+                                      if (linkData.status !== 'success' || !linkData.data) {
+                                        throw new Error("Не удалось получить данные о связи");
+                                      }
+                                      
+                                      // Отправляем запрос на сохранение 
+                                      const res = await fetch(`/api/pd/${dept.position_link_id}`, {
+                                        method: 'PUT',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({
+                                          position_id: linkData.data.position_id,
+                                          department_id: linkData.data.department_id,
+                                          vacancies: modifiedVacancies[dept.position_link_id],
+                                          sort: linkData.data.sort || 0
+                                        }),
+                                      });
+                                      
+                                      if (!res.ok) {
+                                        const text = await res.text();
+                                        console.error("Ошибка при обновлении:", text);
+                                        throw new Error("Ошибка при обновлении количества вакансий");
+                                      }
+                                      
+                                      // Сразу обновляем значение в локальном стейте
+                                      if (selectedPosition && selectedPosition.departments) {
+                                        const updatedDepts = selectedPosition.departments.map(d => {
+                                          if (d.position_link_id === dept.position_link_id) {
+                                            return {
+                                              ...d,
+                                              vacancies: modifiedVacancies[dept.position_link_id]
+                                            };
+                                          }
+                                          return d;
                                         });
                                         
-                                        if (!res.ok) {
-                                          const text = await res.text();
-                                          console.error("Ошибка при обновлении:", text);
-                                          throw new Error("Ошибка при обновлении количества вакансий");
-                                        }
-                                        
-                                        // Сразу обновляем значение в локальном стейте
-                                        if (selectedPosition && selectedPosition.departments) {
-                                          const updatedDepts = selectedPosition.departments.map(d => {
-                                            if (d.position_link_id === dept.position_link_id) {
-                                              return {
-                                                ...d,
-                                                vacancies: modifiedVacancies[dept.position_link_id]
-                                              };
-                                            }
-                                            return d;
-                                          });
-                                          
-                                          setSelectedPosition({
-                                            ...selectedPosition,
-                                            departments: updatedDepts
-                                          });
-                                        }
-                                        
-                                        // Убираем запись из словаря измененных значений после успешного сохранения
-                                        setModifiedVacancies((prev) => {
-                                          const newValues = {...prev};
-                                          delete newValues[dept.position_link_id];
-                                          return newValues;
-                                        });
-                                        
-                                        // Обновляем данные в UI
-                                        queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
-                                        
-                                        toast({
-                                          title: "Изменения сохранены",
-                                          description: "Количество вакансий обновлено успешно",
-                                        });
-                                      } catch (error) {
-                                        console.error("Ошибка:", error);
-                                        toast({
-                                          title: "Ошибка",
-                                          description: error instanceof Error ? error.message : "Неизвестная ошибка",
-                                          variant: "destructive",
+                                        setSelectedPosition({
+                                          ...selectedPosition,
+                                          departments: updatedDepts
                                         });
                                       }
-                                    }}
-                                    title="Сохранить изменения"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
-                                      <path d="M20 6 9 17l-5-5"/>
-                                    </svg>
-                                  </Button>
-                                  
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={() => {
-                                      // Отменяем изменения - удаляем запись из словаря измененных значений
+                                      
+                                      // Убираем запись из словаря измененных значений после успешного сохранения
                                       setModifiedVacancies((prev) => {
                                         const newValues = {...prev};
                                         delete newValues[dept.position_link_id];
                                         return newValues;
                                       });
-                                    }}
-                                    title="Отменить изменения"
-                                  >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
-                                      <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
-                                    </svg>
-                                  </Button>
-                                </>
-                              ) : (
+                                      
+                                      // Обновляем данные в UI
+                                      queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
+                                      
+                                      toast({
+                                        title: "Изменения сохранены",
+                                        description: "Количество вакансий обновлено успешно",
+                                      });
+                                    } catch (error) {
+                                      console.error("Ошибка:", error);
+                                      toast({
+                                        title: "Ошибка",
+                                        description: error instanceof Error ? error.message : "Неизвестная ошибка",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }}
+                                  title="Сохранить изменения"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
+                                    <path d="M20 6 9 17l-5-5"/>
+                                  </svg>
+                                </Button>
+                                
+                                {/* Кнопка отменить */}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => {
+                                    // Отменяем изменения - удаляем запись из словаря измененных значений
+                                    setModifiedVacancies((prev) => {
+                                      const newValues = {...prev};
+                                      delete newValues[dept.position_link_id];
+                                      return newValues;
+                                    });
+                                  }}
+                                  title="Отменить изменения"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                                    <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
+                                  </svg>
+                                </Button>
+                              </div>
+                            ) : (
+                              // Обычный режим - показываем пустое место и кнопку "Удалить связь"
+                              <div className="flex ml-4">
+                                {/* Пустое пространство размером с кнопку сохранения */}
+                                <div style={{ width: "32px", height: "32px" }}></div>
+                                
+                                {/* Кнопка удаления связи */}
                                 <Button 
                                   variant="ghost" 
                                   size="icon" 
@@ -1050,8 +1058,8 @@ export default function Positions() {
                                     <path d="M18 6 6 18"></path><path d="m6 6 12 12"></path>
                                   </svg>
                                 </Button>
-                              )}
-                            </div>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
