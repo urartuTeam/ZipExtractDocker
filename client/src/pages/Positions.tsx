@@ -743,9 +743,9 @@ export default function Positions() {
       <Dialog open={isAddDepartmentDialogOpen} onOpenChange={setIsAddDepartmentDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Привязать должность к отделам</DialogTitle>
+            <DialogTitle>{selectedPosition?.name}</DialogTitle>
             <DialogDescription>
-              Выберите отделы, к которым нужно привязать должность "{selectedPosition?.name}" и укажите количество вакансий для каждого отдела
+              Выберите отделы, к которым нужно привязать должность и укажите количество вакансий для каждого отдела
             </DialogDescription>
           </DialogHeader>
           
