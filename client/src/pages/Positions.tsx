@@ -367,6 +367,22 @@ export default function Positions() {
   
   // Обработчик удаления связи должности с отделом
   const handleDeleteLink = (linkId: number) => {
+    // Проверка на некорректный ID связи
+    if (!linkId) {
+      console.error("Ошибка: Попытка удалить связь с position_link_id = 0");
+      toast({
+        title: "Ошибка",
+        description: "Невозможно удалить связь. Некорректный ID связи (position_link_id = 0).",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!confirm("Вы действительно хотите удалить связь с отделом?")) {
+      return;
+    }
+    
+    console.log(`Удаляем связь position_link_id=${linkId}`);
     deletePositionDepartment.mutate(linkId);
   };
   
