@@ -205,15 +205,22 @@ export default function Vacancies() {
     // Получаем список сотрудников для этой позиции и отдела
     const emps = getEmps(posId, deptId);
     
-    // Общее количество мест - это значение vacancies из БД (новая интерпретация)
-    const staffUnits = positionDept?.vacancies || 0;
+    if (!positionDept) {
+      return {
+        staffUnits: 0, // Общее количество мест
+        vacancies: 0,  // Количество свободных мест
+        currentCount: emps.length // Текущее количество сотрудников
+      };
+    }
+    
+    // В БД поле vacancies хранит прямо количество вакансий (не общее количество мест)
+    const vacancies = positionDept.vacancies || 0;
     
     // Текущее количество сотрудников - это фактическое количество сотрудников в этой должности
     const currentCount = emps.length;
     
-    // Свободные места - это разница между общим количеством и занятыми местами
-    // Если отрицательное значение (сотрудников больше чем мест), то считаем что вакансий нет (0)
-    const vacancies = Math.max(0, staffUnits - currentCount);
+    // Общее количество мест - это сумма вакансий и занятых мест
+    const staffUnits = vacancies + currentCount;
     
     console.log(`Позиция ${posId} в отделе ${deptId}:`, {
       positionDept,
