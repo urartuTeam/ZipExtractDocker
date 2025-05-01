@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Building, LogInIcon } from 'lucide-react';
 import { useAuth } from "@/hooks/use-auth";
-import OrganizationTree from "@/components/OrganizationTreeFixed";
+import OrganizationTree from "@/components/OrganizationTree";
 
 export default function Home() {
   const { user } = useAuth();
