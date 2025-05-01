@@ -267,14 +267,14 @@ export default function Positions() {
   const updatePositionDepartment = useMutation({
     mutationFn: async ({ id, vacancies }: { id: number, vacancies: number }) => {
       // Сначала получим текущую связь, чтобы включить position_id и department_id в запрос
-      const linkDetails = await fetch(`/api/positiondepartments/${id}`).then(res => res.json());
+      const linkDetails = await fetch(`/api/pd/${id}`).then(res => res.json());
       
       if (!linkDetails?.data) {
         throw new Error("Не удалось получить данные о связи");
       }
       
       // Отправляем полные данные со всеми обязательными полями
-      const res = await apiRequest("PUT", `/api/positiondepartments/${id}`, { 
+      const res = await apiRequest("PUT", `/api/pd/${id}`, { 
         position_id: linkDetails.data.position_id,
         department_id: linkDetails.data.department_id,
         vacancies 
