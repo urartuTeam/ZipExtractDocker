@@ -500,6 +500,16 @@ export default function OrganizationStructure() {
       p.departments.some((dd) => dd.department_id === deptId),
     );
     
+    // Получаем связи position_position для этого отдела
+    const positionRelations = positionPositionsR?.data?.filter(pp => 
+      !pp.deleted && pp.department_id === deptId
+    ) || [];
+    
+    console.log(`Найдено ${positionRelations.length} связей должностей для отдела ${deptId}`);
+    positionRelations.forEach(rel => {
+      console.log(`- Связь: должность ${rel.position_id} подчиняется ${rel.parent_position_id}`);
+    });
+    
     // Проверка на случай, если дочерние должности не появляются
     // Специальный случай для начальника управления (ID=24) и его подчиненных
     if (deptId === 19 || deptId === 20) {
@@ -510,16 +520,19 @@ export default function OrganizationStructure() {
       if (managerPosition) {
         console.log(`Найден начальник управления (ID=24) в отделе ${deptId}`);
         
-        // Все подчиненные начальника управления в базе данных
-        const allSubordinates = positions.filter(p => p.parent_position_id === 24);
-        console.log(`Все подчиненные начальника управления в БД:`, 
-          allSubordinates.map(p => `${p.name} (ID: ${p.position_id})`));
+        // Находим подчиненных начальника управления в таблице position_position
+        const subordinates = positionRelations.filter(rel => rel.parent_position_id === 24);
+        console.log(`Подчиненные начальника управления в отделе ${deptId} из position_position:`, 
+          subordinates.map(rel => {
+            const pos = positions.find(p => p.position_id === rel.position_id);
+            return `${pos?.name || 'Неизвестная должность'} (ID: ${rel.position_id})`;
+          }));
       }
     }
     
     // Логгируем для отладки
     console.log(`Все должности отдела ${deptId} до построения иерархии:`, 
-      linked.map(p => `${p.name} (ID: ${p.position_id}, parent: ${p.parent_position_id})`));
+      linked.map(p => `${p.name} (ID: ${p.position_id})`));
     
     // Создаем карту всех должностей этого отдела для построения иерархии
     const map: { [k: number]: any } = {};
@@ -527,23 +540,32 @@ export default function OrganizationStructure() {
       map[p.position_id] = { ...p, children: [] };
     });
     
-    // Строим иерархию - добавляем дочерние должности к родительским
-    linked.forEach((p) => {
-      // Проверяем, существует ли родительская должность в этом отделе
-      if (p.parent_position_id && map[p.parent_position_id]) {
-        // Родитель существует в этом отделе
-        map[p.parent_position_id].children.push(map[p.position_id]);
-        console.log(`Добавлена дочерняя должность ${p.name} (ID: ${p.position_id}) к ${map[p.parent_position_id].name}`);
+    // Строим иерархию на основе данных position_position
+    positionRelations.forEach((relation) => {
+      const childId = relation.position_id;
+      const parentId = relation.parent_position_id;
+      
+      // Проверяем, что обе должности существуют в этом отделе
+      if (map[childId] && map[parentId]) {
+        // Добавляем дочернюю должность к родительской
+        map[parentId].children.push(map[childId]);
+        console.log(`Добавлена дочерняя должность ${map[childId].name} (ID: ${childId}) к ${map[parentId].name} (по данным position_position)`);
       }
     });
     
-    // Возвращаем только корневые должности (без родителей или с родителями вне этого отдела)
-    const rootPositions = linked.filter(
-      (p) => p.parent_position_id === null || !map[p.parent_position_id]
-    );
+    // Находим корневые должности (те, которые не являются дочерними ни для одной другой должности в этом отделе)
+    const isChildInDept = new Set<number>();
+    positionRelations.forEach(rel => {
+      isChildInDept.add(rel.position_id);
+    });
     
-    console.log(`Корневые должности для отдела ${deptId}:`, 
-      rootPositions.map(p => `${p.name} (ID: ${p.position_id})`));
+    // Корневые должности - это те, которые есть в отделе, но не являются дочерними
+    const rootPositions = linked.filter(p => !isChildInDept.has(p.position_id));
+    
+    console.log(`Найдено ${rootPositions.length} корневых должностей для отдела ${deptId}:`);
+    rootPositions.forEach(p => {
+      console.log(`- Корневая должность: "${p.name}" (ID: ${p.position_id}) с ${map[p.position_id]?.children?.length || 0} подчиненными`);
+    });
     
     return rootPositions;
   };
