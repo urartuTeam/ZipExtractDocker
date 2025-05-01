@@ -258,13 +258,22 @@ ALTER TABLE ONLY public.settings ADD CONSTRAINT settings_data_key_key UNIQUE (da
 -- Create Sort Tree table
 CREATE TABLE public.sort_tree (
     id integer NOT NULL,
-    sort integer,
-    department_id integer,
-    parent_id integer,
-    level integer,
-    name text
+    sort integer NOT NULL,
+    type character varying(20) NOT NULL,
+    type_id integer NOT NULL,
+    parent_id integer
 );
 
+CREATE SEQUENCE public.sort_tree_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE public.sort_tree_id_seq OWNED BY public.sort_tree.id;
+ALTER TABLE ONLY public.sort_tree ALTER COLUMN id SET DEFAULT nextval('public.sort_tree_id_seq'::regclass);
 ALTER TABLE ONLY public.sort_tree ADD CONSTRAINT sort_tree_pkey PRIMARY KEY (id);
 
 -- Create Views
