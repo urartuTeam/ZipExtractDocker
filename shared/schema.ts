@@ -18,10 +18,6 @@ export const users = pgTable("users", {
 export const positions = pgTable("positions", {
   position_id: serial("position_id").primaryKey(),
   name: text("name").notNull(),
-  staff_units: integer("staff_units").default(0),
-  current_count: integer("current_count").default(0),
-  vacancies: integer("vacancies").default(0),
-  parent_position_id: integer("parent_position_id"),
   sort: integer("sort").default(0),
   deleted: boolean("deleted").default(false),
   deleted_at: timestamp("deleted_at"),
@@ -31,6 +27,17 @@ export const positions = pgTable("positions", {
 export const positionReferences = pgTable("_dummy_position_references", {
   id: serial("id").primaryKey(),
   position_id: integer("position_id").references(() => positions.position_id),
+});
+
+// Связь между должностями (иерархия должностей)
+export const position_position = pgTable("position_position", {
+  position_relation_id: serial("position_relation_id").primaryKey(),
+  position_id: integer("position_id").references(() => positions.position_id),
+  parent_position_id: integer("parent_position_id").references(() => positions.position_id),
+  department_id: integer("department_id").references(() => departments.department_id),
+  sort: integer("sort").default(0),
+  deleted: boolean("deleted").default(false),
+  deleted_at: timestamp("deleted_at"),
 });
 
 // Отделы
@@ -119,16 +126,29 @@ export const departmentsRelations = relations(departments, ({ one, many }) => ({
   projects: many(projects),
 }));
 
-export const positionsRelations = relations(positions, ({ many, one }) => ({
+export const positionsRelations = relations(positions, ({ many }) => ({
   departments: many(position_department, { relationName: "position_departments" }),
   employees: many(employees),
-  parentPosition: one(positions, {
-    fields: [positions.parent_position_id],
-    references: [positions.position_id],
-    relationName: "parent_position",
-  }),
-  childPositions: many(positions, { relationName: "parent_position" }),
+  parentPositions: many(position_position, { relationName: "child_position_relation" }),
+  childPositions: many(position_position, { relationName: "parent_position_relation" }),
   childDepartments: many(departments, { relationName: "parent_position_department" }),
+}));
+
+export const position_positionRelations = relations(position_position, ({ one }) => ({
+  position: one(positions, {
+    fields: [position_position.position_id],
+    references: [positions.position_id],
+    relationName: "child_position_relation",
+  }),
+  parentPosition: one(positions, {
+    fields: [position_position.parent_position_id],
+    references: [positions.position_id],
+    relationName: "parent_position_relation",
+  }),
+  department: one(departments, {
+    fields: [position_position.department_id],
+    references: [departments.department_id],
+  }),
 }));
 
 export const position_departmentRelations = relations(position_department, ({ one }) => ({
@@ -207,6 +227,10 @@ export const insertPositionDepartmentSchema = createInsertSchema(position_depart
   position_link_id: true,
 });
 
+export const insertPositionPositionSchema = createInsertSchema(position_position).omit({
+  position_relation_id: true,
+});
+
 export const insertEmployeeSchema = createInsertSchema(employees).omit({
   employee_id: true,
 });
@@ -226,6 +250,7 @@ export type User = typeof users.$inferSelect;
 export type Department = typeof departments.$inferSelect;
 export type Position = typeof positions.$inferSelect;
 export type PositionDepartment = typeof position_department.$inferSelect;
+export type PositionPosition = typeof position_position.$inferSelect;
 export type Employee = typeof employees.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type EmployeeProject = typeof employeeprojects.$inferSelect;
@@ -236,6 +261,7 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
 export type InsertPosition = z.infer<typeof insertPositionSchema>;
 export type InsertPositionDepartment = z.infer<typeof insertPositionDepartmentSchema>;
+export type InsertPositionPosition = z.infer<typeof insertPositionPositionSchema>;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 // Настройки
 export const settings = pgTable("settings", {
