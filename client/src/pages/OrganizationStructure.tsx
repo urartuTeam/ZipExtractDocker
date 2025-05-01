@@ -210,17 +210,10 @@ export default function OrganizationStructure() {
     return (
       <div key={key} className="mb-2">
         <div
-          className="relative flex items-center cursor-pointer p-2 border border-gray-200 rounded-md hover:bg-gray-50"
+          className="relative flex items-center cursor-pointer p-2 rounded-md hover:bg-gray-50"
           style={{ paddingLeft: `${lvl * 16 + 8}px` }}
           onClick={() => togglePos(key)}
         >
-          {/* Количество свободных позиций (верхний правый угол) */}
-          {vacancies > 0 && (
-            <div className="absolute top-0 right-0 m-1 px-1.5 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded">
-              +{vacancies}
-            </div>
-          )}
-          
           {ex ? (
             <ChevronDown className="h-4 w-4 mr-2 text-neutral-500" />
           ) : (
@@ -229,10 +222,14 @@ export default function OrganizationStructure() {
           <Users className="h-5 w-5 mr-2 text-blue-500" />
           <span>{displayText}</span>
           
-          {/* Общее количество мест (нижний правый угол) */}
+          {/* Статистика по вакансиям в едином формате, отображается рядом */}
           {staffUnits > 0 && (
-            <div className="absolute bottom-0 right-0 m-1 px-1.5 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
-              {staffUnits}
+            <div className="ml-2 flex items-center text-xs">
+              <span className="text-gray-600 mr-1">{staffUnits} мест,</span>
+              <span className="text-blue-600 mr-1">{currentCount} занято</span>
+              {vacancies > 0 && (
+                <span className="text-green-600">(+{vacancies} вакансий)</span>
+              )}
             </div>
           )}
         </div>
