@@ -240,7 +240,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             position_link_id: link.position_link_id,
             department_id: link.department_id,
             department_name: dept?.name || 'Неизвестный отдел',
-            sort: link.sort
+            sort: link.sort,
+            vacancies: link.vacancies || 0
           };
         });
         
@@ -254,7 +255,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               position_link_id: 0, // Используем 0 как признак того, что это связь из поля department_id без записи в position_department
               department_id: position.department_id,
               department_name: dept.name || 'Неизвестный отдел',
-              sort: 0
+              sort: 0,
+              vacancies: 0
             });
           }
         }
@@ -541,7 +543,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           position_link_id: link.position_link_id,
           department_id: link.department_id,
           department_name: dept?.name || 'Неизвестный отдел',
-          sort: link.sort
+          sort: link.sort,
+          vacancies: link.vacancies || 0
         };
       });
       
@@ -555,7 +558,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             position_link_id: 0, // Используем 0 как признак того, что это связь из поля department_id без записи в position_department
             department_id: position.department_id,
             department_name: dept.name || 'Неизвестный отдел',
-            sort: 0
+            sort: 0,
+            vacancies: 0
           });
         }
       }
