@@ -606,13 +606,27 @@ export default function OrganizationStructure() {
           itemsToSort.map(p => `${p.name} (ID: ${p.position_id}, parent: ${p.parent_position_id})`));
       }
       
-      // Для должностей учитываем родительско-дочерние отношения в сортировке
-      // Сначала выводим родительские должности, затем дочерние
+      // Для должностей учитываем родительско-дочерние отношения в сортировке из таблицы position_position
+      // Получаем все связи position_position для текущего отдела
+      const positionPositions = positionPositionsR?.data?.filter(pp => 
+        !pp.deleted && pp.department_id === parentId
+      ) || [];
+      
       return itemsToSort.sort((a, b) => {
+        // Проверяем, является ли b родителем a в контексте текущего отдела
+        const bIsParentOfA = positionPositions.some(pp => 
+          pp.position_id === a.position_id && pp.parent_position_id === b.position_id
+        );
+        
+        // Проверяем, является ли a родителем b в контексте текущего отдела
+        const aIsParentOfB = positionPositions.some(pp => 
+          pp.position_id === b.position_id && pp.parent_position_id === a.position_id
+        );
+        
         // Если b является родителем a, то b должен быть выше
-        if (a.parent_position_id === b.position_id) return 1;
+        if (bIsParentOfA) return 1;
         // Если a является родителем b, то a должен быть выше
-        if (b.parent_position_id === a.position_id) return -1;
+        if (aIsParentOfB) return -1;
         
         // Если у элементов нет родительско-дочерних отношений, используем sort_tree
         const sortItemA = sortItems.find(si => 
