@@ -287,21 +287,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         });
         
-        // Если должность имеет department_id, но нет соответствующей записи в таблице position_department,
-        // добавляем его тоже
-        if (position.department_id && 
-            !linkedDepartments.some(link => link.department_id === position.department_id)) {
-          const dept = departments.find(d => d.department_id === position.department_id);
-          if (dept) {
-            linkedDepartments.push({
-              position_link_id: 0, // Используем 0 как признак того, что это связь из поля department_id без записи в position_department
-              department_id: position.department_id,
-              department_name: dept.name || 'Неизвестный отдел',
-              sort: 0,
-              vacancies: 0
-            });
-          }
-        }
+        // Удалено: обработка department_id из positions, так как теперь это поле не существует
+        // и все связи хранятся только в таблице position_department
         
         return {
           ...position,
@@ -640,12 +627,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/positions', async (req: Request, res: Response) => {
     try {
-      const positionData = insertPositionSchema.parse(req.body);
+      // Создаем копию req.body, чтобы не изменять исходный объект
+      const positionDataCopy = { ...req.body };
       
-      // Сохраняем department_id перед созданием должности, если он есть
-      const departmentId = positionData.department_id;
+      // Сохраняем department_id из запроса (если есть) и удаляем его из данных для позиции
+      const departmentId = positionDataCopy.department_id;
       
-      // Создаем должность
+      // Удаляем department_id из объекта, так как это поле больше не существует в таблице positions
+      if (positionDataCopy.department_id !== undefined) {
+        delete positionDataCopy.department_id;
+      }
+      
+      // Валидируем и создаем должность
+      const positionData = insertPositionSchema.parse(positionDataCopy);
       const position = await storage.createPosition(positionData);
       
       // Если был указан department_id, создаем связь в таблице position_department
@@ -687,8 +681,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const positionData = req.body;
       
-      // Сохраняем department_id перед обновлением должности, если он есть
-      const departmentId = positionData.department_id;
+      // Сохраняем department_id из запроса (если есть) и удаляем его из данных для позиции
+      const departmentId = req.body.department_id;
+      
+      // Удаляем department_id из позиции, так как это поле больше не существует в таблице positions
+      if (positionData.department_id !== undefined) {
+        delete positionData.department_id;
+      }
       
       const updatedPosition = await storage.updatePosition(id, positionData);
       
