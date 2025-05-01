@@ -175,14 +175,17 @@ export default function OrganizationStructure() {
       queryClient.invalidateQueries({ queryKey: ['/api/sort-tree'] }).then(() => {
         setDragEnabled(true);
         setDragMessage('Режим перемещения включен. Перетащите элементы, чтобы изменить их порядок.');
-        // Разворачиваем все элементы при включении режима перетаскивания
-        setExpanded(true);
+        
+        // Сразу создаем записи сортировки для корневых отделов, если их нет
+        setTimeout(() => {
+          if (sortTreeR?.data) {
+            createMissingSortRecords();
+          }
+        }, 100);
       });
     } else {
       setDragEnabled(false);
       setDragMessage(null);
-      // Очищаем кэш, чтобы при следующем включении режима все работало корректно
-      createdItemsCache.clear();
     }
   };
 
@@ -285,35 +288,22 @@ export default function OrganizationStructure() {
       d.parent_position_id === null,
   );
   
-  // Эффект для создания всех необходимых записей сортировки при включении режима перетаскивания
-  useEffect(() => {
-    if (dragEnabled && sortTreeR?.data && !lst) {
-      // Создаем множество для отслеживания уже существующих записей
-      const existingItems = new Set<string>();
-      
-      // Заполняем множество ключами существующих записей
-      sortItems.forEach(item => {
-        const key = `${item.type}-${item.type_id}-${item.parent_id ?? 'null'}`;
-        existingItems.add(key);
-      });
-      
-      // Создаем записи для корневых отделов
-      for (const dept of roots) {
-        const key = `department-${dept.department_id}-null`;
-        if (!existingItems.has(key) && !createdItemsCache.has(key)) {
-          // Добавляем в кэш, чтобы избежать повторных попыток создания
-          createdItemsCache.add(key);
-          
-          createSortItemMutation.mutate({
-            type: 'department',
-            type_id: dept.department_id,
-            parent_id: null,
-            sort: dept.department_id // Используем ID как начальный порядок
-          });
-        }
+  // Создает недостающие записи сортировки для всех корневых элементов
+  const createMissingSortRecords = () => {
+    if (!sortTreeR?.data) return;
+    
+    // Создаем записи для корневых отделов, которых еще нет в базе
+    for (const dept of roots) {
+      if (!checkSortTreeItemExists('department', dept.department_id, null)) {
+        createSortItemMutation.mutate({
+          type: 'department',
+          type_id: dept.department_id,
+          parent_id: null,
+          sort: dept.department_id
+        });
       }
     }
-  }, [dragEnabled, sortTreeR, lst, sortItems, roots]);
+  };
 
   const getChildDeptsByDept = (deptId: number) =>
     departments.filter((d) => !d.deleted && d.parent_department_id === deptId);
@@ -341,6 +331,16 @@ export default function OrganizationStructure() {
     employees.filter(
       (e) => e.position_id === posId && e.department_id === deptId,
     );
+  
+  // Проверка существования записи сортировки
+  const checkSortTreeItemExists = (type: 'department' | 'position', typeId: number, parentId: number | null = null) => {
+    // Проверяем, существует ли уже запись в БД
+    return sortItems.some(item => 
+      item.type === type && 
+      item.type_id === typeId && 
+      ((item.parent_id === null && parentId === null) || item.parent_id === parentId)
+    );
+  };
     
   // Функция для получения информации о вакансиях для позиции в отделе
   const getPositionDepartmentInfo = (posId: number, deptId: number) => {
@@ -394,10 +394,8 @@ export default function OrganizationStructure() {
     // Получаем информацию о вакансиях для данной позиции в отделе
     const { staffUnits, vacancies, currentCount } = getPositionDepartmentInfo(p.position_id, deptId);
     
-    // Если включен режим drag-and-drop, убеждаемся что у элемента есть запись в sort_tree
-    if (dragEnabled && parentDeptId !== null) {
-      ensureSortTreeItem('position', p.position_id, parentDeptId);
-    }
+    // При перетаскивании нам нужно знать, существует ли запись сортировки
+    const sortRecordExists = !dragEnabled || !parentDeptId || checkSortTreeItemExists('position', p.position_id, parentDeptId);
     
     // Определяем, как отображать сотрудников в зависимости от их количества
     // Если один сотрудник - показываем в скобках рядом с должностью
@@ -591,29 +589,6 @@ export default function OrganizationStructure() {
     });
   };
   
-  // Кэш для отслеживания уже созданных или создающихся записей в этой сессии рендеринга
-  const createdItemsCache = new Set<string>();
-  
-  // Функция для создания записи сортировки, если её ещё нет
-  // Она вызывается при рендере каждого элемента, поэтому нужно избегать множественных вызовов
-  const ensureSortTreeItem = (type: 'department' | 'position', typeId: number, parentId: number | null = null) => {
-    // Создаем ключ для кэширования этой записи
-    const cacheKey = `${type}-${typeId}-${parentId ?? 'null'}`;
-    
-    // Если уже пытались создать этот элемент в текущей сессии, ничего не делаем
-    if (createdItemsCache.has(cacheKey)) {
-      return true;
-    }
-    
-    // Проверяем, существует ли уже запись в БД
-    const exists = sortItems.some(item => 
-      item.type === type && item.type_id === typeId && 
-      ((item.parent_id === null && parentId === null) || item.parent_id === parentId)
-    );
-    
-    return exists;
-  };
-
   const renderDept = (d: Department, lvl = 0, parentId: number | null = null) => {
     // Если элемент явно закрыт в expDept, то используем это значение, иначе проверяем глобальное состояние expanded
     const ex = expDept[d.department_id] === false ? false : (expanded || (expDept[d.department_id] ?? false));
@@ -622,10 +597,8 @@ export default function OrganizationStructure() {
     const deptPositions = getDeptPositions(d.department_id);
     const sortedDeptPositions = sortByCustomOrder(deptPositions, 'position', d.department_id);
     
-    // Если включен режим drag-and-drop, убеждаемся что у элемента есть запись в sort_tree
-    if (dragEnabled) {
-      ensureSortTreeItem('department', d.department_id, parentId);
-    }
+    // При перетаскивании нам нужно знать, существует ли запись сортировки
+    const sortRecordExists = !dragEnabled || checkSortTreeItemExists('department', d.department_id, parentId);
     
     // Находим ID записи сортировки для этого отдела
     const sortItem = sortItems.find(item => item.type === 'department' && item.type_id === d.department_id && item.parent_id === parentId);
