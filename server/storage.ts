@@ -1,9 +1,10 @@
 import { 
-  users, departments, positions, employees, projects, employeeprojects, leaves, position_department, settings,
+  users, departments, positions, employees, projects, employeeprojects, leaves, position_department, position_position, settings,
   type User, type InsertUser, 
   type Department, type InsertDepartment,
   type Position, type InsertPosition,
   type PositionDepartment, type InsertPositionDepartment,
+  type PositionPosition, type InsertPositionPosition,
   type Employee, type InsertEmployee,
   type Project, type InsertProject,
   type EmployeeProject, type InsertEmployeeProject,
@@ -11,7 +12,7 @@ import {
   type Setting, type InsertSetting
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Пользователи
@@ -35,7 +36,16 @@ export interface IStorage {
   createPosition(position: InsertPosition): Promise<Position>;
   updatePosition(id: number, position: Partial<InsertPosition>): Promise<Position | undefined>;
   deletePosition(id: number): Promise<boolean>;
-  getPositionSubordinates(positionId: number): Promise<Position[]>;
+  
+  // Иерархия должностей
+  getPositionPosition(id: number): Promise<PositionPosition | undefined>;
+  getPositionPositionsByPosition(positionId: number): Promise<PositionPosition[]>;
+  getPositionPositionsByParent(parentPositionId: number): Promise<PositionPosition[]>;
+  getPositionPositionsByDepartment(departmentId: number): Promise<PositionPosition[]>;
+  getAllPositionPositions(): Promise<PositionPosition[]>;
+  createPositionPosition(positionPosition: InsertPositionPosition): Promise<PositionPosition>;
+  updatePositionPosition(id: number, positionPosition: Partial<InsertPositionPosition>): Promise<PositionPosition | undefined>;
+  deletePositionPosition(id: number): Promise<boolean>;
 
   // Связь должностей и отделов
   getPositionDepartment(id: number): Promise<PositionDepartment | undefined>;
@@ -210,10 +220,99 @@ export class DatabaseStorage implements IStorage {
     return !!updated;
   }
   
+  // Методы для работы с иерархией должностей
+  async getPositionPosition(id: number): Promise<PositionPosition | undefined> {
+    const [positionPosition] = await db.select().from(position_position).where(
+      and(
+        eq(position_position.position_relation_id, id),
+        eq(position_position.deleted, false)
+      )
+    );
+    return positionPosition || undefined;
+  }
+
+  async getPositionPositionsByPosition(positionId: number): Promise<PositionPosition[]> {
+    return await db.select().from(position_position).where(
+      and(
+        eq(position_position.position_id, positionId),
+        eq(position_position.deleted, false)
+      )
+    );
+  }
+
+  async getPositionPositionsByParent(parentPositionId: number): Promise<PositionPosition[]> {
+    return await db.select().from(position_position).where(
+      and(
+        eq(position_position.parent_position_id, parentPositionId),
+        eq(position_position.deleted, false)
+      )
+    );
+  }
+
+  async getPositionPositionsByDepartment(departmentId: number): Promise<PositionPosition[]> {
+    return await db.select().from(position_position).where(
+      and(
+        eq(position_position.department_id, departmentId),
+        eq(position_position.deleted, false)
+      )
+    );
+  }
+
+  async getAllPositionPositions(): Promise<PositionPosition[]> {
+    return await db.select().from(position_position).where(eq(position_position.deleted, false));
+  }
+
+  async createPositionPosition(insertPositionPosition: InsertPositionPosition): Promise<PositionPosition> {
+    const [positionPosition] = await db
+      .insert(position_position)
+      .values(insertPositionPosition)
+      .returning();
+    return positionPosition;
+  }
+
+  async updatePositionPosition(id: number, positionPositionData: Partial<InsertPositionPosition>): Promise<PositionPosition | undefined> {
+    const [positionPosition] = await db
+      .update(position_position)
+      .set(positionPositionData)
+      .where(eq(position_position.position_relation_id, id))
+      .returning();
+    return positionPosition || undefined;
+  }
+
+  async deletePositionPosition(id: number): Promise<boolean> {
+    // Физически удаляем запись вместо установки флага deleted
+    const [deleted] = await db
+      .delete(position_position)
+      .where(eq(position_position.position_relation_id, id))
+      .returning({ id: position_position.position_relation_id });
+    return !!deleted;
+  }
+  
+  // Совместимость с предыдущими версиями - теперь используется position_position
   async getPositionSubordinates(positionId: number): Promise<Position[]> {
-    // Используем parent_position_id для должностей, так как эта колонка сохраняется
-    // Для отделов был изменён parent_position_id на parent_department_id
-    return await db.select().from(positions).where(eq(positions.parent_position_id, positionId));
+    // Получаем все записи связей position_position, где текущая должность - родительская
+    const positionPositions = await this.getPositionPositionsByParent(positionId);
+    
+    // Извлекаем ID подчиненных должностей
+    const subordinateIds = positionPositions.map(pp => pp.position_id);
+    
+    // Если нет подчиненных, возвращаем пустой массив
+    if (subordinateIds.length === 0) {
+      return [];
+    }
+    
+    // Получаем сами должности
+    const subordinatePositions = await db.select()
+      .from(positions)
+      .where(
+        and(
+          // Проверяем, что ID должности есть в списке подчиненных
+          inArray(positions.position_id, subordinateIds),
+          eq(positions.deleted, false)
+        )
+      );
+    
+    return subordinatePositions;
   }
 
   // Методы для работы со связью должностей и отделов

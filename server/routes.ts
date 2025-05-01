@@ -347,6 +347,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Получение всех связей между должностями (иерархия должностей)
+  app.get('/api/positionpositions', async (req: Request, res: Response) => {
+    try {
+      const positionPositions = await storage.getAllPositionPositions();
+      res.json({ status: 'success', data: positionPositions });
+    } catch (error) {
+      console.error('Error fetching position hierarchy:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch position hierarchy' });
+    }
+  });
+  
+  // Получение связей для конкретной должности
+  app.get('/api/positionpositions/position/:id', async (req: Request, res: Response) => {
+    try {
+      const positionId = parseInt(req.params.id);
+      
+      if (isNaN(positionId)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid position ID' });
+      }
+      
+      const positionPositions = await storage.getPositionPositionsByPosition(positionId);
+      res.json({ status: 'success', data: positionPositions });
+    } catch (error) {
+      console.error('Error fetching position relationships:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch position relationships' });
+    }
+  });
+  
+  // Получение подчиненных должностей для указанной родительской должности
+  app.get('/api/positionpositions/parent/:id', async (req: Request, res: Response) => {
+    try {
+      const parentPositionId = parseInt(req.params.id);
+      
+      if (isNaN(parentPositionId)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid parent position ID' });
+      }
+      
+      const positionPositions = await storage.getPositionPositionsByParent(parentPositionId);
+      res.json({ status: 'success', data: positionPositions });
+    } catch (error) {
+      console.error('Error fetching subordinate positions:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch subordinate positions' });
+    }
+  });
+  
+  // Получение иерархии должностей для конкретного отдела
+  app.get('/api/positionpositions/department/:id', async (req: Request, res: Response) => {
+    try {
+      const departmentId = parseInt(req.params.id);
+      
+      if (isNaN(departmentId)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid department ID' });
+      }
+      
+      const positionPositions = await storage.getPositionPositionsByDepartment(departmentId);
+      res.json({ status: 'success', data: positionPositions });
+    } catch (error) {
+      console.error('Error fetching department position hierarchy:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch department position hierarchy' });
+    }
+  });
+  
   // Получение позиций для конкретного отдела
   app.get('/api/departments/:id/positions', async (req: Request, res: Response) => {
     try {
