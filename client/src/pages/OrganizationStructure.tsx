@@ -478,25 +478,45 @@ export default function OrganizationStructure() {
     departments.filter((d) => !d.deleted && d.parent_position_id === posId);
 
   const getDeptPositions = (deptId: number) => {
+    console.log(`Получаем должности для отдела ${deptId}`);
+    
     // Получаем все должности, связанные с этим отделом
     const linked = positions.filter((p) =>
       p.departments.some((dd) => dd.department_id === deptId),
     );
     
-    // Логгируем для отладки
-    if (deptId === 19 || deptId === 20) {
-      console.log(`Должности для отдела ${deptId}:`, linked.map(p => `${p.name} (ID: ${p.position_id}, parent: ${p.parent_position_id})`));
-    }
+    // Логгируем для отладки (для всех отделов)
+    console.log(`Все должности отдела ${deptId} до построения иерархии:`, 
+      linked.map(p => `${p.name} (ID: ${p.position_id}, parent: ${p.parent_position_id})`));
     
     // Создаем карту всех должностей этого отдела для построения иерархии
     const map: { [k: number]: any } = {};
-    linked.forEach((p) => (map[p.position_id] = { ...p, children: [] }));
+    linked.forEach((p) => {
+      map[p.position_id] = { ...p, children: [] };
+    });
+    
+    // Отладочная информация о должностях, которые должны быть в карте
+    console.log(`Карта должностей для отдела ${deptId}:`, Object.keys(map).join(', '));
     
     // Строим иерархию - добавляем дочерние должности к родительским
     linked.forEach((p) => {
-      // Проверяем, что родительская должность существует И принадлежит этому же отделу
-      if (p.parent_position_id && map[p.parent_position_id]) {
-        map[p.parent_position_id].children.push(map[p.position_id]);
+      // Проверяем, существует ли родительская должность в этом отделе
+      if (p.parent_position_id) {
+        if (map[p.parent_position_id]) {
+          // Родитель существует в этом отделе
+          map[p.parent_position_id].children.push(map[p.position_id]);
+          console.log(`Добавлена дочерняя должность ${p.name} (ID: ${p.position_id}) к ${map[p.parent_position_id].name}`);
+        } else {
+          console.log(`Родительская должность ID: ${p.parent_position_id} для должности ${p.name} (ID: ${p.position_id}) не найдена в этом отделе`);
+        }
+      }
+    });
+    
+    // Проверяем, что правильно построены children
+    Object.values(map).forEach((p: any) => {
+      if (p.children && p.children.length > 0) {
+        console.log(`Должность ${p.name} (ID: ${p.position_id}) имеет ${p.children.length} дочерних должностей:`, 
+          p.children.map((c: any) => `${c.name} (ID: ${c.position_id})`));
       }
     });
     
@@ -505,11 +525,12 @@ export default function OrganizationStructure() {
       (p: any) => p.parent_position_id === null || !map[p.parent_position_id],
     );
     
-    if (deptId === 19 || deptId === 20) {
-      console.log(`Корневые должности для отдела ${deptId}:`, rootPositions.map(p => `${p.name} (ID: ${p.position_id})`));
-    }
+    console.log(`Корневые должности для отдела ${deptId}:`, 
+      rootPositions.map(p => `${p.name} (ID: ${p.position_id})`));
     
-    return rootPositions;
+    // Просто для отладки - возвращаем все должности отдела, без иерархии
+    // Это позволит увидеть, все ли должности отображаются
+    return linked;
   };
 
   const getEmps = (posId: number, deptId: number) =>
@@ -649,7 +670,15 @@ export default function OrganizationStructure() {
     // Если элемент явно закрыт в expPos, то используем это значение, иначе проверяем глобальное состояние expanded
     const ex = expPos[key] === false ? false : (expanded || (expPos[key] ?? false));
     const emps = getEmps(p.position_id, deptId);
+    // Получаем дочерние должности и детально логируем их для отладки
     const childPositions = p.children || [];
+    
+    // Отладка для проблемных позиций
+    if (p.position_id === 21 || p.position_id === 22) { // Проверим id начальников управления
+      console.log(`Дочерние должности для "${p.name}" (ID: ${p.position_id}):`, 
+        childPositions.map((c: any) => `${c.name} (ID: ${c.position_id})`));
+    }
+    
     const sortedChildPositions = sortByCustomOrder(childPositions, 'position', deptId);
     const childDepts = getChildDeptsByPosition(p.position_id);
     const sortedChildDepts = sortByCustomOrder(childDepts, 'department', p.position_id);
