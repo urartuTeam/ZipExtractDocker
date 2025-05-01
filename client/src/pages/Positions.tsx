@@ -495,11 +495,6 @@ export default function Positions() {
                                           (штатных единиц: {dept.vacancies})
                                         </span>
                                       )}
-                                      {dept.position_link_id === 0 && (
-                                        <span className="ml-1 text-xs text-amber-500">
-                                          [Унаследовано]
-                                        </span>
-                                      )}
                                     </span>
                                     {dept.position_link_id !== 0 && (
                                       <Button 
