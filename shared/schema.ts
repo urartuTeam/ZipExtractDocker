@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date, primaryKey, varchar } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, date, primaryKey, varchar, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -259,3 +259,23 @@ export type InsertEmployeeProject = z.infer<typeof insertEmployeeProjectSchema>;
 export type InsertLeave = z.infer<typeof insertLeaveSchema>;
 export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
+
+// Таблица для хранения порядка сортировки элементов иерархии
+export const sort_tree = pgTable("sort_tree", {
+  id: serial("id").primaryKey(),
+  sort: integer("sort").notNull(),
+  type: text("type").notNull(),
+  type_id: integer("type_id").notNull(),
+}, (table) => ({
+  // Уникальное ограничение на тип и id элемента
+  unique_type_entity: unique().on(table.type, table.type_id)
+}));
+
+// Схема Zod для sort_tree
+export const insertSortTreeSchema = createInsertSchema(sort_tree).omit({
+  id: true,
+});
+
+// Типы для sort_tree
+export type SortTree = typeof sort_tree.$inferSelect;
+export type InsertSortTree = z.infer<typeof insertSortTreeSchema>;
