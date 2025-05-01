@@ -485,40 +485,9 @@ export default function OrganizationStructure() {
       p.departments.some((dd) => dd.department_id === deptId),
     );
     
-    // Логгируем для отладки (для всех отделов)
+    // Логгируем для отладки
     console.log(`Все должности отдела ${deptId} до построения иерархии:`, 
       linked.map(p => `${p.name} (ID: ${p.position_id}, parent: ${p.parent_position_id})`));
-    
-    // Сортируем должности - родительские должности должны идти перед дочерними
-    const sortedLinked = [...linked].sort((a, b) => {
-      // Если b является родителем a, то b должен быть выше
-      if (a.parent_position_id === b.position_id) return 1;
-      // Если a является родителем b, то a должен быть выше
-      if (b.parent_position_id === a.position_id) return -1;
-      // Иначе сортируем по ID
-      return a.position_id - b.position_id;
-    });
-    
-    // Фильтрация должностей, чтобы "Генеральный директор" не отображался в корне,
-    // если он является дочерней должностью "Заместителя руководителя департамента"
-    const filteredLinked = sortedLinked.filter(p => {
-      // Если у должности нет родителя или родитель не в этом отделе, оставляем
-      if (!p.parent_position_id) return true;
-      
-      // Проверяем, есть ли родительская должность в этом отделе
-      const parentInThisDept = linked.some(parent => 
-        parent.position_id === p.parent_position_id
-      );
-      
-      // Если родительская должность в этом отделе, нужно проверить,
-      // является ли текущая должность "Генеральным директором"
-      if (parentInThisDept && p.name === "Генеральный директор") {
-        console.log(`Должность "Генеральный директор" (ID: ${p.position_id}) будет добавлена к родительской должности (ID: ${p.parent_position_id}) вместо корня`);
-        return false; // Должность будет добавлена как дочерняя к родительской
-      }
-      
-      return true;
-    });
     
     // Создаем карту всех должностей этого отдела для построения иерархии
     const map: { [k: number]: any } = {};
@@ -529,36 +498,19 @@ export default function OrganizationStructure() {
     // Строим иерархию - добавляем дочерние должности к родительским
     linked.forEach((p) => {
       // Проверяем, существует ли родительская должность в этом отделе
-      if (p.parent_position_id) {
-        if (map[p.parent_position_id]) {
-          // Родитель существует в этом отделе
-          map[p.parent_position_id].children.push(map[p.position_id]);
-          console.log(`Добавлена дочерняя должность ${p.name} (ID: ${p.position_id}) к ${map[p.parent_position_id].name}`);
-        } else {
-          console.log(`Родительская должность ID: ${p.parent_position_id} для должности ${p.name} (ID: ${p.position_id}) не найдена в этом отделе`);
-        }
+      if (p.parent_position_id && map[p.parent_position_id]) {
+        // Родитель существует в этом отделе
+        map[p.parent_position_id].children.push(map[p.position_id]);
+        console.log(`Добавлена дочерняя должность ${p.name} (ID: ${p.position_id}) к ${map[p.parent_position_id].name}`);
       }
     });
     
     // Возвращаем только корневые должности (без родителей или с родителями вне этого отдела)
-    // но исключаем "Генеральный директор" если он является дочерним для "Заместителя руководителя департамента"
     const rootPositions = linked.filter(
-      (p: any) => {
-        // Проверяем, является ли должность дочерней для другой должности в этом отделе
-        const isChildOfPositionInThisDept = p.parent_position_id !== null && 
-          linked.some(parent => parent.position_id === p.parent_position_id);
-        
-        // Если должность дочерняя и это "Генеральный директор", исключаем из корневых
-        if (isChildOfPositionInThisDept && p.name === "Генеральный директор") {
-          return false;
-        }
-        
-        // В остальных случаях следуем стандартной логике
-        return p.parent_position_id === null || !map[p.parent_position_id];
-      }
+      (p) => p.parent_position_id === null || !map[p.parent_position_id]
     );
     
-    console.log(`Корневые должности для отдела ${deptId} после фильтрации:`, 
+    console.log(`Корневые должности для отдела ${deptId}:`, 
       rootPositions.map(p => `${p.name} (ID: ${p.position_id})`));
     
     return rootPositions;
