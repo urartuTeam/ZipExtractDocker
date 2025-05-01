@@ -118,11 +118,25 @@ export function registerPositionEndpoints(app: Express) {
       const positionPositionData = insertPositionPositionSchema.parse(req.body);
       
       // Проверяем, существуют ли должности
+      if (positionPositionData.position_id === undefined) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'ID должности не указан' 
+        });
+      }
+      
       const position = await storage.getPosition(positionPositionData.position_id);
       if (!position) {
         return res.status(404).json({ 
           status: 'error', 
           message: 'Должность не найдена' 
+        });
+      }
+      
+      if (positionPositionData.parent_position_id === undefined) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'ID родительской должности не указан' 
         });
       }
       
@@ -135,6 +149,13 @@ export function registerPositionEndpoints(app: Express) {
       }
       
       // Проверяем, существует ли отдел
+      if (positionPositionData.department_id === undefined) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'ID отдела не указан' 
+        });
+      }
+      
       const department = await storage.getDepartment(positionPositionData.department_id);
       if (!department) {
         return res.status(404).json({ 
