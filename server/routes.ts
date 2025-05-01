@@ -361,6 +361,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Получение информации о связи должности с отделом по ID
+  app.get('/api/positiondepartments/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Invalid position-department link ID' 
+        });
+      }
+
+      const link = await storage.getPositionDepartment(id);
+      
+      if (!link) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Position-department link not found' 
+        });
+      }
+
+      res.json({ status: 'success', data: link });
+    } catch (error) {
+      console.error('Error fetching position-department link:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Failed to fetch position-department link' 
+      });
+    }
+  });
+
   // Обновление связи должности с отделом
   app.put('/api/positiondepartments/:id', async (req: Request, res: Response) => {
     try {

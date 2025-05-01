@@ -264,11 +264,33 @@ export default function Positions() {
   // Mutation для обновления связи должности с отделом (изменение количества вакансий)
   const updatePositionDepartment = useMutation({
     mutationFn: async ({ id, vacancies }: { id: number, vacancies: number }) => {
-      const res = await apiRequest("PUT", `/api/positiondepartments/${id}`, { vacancies });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Ошибка при обновлении связи должности с отделом");
+      // Сначала получим текущую связь, чтобы включить position_id и department_id в запрос
+      const linkDetails = await fetch(`/api/positiondepartments/${id}`).then(res => res.json());
+      
+      if (!linkDetails?.data) {
+        throw new Error("Не удалось получить данные о связи");
       }
+      
+      // Отправляем полные данные со всеми обязательными полями
+      const res = await apiRequest("PUT", `/api/positiondepartments/${id}`, { 
+        position_id: linkDetails.data.position_id,
+        department_id: linkDetails.data.department_id,
+        vacancies 
+      });
+      
+      if (!res.ok) {
+        // Проверяем, является ли ответ JSON или HTML
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || "Ошибка при обновлении связи должности с отделом");
+        } else {
+          const text = await res.text();
+          console.error("Получен ответ не в формате JSON:", text);
+          throw new Error("Ошибка сервера: получен неверный формат ответа");
+        }
+      }
+      
       return res.json();
     },
     onSuccess: () => {
@@ -828,6 +850,58 @@ export default function Positions() {
                                   // Используем текущее значение из базы данных, если поле пустое
                                   const value = e.target.value ? parseInt(e.target.value) : 0;
                                   setEditVacanciesCount(value);
+                                  
+                                  // Обновляем количество вакансий сразу при изменении значения
+                                  // Используем setTimeout для предотвращения слишком частых запросов
+                                  setTimeout(() => {
+                                    console.log("Обновление вакансий для связи:", {
+                                      id: dept.position_link_id,
+                                      vacancies: value
+                                    });
+                                    
+                                    // Вызываем API напрямую вместо использования мутации
+                                    (async () => {
+                                      try {
+                                        // Получаем детали связи
+                                        const linkRes = await fetch(`/api/positiondepartments/${dept.position_link_id}`);
+                                        const linkData = await linkRes.json();
+                                        
+                                        if (linkData.status !== 'success' || !linkData.data) {
+                                          throw new Error("Не удалось получить данные о связи");
+                                        }
+                                        
+                                        // Отправляем обновление с полными данными
+                                        const res = await fetch(`/api/positiondepartments/${dept.position_link_id}`, {
+                                          method: 'PUT',
+                                          headers: {
+                                            'Content-Type': 'application/json',
+                                          },
+                                          body: JSON.stringify({
+                                            position_id: linkData.data.position_id,
+                                            department_id: linkData.data.department_id,
+                                            vacancies: value,
+                                            sort: linkData.data.sort || 0
+                                          }),
+                                        });
+                                        
+                                        if (!res.ok) {
+                                          const text = await res.text();
+                                          console.error("Ошибка при обновлении:", text);
+                                          throw new Error("Ошибка при обновлении количества вакансий");
+                                        }
+                                        
+                                        // Обновляем данные в UI
+                                        queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
+                                      } catch (error) {
+                                        console.error("Ошибка:", error);
+                                        toast({
+                                          title: "Ошибка",
+                                          description: error instanceof Error ? error.message : "Неизвестная ошибка",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    })();
+                                  }, 300);
                                 }}
                                 title="Количество штатных единиц"
                               />
