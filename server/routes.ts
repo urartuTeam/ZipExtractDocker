@@ -299,7 +299,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Сортируем должности по sort_tree
       const sortedPositions = [...positionsWithDepts].sort((a, b) => {
         // Функция для поиска значения сортировки
-        const getSortValue = (position, departmentId) => {
+        const getSortValue = (position: { position_id: number }, departmentId?: number | null) => {
           // Ключ с учетом отдела, если он есть
           const keyWithDept = `${position.position_id}_${departmentId || 'null'}`;
           if (sortMap.has(keyWithDept)) {
