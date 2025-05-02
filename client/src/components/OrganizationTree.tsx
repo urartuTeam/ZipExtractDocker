@@ -993,20 +993,29 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   };
 
   // Функция для построения иерархии должностей на основе новой таблицы position_position
-  const buildPositionHierarchy = (positionRelations: any[] = []) => {
-    if (positions.length === 0) {
+  function buildPositionHierarchy(
+    rootDepartment: Department,
+    allPositions: Position[],
+    allPositionsWithDepartments: any[],
+    allEmployees: Employee[],
+    allDepartments: Department[],
+    positionRelations: any[] = [] // Связи из таблицы position_position
+  ): PositionHierarchyNode[] {
+    if (allPositions.length === 0) {
       return [];
     }
+    
+    console.log("Активные связи position_position:", positionRelations);
 
-    // Используем глобальный доступ к positionsWithDepartmentsData
-    const positionsWithDepartments = window.positionsWithDepartmentsData || [];
+    // Используем переданные данные о должностях с отделами
+    const posWithDepartments = allPositionsWithDepartments || [];
 
     console.log(
       "Построение иерархии должностей из",
       positions.length,
       "должностей",
     );
-    console.log("Должности с отделами:", positionsWithDepartments.length);
+    console.log("Должности с отделами:", posWithDepartments.length);
 
     // Выводим отладочную информацию для проверки связей
     positions.forEach((position) => {
@@ -1022,9 +1031,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
     // Создаем узлы для всех должностей с правильными связями с отделами
     positions.forEach((position) => {
-      // Находим актуальную информацию о должности из positionsWithDepartmentsData
+      // Находим актуальную информацию о должности из переданных данных
       const positionWithDepts =
-        positionsWithDepartments.find(
+        posWithDepartments.find(
           (p) => p.position_id === position.position_id,
         ) || position;
 
@@ -1114,7 +1123,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
 
     // Дополнительно обрабатываем связи между должностями и отделами
-    positionsWithDepartments.forEach((pos) => {
+    posWithDepartments.forEach((pos) => {
       if (pos.departments && Array.isArray(pos.departments)) {
         // Находим узел должности
         const positionNode = positionNodes[pos.position_id];
@@ -1158,7 +1167,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
     // Добавляем должности, связанные с отделами через position_department
     // Используем информацию о связях из positionsWithDepartments
-    positionsWithDepartments.forEach((position: any) => {
+    posWithDepartments.forEach((position: any) => {
       if (position.departments && Array.isArray(position.departments)) {
         position.departments.forEach((dept: any) => {
           const positionId = position.position_id;
@@ -1244,7 +1253,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Проходим по всем узлам и проверяем, не являются ли они дочерними
     Object.entries(positionNodes).forEach(([positionId, node]) => {
       // Находим расширенную информацию о позиции из API
-      const posWithDeptInfo = positionsWithDepartments.find(
+      const posWithDeptInfo = posWithDepartments.find(
         (p) => p.position_id === parseInt(positionId),
       );
 
@@ -1767,8 +1776,20 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         setPositionHierarchy(rootDepartmentHierarchy);
       } else {
         // Резервный вариант - строим на основе manager_id
-        const hierarchy = buildPositionHierarchy(positionPositionsData);
-        setPositionHierarchy(hierarchy);
+        const rootDept = departments.find(
+          (d) => d.parent_department_id === null && d.parent_position_id === null
+        );
+        if (rootDept) {
+          const hierarchy = buildPositionHierarchy(
+            rootDept,
+            positions,
+            positionsWithDepartments,
+            employees,
+            departments,
+            positionPositionsData
+          );
+          setPositionHierarchy(hierarchy);
+        }
       }
     }
   }, [departments, positions, employees, positionsWithDepartments, positionPositionsData]);
