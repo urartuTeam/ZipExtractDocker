@@ -1,16 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import UnifiedPositionCard from "./UnifiedPositionCard";
-import DisplaySettings from "./DisplaySettings";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
-
-// Расширяем интерфейс Window глобально
-declare global {
-  interface Window {
-    positionsWithDepartmentsData: any[];
-  }
-}
+import { ChevronLeft, ChevronDown, ChevronRight, User } from "lucide-react";
 
 // Типы данных для организационной структуры
 type Department = {
@@ -18,6 +9,7 @@ type Department = {
   name: string;
   parent_department_id: number | null;
   parent_position_id: number | null;
+  deleted?: boolean;
 };
 
 type Position = {
@@ -25,6 +17,7 @@ type Position = {
   name: string;
   parent_position_id?: number | null;
   department_id?: number | null;
+  departments?: { department_id: number }[];
 };
 
 type Employee = {
@@ -32,39 +25,7 @@ type Employee = {
   full_name: string;
   position_id: number | null;
   department_id: number | null;
-  manager_id: number | null; // Добавляем поле manager_id для отслеживания подчиненности
-};
-
-// Тип для построения дерева отделов
-type DepartmentNode = Department & {
-  positions: Position[];
-  children: DepartmentNode[];
-  width: number; // ширина в процентах
-  childCount: number; // общее количество дочерних элементов
-};
-
-// Тип для построения позиций с сотрудниками
-type PositionWithEmployees = Position & {
-  employees: Employee[];
-};
-
-// Специальный тип для представления отдела в иерархии должностей
-type DepartmentAsPosition = {
-  position_id: number; // Используем уникальный ID, например department_id * 1000
-  name: string;
-  isDepartment: true;
-  department_id: number;
-};
-
-// Карточка отдела
-const DepartmentCard = ({ department }: { department: DepartmentNode }) => {
-  return (
-    <div className="department-card" style={{ minWidth: "300px" }}>
-      <div className="department-title">
-        {department.name} <span className="department-label">Отдел</span>
-      </div>
-    </div>
-  );
+  manager_id: number | null;
 };
 
 // Карточка должности с сотрудниками
