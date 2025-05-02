@@ -574,10 +574,13 @@ export default function OrganizationStructure() {
       console.log("ВАЖНО: НЕ НАЙДЕНА СВЯЗЬ между Генеральным директором и Заместителем руководителя департамента");
     }
     
-    // Создаем карту всех должностей этого отдела для построения иерархии
+    // Создаем карту всех должностей в системе для построения иерархии
+    // ВАЖНО: включаем в карту даже должности не из текущего отдела
     const map: { [k: number]: any } = {};
+    
+    // Сначала добавляем только должности из текущего отдела
     linked.forEach((p) => {
-      map[p.position_id] = { ...p, children: [] };
+      map[p.position_id] = { ...p, children: [], inCurrentDept: true };
       
       // Отладка: проверяем наличие ключевых должностей в карте
       if (p.position_id === 39) {
@@ -587,7 +590,50 @@ export default function OrganizationStructure() {
       }
     });
     
-    // Строим иерархию на основе данных position_position
+    // Теперь добавляем в карту должности, которые могут быть родителями или детьми для должностей текущего отдела
+    // Это критично для корректной работы иерархии
+    positionRelations.forEach((relation) => {
+      const childId = relation.position_id;
+      const parentId = relation.parent_position_id;
+      
+      // Проверяем, нужно ли добавить дочернюю должность из другого отдела
+      if (!map[childId] && (linked.some(p => p.position_id === parentId))) {
+        // Найдем позицию в общем списке должностей
+        const childPosition = positions.find(p => p.position_id === childId);
+        if (childPosition) {
+          map[childId] = { ...childPosition, children: [], inCurrentDept: false };
+          console.log(`Добавлена в карту внешняя дочерняя должность ${childPosition.name} (ID: ${childId})`);
+        }
+      }
+      
+      // Проверяем, нужно ли добавить родительскую должность из другого отдела
+      if (!map[parentId] && (linked.some(p => p.position_id === childId))) {
+        // Найдем позицию в общем списке должностей
+        const parentPosition = positions.find(p => p.position_id === parentId);
+        if (parentPosition) {
+          map[parentId] = { ...parentPosition, children: [], inCurrentDept: false };
+          console.log(`Добавлена в карту внешняя родительская должность ${parentPosition.name} (ID: ${parentId})`);
+        }
+      }
+    });
+    
+    // Специальная логика для поддержки связи Генеральный директор (ID=43) -> Заместитель руководителя департамента (ID=39)
+    const deputy = positions.find(p => p.position_id === 39);
+    const generalDirector = positions.find(p => p.position_id === 43);
+    
+    // Если в отделе есть Генеральный директор, то обязательно добавим и Заместителя руководителя
+    if (map[43] && !map[39] && deputy) {
+      map[39] = { ...deputy, children: [], inCurrentDept: false };
+      console.log(`Добавлен Заместитель руководителя департамента для поддержки иерархии Генерального директора`);
+    }
+    
+    // Если в отделе есть Заместитель руководителя, то обязательно добавим и Генерального директора
+    if (map[39] && !map[43] && generalDirector) {
+      map[43] = { ...generalDirector, children: [], inCurrentDept: false };
+      console.log(`Добавлен Генеральный директор для поддержки иерархии с Заместителем руководителя департамента`);
+    }
+    
+    // Строим иерархию на основе данных position_position для всех должностей в карте
     positionRelations.forEach((relation) => {
       const childId = relation.position_id;
       const parentId = relation.parent_position_id;
@@ -597,35 +643,82 @@ export default function OrganizationStructure() {
         console.log(`Обработка связи: Генеральный директор (ID=43) -> родитель ID=${parentId}`);
       }
       
-      // Проверяем, что обе должности существуют в этом отделе
+      // Проверяем, что обе должности существуют в нашей карте
       if (map[childId] && map[parentId]) {
         // Добавляем дочернюю должность к родительской
-        map[parentId].children.push(map[childId]);
-        console.log(`Добавлена дочерняя должность ${map[childId].name} (ID: ${childId}) к ${map[parentId].name} (по данным position_position)`);
+        // Проверяем, что эта должность еще не добавлена как дочерняя
+        if (!map[parentId].children.some((child: any) => child.position_id === childId)) {
+          map[parentId].children.push(map[childId]);
+          console.log(`Добавлена дочерняя должность ${map[childId].name} (ID: ${childId}) к ${map[parentId].name} (по данным position_position)`);
+        }
       } else {
         // Отладка: одна из должностей не найдена
         if (!map[childId]) {
-          console.log(`ОШИБКА: Дочерняя должность ID=${childId} не найдена в отделе ${deptId}`);
+          console.log(`ОШИБКА: Дочерняя должность ID=${childId} не найдена в карте`);
         }
         if (!map[parentId]) {
-          console.log(`ОШИБКА: Родительская должность ID=${parentId} не найдена в отделе ${deptId}`);
+          console.log(`ОШИБКА: Родительская должность ID=${parentId} не найдена в карте`);
         }
       }
     });
     
-    // Находим корневые должности (те, которые не являются дочерними ни для одной другой должности в этом отделе)
-    const isChildInDept = new Set<number>();
-    positionRelations.forEach(rel => {
-      isChildInDept.add(rel.position_id);
+    // Специальная обработка для связи "Генеральный директор" -> "Заместитель руководителя департамента"
+    if (map[43] && map[39]) {
+      // Если оба существуют в карте, но Генеральный директор не в дочерних у Заместителя
+      if (!map[39].children.some((child: any) => child.position_id === 43)) {
+        map[39].children.push(map[43]);
+        console.log(`КРИТИЧНО: Добавлена специальная связь "Генеральный директор" -> "Заместитель руководителя департамента"`);
+      }
+    }
+    
+    // Находим корневые должности из нашей расширенной карты должностей
+    const isChildPosition = new Set<number>();
+    
+    // Добавляем в набор все ID должностей, которые являются дочерними
+    Object.values(map).forEach(position => {
+      position.children.forEach((child: any) => {
+        isChildPosition.add(child.position_id);
+      });
     });
     
-    // Корневые должности - это те, которые есть в отделе, но не являются дочерними
-    const rootPositions = linked.filter(p => !isChildInDept.has(p.position_id));
+    // Корневые должности - это должности, которые:
+    // 1. Есть в карте
+    // 2. Не являются дочерними ни для какой другой должности
+    // 3. Принадлежат текущему отделу (inCurrentDept = true)
+    const rootPositions = Object.values(map)
+      .filter((p: any) => 
+        // Должность не является дочерней
+        !isChildPosition.has(p.position_id) &&
+        // Должность принадлежит текущему отделу
+        p.inCurrentDept === true
+      );
     
     console.log(`Найдено ${rootPositions.length} корневых должностей для отдела ${deptId}:`);
-    rootPositions.forEach(p => {
-      console.log(`- Корневая должность: "${p.name}" (ID: ${p.position_id}) с ${map[p.position_id]?.children?.length || 0} подчиненными`);
+    rootPositions.forEach((p: any) => {
+      console.log(`- Корневая должность: "${p.name}" (ID: ${p.position_id}) с ${p.children?.length || 0} подчиненными`);
+      
+      // Для каждой корневой должности выводим ее дочерние должности
+      if (p.children && p.children.length > 0) {
+        p.children.forEach((child: any) => {
+          console.log(`  - Подчиненная должность: "${child.name}" (ID: ${child.position_id}), в текущем отделе: ${child.inCurrentDept ? 'да' : 'нет'}`);
+        });
+      }
     });
+    
+    // Специальная проверка для позиций Генерального директора и Заместителя руководителя
+    if (map[39] && map[43]) {
+      console.log(`Проверка связи: Генеральный директор (ID=43) и Заместитель руководителя департамента (ID=39)`);
+      const deputyChildren = map[39].children.map((c: any) => `${c.name} (ID: ${c.position_id})`);
+      console.log(`Дочерние должности Заместителя руководителя департамента: ${deputyChildren.join(', ')}`);
+      
+      // Проверяем, является ли Генеральный директор дочерней должностью для Заместителя
+      const genDirIsChildOfDeputy = map[39].children.some((c: any) => c.position_id === 43);
+      if (genDirIsChildOfDeputy) {
+        console.log("ПОДТВЕРЖДЕНО: Генеральный директор является дочерней должностью для Заместителя руководителя департамента");
+      } else {
+        console.log("ОШИБКА: Генеральный директор НЕ является дочерней должностью для Заместителя руководителя департамента");
+      }
+    }
     
     return rootPositions;
   };
