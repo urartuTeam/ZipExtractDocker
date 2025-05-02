@@ -6,6 +6,7 @@ import { Building, LogInIcon } from 'lucide-react';
 import { useAuth } from "@/hooks/use-auth";
 import OrganizationTree from "@/components/OrganizationTree";
 import TreeView from "@/components/TreeView";
+import VerticalTreeView from "@/components/VerticalTreeView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Home() {
