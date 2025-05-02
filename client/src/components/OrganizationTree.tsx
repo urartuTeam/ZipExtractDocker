@@ -1659,7 +1659,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           }
 
           // Добавляем отдел как подчиненный элемент к должности-родителю
-          positionMap[position.position_id].subordinates.push(departmentNode);
+          positionMapRoot[position.position_id].subordinates.push(departmentNode);
         });
       }
     });
@@ -1670,7 +1670,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Сначала добавляем все должности в список корневых узлов
     // Затем на основе данных из position_position будем перемещать их в подчиненные
     adminPositions.forEach((position) => {
-      const currentNode = positionMap[position.position_id];
+      const currentNode = positionMapRoot[position.position_id];
       rootNodes.push(currentNode);
     });
 
@@ -1678,14 +1678,14 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       const childId = link.position_id;
       const parentId = link.parent_position_id;
 
-      if (positionMap[childId] && positionMap[parentId]) {
+      if (positionMapRoot[childId] && positionMapRoot[parentId]) {
         const childIndex = rootNodes.findIndex(
           (node) => node.position.position_id === childId,
         );
 
         if (childIndex !== -1) {
           const childNode = rootNodes.splice(childIndex, 1)[0];
-          positionMap[parentId].subordinates.push(childNode);
+          positionMapRoot[parentId].subordinates.push(childNode);
         }
       }
     });
@@ -1701,7 +1701,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       // Обрабатываем стандартную связь parent_position_id -> position_id
       if (
         position.parent_position_id &&
-        positionMap[position.parent_position_id]
+        positionMapRoot[position.parent_position_id]
       ) {
         const childIndex = rootNodes.findIndex(
           (node) => node.position.position_id === position.position_id,
@@ -1709,7 +1709,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
         if (childIndex !== -1) {
           const childNode = rootNodes.splice(childIndex, 1)[0];
-          positionMap[position.parent_position_id].subordinates.push(childNode);
+          positionMapRoot[position.parent_position_id].subordinates.push(childNode);
           console.log(
             `СТАНДАРТНАЯ СВЯЗЬ: ${position.position_id} -> ${position.parent_position_id}`,
           );
