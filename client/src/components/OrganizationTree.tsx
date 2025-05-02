@@ -327,8 +327,6 @@ type PositionHierarchyNode = {
   employees: Employee[]; // Массив сотрудников на этой должности
   subordinates: PositionHierarchyNode[];
   childDepartments: Department[]; // Дочерние отделы, связанные с этой должностью
-  departmentId?: number | null; // ID отдела, к которому привязана должность
-  nodeUniqueId?: string; // Уникальный идентификатор узла (position_id+department_id)
 };
 
 // Убираем вспомогательный компонент, так как теперь он импортирован из отдельного файла
@@ -796,9 +794,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     if (!positionNode || !positionNode.position_id) {
       return null;
     }
-    
-    // Создаем уникальный идентификатор на основе ID должности и ID отдела
-    const nodeUniqueId = `p${positionNode.position_id}_d${departmentId}`;
 
     // Ищем всех сотрудников на этой должности в этом отделе
     const positionEmployees = employees.filter(
@@ -818,8 +813,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       employees: positionEmployees,
       subordinates: [],
       childDepartments: [],
-      departmentId: departmentId,
-      nodeUniqueId: nodeUniqueId,
     };
 
     // Рекурсивно обрабатываем дочерние должности
@@ -1068,36 +1061,12 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         departments: positionWithDepts.departments || [],
       };
 
-      // Для каждой должности нам нужны отдельные узлы для разных отделов
-      // Получаем все департаменты, к которым привязана должность
-      const positionDepartments = positionWithDepts.departments || [];
-      
-      if (positionDepartments.length > 0) {
-        // Если должность привязана к отделам, создаем отдельный узел для каждого отдела
-        positionDepartments.forEach(dept => {
-          const departmentId = dept.department_id;
-          const nodeUniqueId = `p${position.position_id}_d${departmentId}`;
-          
-          positionNodes[nodeUniqueId] = {
-            position: positionData,
-            employees: positionEmployees.filter(emp => emp.department_id === departmentId),
-            subordinates: [],
-            childDepartments: [],
-            departmentId: departmentId,
-            nodeUniqueId: nodeUniqueId
-          };
-        });
-      } else {
-        // Если нет привязки к отделам, используем общий узел
-        const nodeUniqueId = `p${position.position_id}`;
-        positionNodes[position.position_id] = {
-          position: positionData,
-          employees: positionEmployees,
-          subordinates: [],
-          childDepartments: [],
-          nodeUniqueId: nodeUniqueId
-        };
-      }
+      positionNodes[position.position_id] = {
+        position: positionData,
+        employees: positionEmployees,
+        subordinates: [],
+        childDepartments: [],
+      };
     });
 
     // Загружаем данные о связях должностей из positionPositions
