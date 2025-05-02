@@ -551,82 +551,29 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   positionsData,
   employeesData,
 }) => {
-  // Загрузка данных из API (если не переданы через пропсы)
-  const { data: departmentsResponse } = useQuery<{
-    status: string;
-    data: Department[];
-  }>({
-    queryKey: ["/api/departments"],
-    enabled: !departmentsData, // Не выполнять запрос, если данные переданы через пропсы
-  });
-  const departments = departmentsData || departmentsResponse?.data || [];
-
-  // Запрашиваем данные о иерархии должностей из новой таблицы position_position
-  const { data: positionHierarchyResponse } = useQuery<{
-    status: string;
-    data: {
-      position_relation_id: number;
-      position_id: number;
-      parent_position_id: number;
-      department_id: number | null;
-      sort: number | null;
-      deleted: boolean;
-      deleted_at: string | null;
-    }[];
-  }>({
-    queryKey: ["/api/positionpositions"],
-  });
-  const positionPositionsData = positionHierarchyResponse?.data || [];
-
-  const { data: positionsResponse } = useQuery<{
-    status: string;
-    data: Position[];
-  }>({
-    queryKey: ["/api/positions"],
-    enabled: !positionsData, // Не выполнять запрос, если данные переданы через пропсы
-  });
-  const positions = positionsData || positionsResponse?.data || [];
-
-  const { data: employeesResponse } = useQuery<{
-    status: string;
-    data: Employee[];
-  }>({
-    queryKey: ["/api/employees"],
-    enabled: !employeesData, // Не выполнять запрос, если данные переданы через пропсы
-  });
-  const employees = employeesData || employeesResponse?.data || [];
-
-  // Состояние для хранения построенного дерева
-  const [departmentTree, setDepartmentTree] = useState<DepartmentNode[]>([]);
-
-  // Состояние для хранения иерархии должностей
-  const [positionHierarchy, setPositionHierarchy] = useState<
-    PositionHierarchyNode[]
-  >([]);
-
-  // Состояние для хранения текущей выбранной должности
-  const [selectedPositionId, setSelectedPositionId] = useState<
-    number | undefined
-  >(initialPositionId);
-
-  // Состояние для хранения отфильтрованной иерархии должностей, когда выбрана конкретная должность
-  const [filteredHierarchy, setFilteredHierarchy] = useState<
-    PositionHierarchyNode[]
-  >([]);
-
-  // Состояние для хранения информации о должностях с отделами (если не переданы через пропсы)
-  const { data: positionsWithDepartmentsResponse } = useQuery<{
+  // Получаем готовое дерево организации из API /api/tree
+  const { data: treeResponse } = useQuery<{
     status: string;
     data: any[];
   }>({
-    queryKey: ["/api/positions/with-departments"],
-    enabled: !positionsData, // Не выполнять запрос, если данные переданы через пропсы
+    queryKey: ["/api/tree"],
   });
+  
+  // Для совместимости с существующим кодом: создаем состояния и переменные как раньше,
+  // но заполняем их из данных API /api/tree
+  const [departmentTree, setDepartmentTree] = useState<DepartmentNode[]>([]);
+  const [positionHierarchy, setPositionHierarchy] = useState<PositionHierarchyNode[]>([]);
+  const [selectedPositionId, setSelectedPositionId] = useState<number | undefined>(initialPositionId);
+  const [filteredHierarchy, setFilteredHierarchy] = useState<PositionHierarchyNode[]>([]);
 
-  // Используем данные о должностях с отделами из пропсов или из запроса
-  const positionsWithDepartments =
-    positionsData || positionsWithDepartmentsResponse?.data || [];
+  // Используем данные из пропсов, если они переданы (для тестирования или других целей)
+  const departments = departmentsData || [];
+  const positions = positionsData || [];
+  const employees = employeesData || [];
 
+  // Для обратной совместимости сохраняем ссылку на positionsWithDepartments
+  const positionsWithDepartments = positionsData || [];
+  
   // Сохраняем positionsWithDepartments в глобальном объекте для доступа из подкомпонентов
   if (typeof window !== "undefined") {
     window.positionsWithDepartmentsData = positionsWithDepartments;
