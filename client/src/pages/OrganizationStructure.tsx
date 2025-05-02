@@ -534,10 +534,29 @@ export default function OrganizationStructure() {
     console.log(`Все должности отдела ${deptId} до построения иерархии:`, 
       linked.map(p => `${p.name} (ID: ${p.position_id})`));
     
+    // Логируем данные о связях должностей (position_position)
+    console.log(`Данные о связях должностей для отдела ${deptId}:`, 
+      positionRelations.map(rel => `Должность ID ${rel.position_id} подчиняется должности ID ${rel.parent_position_id}`));
+    
+    // Проверяем, есть ли связь для Генерального директора (ID=43) и Заместителя руководителя департамента (ID=39)
+    const genDirectorRelation = positionRelations.find(rel => rel.position_id === 43 && rel.parent_position_id === 39);
+    if (genDirectorRelation) {
+      console.log("НАЙДЕНА СВЯЗЬ: Генеральный директор (ID=43) подчиняется Заместителю руководителя департамента (ID=39)");
+    } else {
+      console.log("ВАЖНО: НЕ НАЙДЕНА СВЯЗЬ между Генеральным директором и Заместителем руководителя департамента");
+    }
+    
     // Создаем карту всех должностей этого отдела для построения иерархии
     const map: { [k: number]: any } = {};
     linked.forEach((p) => {
       map[p.position_id] = { ...p, children: [] };
+      
+      // Отладка: проверяем наличие ключевых должностей в карте
+      if (p.position_id === 39) {
+        console.log("Заместитель руководителя департамента добавлен в карту должностей");
+      } else if (p.position_id === 43) {
+        console.log("Генеральный директор добавлен в карту должностей");
+      }
     });
     
     // Строим иерархию на основе данных position_position
@@ -545,11 +564,24 @@ export default function OrganizationStructure() {
       const childId = relation.position_id;
       const parentId = relation.parent_position_id;
       
+      // Особая проверка для Генерального директора
+      if (childId === 43) {
+        console.log(`Обработка связи: Генеральный директор (ID=43) -> родитель ID=${parentId}`);
+      }
+      
       // Проверяем, что обе должности существуют в этом отделе
       if (map[childId] && map[parentId]) {
         // Добавляем дочернюю должность к родительской
         map[parentId].children.push(map[childId]);
         console.log(`Добавлена дочерняя должность ${map[childId].name} (ID: ${childId}) к ${map[parentId].name} (по данным position_position)`);
+      } else {
+        // Отладка: одна из должностей не найдена
+        if (!map[childId]) {
+          console.log(`ОШИБКА: Дочерняя должность ID=${childId} не найдена в отделе ${deptId}`);
+        }
+        if (!map[parentId]) {
+          console.log(`ОШИБКА: Родительская должность ID=${parentId} не найдена в отделе ${deptId}`);
+        }
       }
     });
     
