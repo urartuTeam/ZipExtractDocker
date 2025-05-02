@@ -728,7 +728,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
     // Получаем связи должностей из position_position для этого отдела
     const positionRelations =
-      positionHierarchyResponse?.data.filter((relation) => !relation.deleted) ||
+      positionPositionsData?.filter((relation) => !relation.deleted) ||
       [];
 
     console.log(
@@ -1673,24 +1673,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
     
     // Проверяем, что все связи position_positions корректно применены
-    // С помощью API запроса получаем связи между должностями
-    const { data: positionPositionsResp } = useQuery<{
-      status: string;
-      data: {
-        position_relation_id: number;
-        position_id: number;
-        parent_position_id: number;
-        department_id: number;
-        deleted: boolean;
-      }[];
-    }>({
-      queryKey: ['/api/positionpositions'],
-    });
-
+    // Используем данные от уже существующего запроса
     // Если данные о связях есть и есть корневые ноды
-    if (positionPositionsResp?.data && rootNodes.length > 0) {
+    if (positionPositionsData && rootNodes.length > 0) {
       // Получаем только актуальные связи (не удаленные)
-      const positionPositions = positionPositionsResp.data.filter(pp => !pp.deleted);
+      const positionPositions = positionPositionsData.filter(pp => !pp.deleted);
       
       // Обрабатываем каждую связь между должностями
       positionPositions.forEach(pp => {
