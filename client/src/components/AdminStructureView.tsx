@@ -160,6 +160,11 @@ const AdminStructureView: React.FC = () => {
       (e) => e.position_id === posId && e.department_id === deptId
     );
   };
+  
+  // Проверяет, является ли должность вакантной
+  const isPositionVacant = (posId: number, deptId: number) => {
+    return getPosEmployees(posId, deptId).length === 0;
+  };
 
   // Корневые отделы (без родителей)
   const roots = departments.filter(
@@ -196,12 +201,9 @@ const AdminStructureView: React.FC = () => {
               <ChevronRight className="h-4 w-4 mr-2 text-neutral-500" />
           )}
           <User className="h-5 w-5 mr-2 text-blue-500" />
-          <span className="font-medium">{p.name}</span>
-          {emps.length > 0 && (
-            <span className="ml-2 text-green-600 text-sm">
-              ({emps.map(e => e.full_name).join(", ")})
-            </span>
-          )}
+          <span className="font-medium">
+            {p.name} {isPositionVacant(p.position_id, d.department_id) ? '(Вакантная)' : emps.length > 0 ? `(${emps[0].full_name})` : ''}
+          </span>
         </div>
       </div>
     );
