@@ -1367,7 +1367,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Используем логику из OrganizationStructure.tsx для получения должностей отдела
     // Получаем все должности, связанные с этим отделом
     // Ищем все должности, которые имеют deptId в своем массиве departments    
-    const linked = positionsWithDepartments.filter((p) =>
+    const linked = positionsWithDepartments.filter((p: any) =>
       p.departments && Array.isArray(p.departments) && 
       p.departments.some((d: any) => d.department_id === rootDepartment.department_id),
     );
@@ -1489,7 +1489,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
             // Поиск должностей в positionsWithDepartments
             const digitalDeptPositions = positionsWithDepartments.filter(
-              (pos) =>
+              (pos: any) =>
                 pos.departments &&
                 Array.isArray(pos.departments) &&
                 pos.departments.some((d: any) => d.department_id === 20),
