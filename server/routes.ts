@@ -2090,9 +2090,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/tree", async (req, res) => {
     try {
-      const tree = await import("./treeService").then((m) => m.fetchTree());
+      // Используем прямой импорт вместо динамического импорта
+      const { fetchTree } = await import("./treeService");
+      const tree = await fetchTree();
       res.json({ status: "success", data: tree });
     } catch (e: any) {
+      console.error("Ошибка при получении дерева:", e);
       res.status(500).json({ status: "error", message: e.message });
     }
   });

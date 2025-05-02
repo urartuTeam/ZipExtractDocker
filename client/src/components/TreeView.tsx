@@ -1,14 +1,26 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { cn } from "@/lib/utils";
+import { FolderIcon, BriefcaseIcon, ChevronDown, ChevronRight, User } from "lucide-react";
+
+// Тип данных для информации о сотруднике
+type EmployeeInfo = {
+  id: number;
+  fullName: string;
+};
+
 // Определяем тип TreeNode локально, чтобы не зависеть от импорта
 type TreeNode = {
   id: string;
   name: string;
   type: "department" | "position";
   children: TreeNode[];
+  sort: number;
+  // Дополнительные поля
+  positionId?: number;
+  departmentId?: number;
+  employee?: EmployeeInfo;
 };
-import { cn } from "@/lib/utils";
-import { FolderIcon, BriefcaseIcon, ChevronDown, ChevronRight } from "lucide-react";
 
 type TreeViewProps = {
   onNodeSelect?: (id: string, type: string) => void;
@@ -98,6 +110,14 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({ node, depth, onNo
         )}>
           {node.name}
         </span>
+        
+        {/* Отображаем информацию о сотруднике, если доступна */}
+        {node.type === "position" && node.employee && (
+          <span className="ml-2 flex items-center text-gray-500 text-sm">
+            <User size={14} className="mr-1" />
+            {node.employee.fullName}
+          </span>
+        )}
       </div>
       
       {expanded && hasChildren && (
