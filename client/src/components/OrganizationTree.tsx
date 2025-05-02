@@ -1767,7 +1767,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         setPositionHierarchy(rootDepartmentHierarchy);
       } else {
         // Резервный вариант - строим на основе manager_id
-        const hierarchy = buildPositionHierarchy();
+        const hierarchy = buildPositionHierarchy(positionPositionsData);
         setPositionHierarchy(hierarchy);
       }
     }
@@ -1815,8 +1815,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Если данные еще не загружены, показываем загрузку
   if (
     departments.length === 0 ||
-    (positions.length === 0 && positionsWithDepartments.length === 0) ||
-    !positionPositionsData || positionPositionsData.length === 0
+    (positions.length === 0 && positionsWithDepartments.length === 0)
   ) {
     return (
       <div className="loading-message">
