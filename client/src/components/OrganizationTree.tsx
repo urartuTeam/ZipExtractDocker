@@ -1,33 +1,16 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import UnifiedPositionCard from "./UnifiedPositionCard";
+import DisplaySettings from "./DisplaySettings";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronDown, ChevronRight, User } from "lucide-react";
-import DisplaySettings from "@/components/DisplaySettings";
-import UnifiedPositionCard from "@/components/UnifiedPositionCard";
+import { ChevronLeft } from "lucide-react";
 
-// Расширяем глобальный объект Window для TypeScript
+// Расширяем интерфейс Window глобально
 declare global {
   interface Window {
-    positionsWithDepartmentsData?: any[];
+    positionsWithDepartmentsData: any[];
   }
 }
-
-// Типы данных из API /api/tree
-type TreeNodeAPI = {
-  id: string;
-  name: string;
-  type: "department" | "position";
-  children: TreeNodeAPI[];
-  employee?: {
-    id: number;
-    fullName: string;
-  };
-  sort: number;
-  positionId?: number;
-  departmentId?: number;
-  parent_position_id?: number | null;
-  parent_department_id?: number | null;
-};
 
 // Типы данных для организационной структуры
 type Department = {
@@ -35,15 +18,6 @@ type Department = {
   name: string;
   parent_department_id: number | null;
   parent_position_id: number | null;
-  deleted?: boolean;
-};
-
-// Тип для отдела с дополнительными полями для построения дерева
-type DepartmentNode = Department & {
-  positions: Position[]; // Позиции в отделе
-  children: DepartmentNode[]; // Дочерние отделы
-  width: number; // Ширина в процентах для отображения
-  childCount: number; // Общее количество дочерних элементов
 };
 
 type Position = {
@@ -51,7 +25,6 @@ type Position = {
   name: string;
   parent_position_id?: number | null;
   department_id?: number | null;
-  departments?: { department_id: number }[];
 };
 
 type Employee = {
@@ -59,7 +32,39 @@ type Employee = {
   full_name: string;
   position_id: number | null;
   department_id: number | null;
-  manager_id: number | null;
+  manager_id: number | null; // Добавляем поле manager_id для отслеживания подчиненности
+};
+
+// Тип для построения дерева отделов
+type DepartmentNode = Department & {
+  positions: Position[];
+  children: DepartmentNode[];
+  width: number; // ширина в процентах
+  childCount: number; // общее количество дочерних элементов
+};
+
+// Тип для построения позиций с сотрудниками
+type PositionWithEmployees = Position & {
+  employees: Employee[];
+};
+
+// Специальный тип для представления отдела в иерархии должностей
+type DepartmentAsPosition = {
+  position_id: number; // Используем уникальный ID, например department_id * 1000
+  name: string;
+  isDepartment: true;
+  department_id: number;
+};
+
+// Карточка отдела
+const DepartmentCard = ({ department }: { department: DepartmentNode }) => {
+  return (
+    <div className="department-card" style={{ minWidth: "300px" }}>
+      <div className="department-title">
+        {department.name} <span className="department-label">Отдел</span>
+      </div>
+    </div>
+  );
 };
 
 // Карточка должности с сотрудниками
@@ -283,10 +288,7 @@ const DepartmentWithChildren = ({
         margin: "0 auto",
       }}
     >
-      {/* Заголовок отдела */}
-      <div className="department-card">
-        <h3 className="department-title">{department.name}</h3>
-      </div>
+      <DepartmentCard department={department} />
 
       {/* Должности в отделе */}
       <div className="position-employees-list">
@@ -568,36 +570,85 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   positionsData,
   employeesData,
 }) => {
-  // Получаем готовое дерево организации из API /api/tree
-  const { data: treeResponse } = useQuery<{
+  // Загрузка данных из API (если не переданы через пропсы)
+  const { data: departmentsResponse } = useQuery<{
+    status: string;
+    data: Department[];
+  }>({
+    queryKey: ["/api/departments"],
+    enabled: !departmentsData, // Не выполнять запрос, если данные переданы через пропсы
+  });
+  const departments = departmentsData || departmentsResponse?.data || [];
+
+  // Запрашиваем данные о иерархии должностей из новой таблицы position_position
+  const { data: positionHierarchyResponse } = useQuery<{
+    status: string;
+    data: {
+      position_relation_id: number;
+      position_id: number;
+      parent_position_id: number;
+      department_id: number | null;
+      sort: number | null;
+      deleted: boolean;
+      deleted_at: string | null;
+    }[];
+  }>({
+    queryKey: ["/api/positionpositions"],
+  });
+  const positionPositionsData = positionHierarchyResponse?.data || [];
+
+  const { data: positionsResponse } = useQuery<{
+    status: string;
+    data: Position[];
+  }>({
+    queryKey: ["/api/positions"],
+    enabled: !positionsData, // Не выполнять запрос, если данные переданы через пропсы
+  });
+  const positions = positionsData || positionsResponse?.data || [];
+
+  const { data: employeesResponse } = useQuery<{
+    status: string;
+    data: Employee[];
+  }>({
+    queryKey: ["/api/employees"],
+    enabled: !employeesData, // Не выполнять запрос, если данные переданы через пропсы
+  });
+  const employees = employeesData || employeesResponse?.data || [];
+
+  // Состояние для хранения построенного дерева
+  const [departmentTree, setDepartmentTree] = useState<DepartmentNode[]>([]);
+
+  // Состояние для хранения иерархии должностей
+  const [positionHierarchy, setPositionHierarchy] = useState<
+    PositionHierarchyNode[]
+  >([]);
+
+  // Состояние для хранения текущей выбранной должности
+  const [selectedPositionId, setSelectedPositionId] = useState<
+    number | undefined
+  >(initialPositionId);
+
+  // Состояние для хранения отфильтрованной иерархии должностей, когда выбрана конкретная должность
+  const [filteredHierarchy, setFilteredHierarchy] = useState<
+    PositionHierarchyNode[]
+  >([]);
+
+  // Состояние для хранения информации о должностях с отделами (если не переданы через пропсы)
+  const { data: positionsWithDepartmentsResponse } = useQuery<{
     status: string;
     data: any[];
   }>({
-    queryKey: ["/api/tree"],
+    queryKey: ["/api/positions/with-departments"],
+    enabled: !positionsData, // Не выполнять запрос, если данные переданы через пропсы
   });
-  
-  // Для совместимости с существующим кодом: создаем состояния и переменные как раньше,
-  // но заполняем их из данных API /api/tree
-  const [departmentTree, setDepartmentTree] = useState<DepartmentNode[]>([]);
-  const [positionHierarchy, setPositionHierarchy] = useState<PositionHierarchyNode[]>([]);
-  const [selectedPositionId, setSelectedPositionId] = useState<number | undefined>(initialPositionId);
-  const [filteredHierarchy, setFilteredHierarchy] = useState<PositionHierarchyNode[]>([]);
 
-  // Используем данные из пропсов, если они переданы (для тестирования или других целей)
-  const departments = departmentsData || [];
-  const positions = positionsData || [];
-  const employees = employeesData || [];
+  // Используем данные о должностях с отделами из пропсов или из запроса
+  const positionsWithDepartments =
+    positionsData || positionsWithDepartmentsResponse?.data || [];
 
-  // Для обратной совместимости сохраняем ссылку на positionsWithDepartments
-  const positionsWithDepartments = positionsData || [];
-  
-  // Также создаем пустой массив для position_position, чтобы избежать ошибок
-  const positionPositionsData: any[] = [];
-  
   // Сохраняем positionsWithDepartments в глобальном объекте для доступа из подкомпонентов
   if (typeof window !== "undefined") {
     window.positionsWithDepartmentsData = positionsWithDepartments;
-    console.log("Данные positionsWithDepartmentsData инициализированы:", positionsWithDepartments.length);
   }
 
   // Состояние для хранения истории навигации по дереву
@@ -606,123 +657,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Состояния для настроек отображения
   const [showThreeLevels, setShowThreeLevels] = useState<boolean>(false);
   const [showVacancies, setShowVacancies] = useState<boolean>(false);
-  
-  // Эффект для преобразования данных из API /api/tree в формат, используемый компонентом
-  useEffect(() => {
-    if (treeResponse?.data && treeResponse.data.length > 0) {
-      console.log("Получены данные из API /api/tree, конвертируем в формат PositionHierarchyNode");
-      
-      try {
-        // Сначала найдем первый уровень должностей
-        const rootDepartment = treeResponse.data[0]; // Берем первый элемент - обычно корневой отдел
-        if (!rootDepartment || rootDepartment.type !== "department") {
-          console.error("Не найден корневой отдел в данных API /api/tree");
-          return;
-        }
-        
-        // Получаем все должности первого уровня из корневого отдела
-        const topLevelPositions: TreeNodeAPI[] = [];
-        
-        // Проверяем наличие детей и применяем фильтр
-        if (rootDepartment.children && Array.isArray(rootDepartment.children)) {
-          rootDepartment.children.forEach((child: TreeNodeAPI) => {
-            if (child.type === "position") {
-              topLevelPositions.push(child);
-            }
-          });
-        }
-        console.log(`Получено ${topLevelPositions.length} должностей первого уровня из корневого отдела ${rootDepartment.name}`);
-        
-        // Функция для преобразования одного узла в формат PositionHierarchyNode
-        const convertNodeToPositionHierarchy = (node: TreeNodeAPI): PositionHierarchyNode => {
-          // Извлекаем ID позиции
-          const positionId = node.positionId || parseInt(node.id.substring(1));
-          
-          // Создаем позицию
-          const position: Position = {
-            position_id: positionId,
-            name: node.name,
-            parent_position_id: node.parent_position_id || null,
-            department_id: node.parent_department_id || null
-          };
-          
-          // Получаем информацию о сотруднике, если есть
-          const employeeList: Employee[] = [];
-          if (node.employee) {
-            employeeList.push({
-              employee_id: node.employee.id,
-              full_name: node.employee.fullName,
-              position_id: positionId,
-              department_id: node.parent_department_id !== undefined ? node.parent_department_id : null,
-              manager_id: null
-            });
-          }
-          
-          // Находим дочерние отделы этой должности
-          const childDepartments: Department[] = [];
-          const childPositions: PositionHierarchyNode[] = [];
-          
-          // Обрабатываем всех детей
-          node.children.forEach((child: TreeNodeAPI) => {
-            if (child.type === "department") {
-              // Это отдел
-              childDepartments.push({
-                department_id: child.departmentId || parseInt(child.id.substring(1)),
-                name: child.name,
-                parent_department_id: null,
-                parent_position_id: positionId
-              });
-            } else if (child.type === "position") {
-              // Это должность - рекурсивно обрабатываем
-              childPositions.push(convertNodeToPositionHierarchy(child));
-            }
-          });
-          
-          // Возвращаем узел иерархии должностей
-          return {
-            position,
-            employees: employeeList,
-            subordinates: childPositions,
-            childDepartments
-          };
-        };
-        
-        // Преобразуем каждую должность верхнего уровня
-        const hierarchy = topLevelPositions.map(convertNodeToPositionHierarchy);
-        console.log(`Преобразовано ${hierarchy.length} корневых узлов из API /api/tree`);
-        
-        // Обновляем состояние только если что-то изменилось
-        if (hierarchy.length > 0) {
-          setPositionHierarchy(hierarchy);
-        }
-        
-        // Если есть выбранная должность, находим соответствующий узел
-        if (selectedPositionId) {
-          const findNode = (nodes: PositionHierarchyNode[]): PositionHierarchyNode | null => {
-            for (const node of nodes) {
-              if (node.position.position_id === selectedPositionId) {
-                return node;
-              }
-              
-              // Проверяем в подчиненных
-              if (node.subordinates.length > 0) {
-                const found = findNode(node.subordinates);
-                if (found) return found;
-              }
-            }
-            return null;
-          };
-          
-          const selectedNode = findNode(hierarchy);
-          if (selectedNode) {
-            setFilteredHierarchy([selectedNode]);
-          }
-        }
-      } catch (error) {
-        console.error("Ошибка при преобразовании данных дерева:", error);
-      }
-    }
-  }, [treeResponse?.data]);
 
   // Запрос настроек для получения количества показываемых уровней иерархии
   const { data: settingsResponse, isError } = useQuery<{
@@ -731,8 +665,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   }>({
     queryKey: ["/api/settings"],
     retry: false, // Не повторять запрос в случае ошибки
-    // Добавляем обработку ошибок 401, чтобы использовать дефолтные значения
-    throwOnError: false,
   });
 
   // Если есть ошибка с запросом настроек, просто логируем
@@ -795,8 +727,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
 
     // Получаем связи должностей из position_position для этого отдела
-    // Используем positionPositionsData вместо positionHierarchyResponse
-    const positionRelations = positionPositionsData.filter((relation: any) => !relation.deleted) || [];
+    const positionRelations =
+      positionHierarchyResponse?.data.filter((relation) => !relation.deleted) ||
+      [];
 
     console.log(
       `Найдено ${positionRelations.length} связей должностей для отдела ${deptId}`,
@@ -1079,29 +1012,20 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   };
 
   // Функция для построения иерархии должностей на основе новой таблицы position_position
-  function buildPositionHierarchy(
-    rootDepartment: Department,
-    allPositions: Position[],
-    allPositionsWithDepartments: any[],
-    allEmployees: Employee[],
-    allDepartments: Department[],
-    positionRelations: any[] = [] // Связи из таблицы position_position
-  ): PositionHierarchyNode[] {
-    if (allPositions.length === 0) {
+  const buildPositionHierarchy = () => {
+    if (positions.length === 0) {
       return [];
     }
-    
-    console.log("Активные связи position_position:", positionRelations);
 
-    // Используем переданные данные о должностях с отделами
-    const posWithDepartments = allPositionsWithDepartments || [];
+    // Используем глобальный доступ к positionsWithDepartmentsData
+    const positionsWithDepartments = window.positionsWithDepartmentsData || [];
 
     console.log(
       "Построение иерархии должностей из",
       positions.length,
       "должностей",
     );
-    console.log("Должности с отделами:", posWithDepartments.length);
+    console.log("Должности с отделами:", positionsWithDepartments.length);
 
     // Выводим отладочную информацию для проверки связей
     positions.forEach((position) => {
@@ -1112,14 +1036,17 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       }
     });
 
+    // В функциях нельзя использовать хуки, поэтому используем positionsWithDepartments
+    // для получения информации о связях должностей и отделов
+
     // Сначала создаем узлы для всех должностей
     const positionNodes: Record<number, PositionHierarchyNode> = {};
 
     // Создаем узлы для всех должностей с правильными связями с отделами
     positions.forEach((position) => {
-      // Находим актуальную информацию о должности из переданных данных
+      // Находим актуальную информацию о должности из positionsWithDepartmentsData
       const positionWithDepts =
-        posWithDepartments.find(
+        positionsWithDepartments.find(
           (p) => p.position_id === position.position_id,
         ) || position;
 
@@ -1141,6 +1068,25 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         childDepartments: [],
       };
     });
+
+    // Загружаем данные о связях должностей из positionPositions
+    // Нам нужны связи position_position для всех отделов
+    // Получаем из запросов
+    const { data: positionPositionsResponse } = useQuery<{
+      status: string;
+      data: {
+        position_relation_id: number;
+        position_id: number;
+        parent_position_id: number;
+        department_id: number;
+        deleted: boolean;
+      }[];
+    }>({
+      queryKey: [`/api/positionpositions`],
+    });
+
+    const positionRelations =
+      positionPositionsResponse?.data?.filter((pp) => !pp.deleted) || [];
 
     console.log(
       `Загружено ${positionRelations.length} связей позиций из position_positions`,
@@ -1209,7 +1155,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
 
     // Дополнительно обрабатываем связи между должностями и отделами
-    posWithDepartments.forEach((pos) => {
+    positionsWithDepartments.forEach((pos) => {
       if (pos.departments && Array.isArray(pos.departments)) {
         // Находим узел должности
         const positionNode = positionNodes[pos.position_id];
@@ -1253,7 +1199,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
     // Добавляем должности, связанные с отделами через position_department
     // Используем информацию о связях из positionsWithDepartments
-    posWithDepartments.forEach((position: any) => {
+    positionsWithDepartments.forEach((position: any) => {
       if (position.departments && Array.isArray(position.departments)) {
         position.departments.forEach((dept: any) => {
           const positionId = position.position_id;
@@ -1339,7 +1285,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Проходим по всем узлам и проверяем, не являются ли они дочерними
     Object.entries(positionNodes).forEach(([positionId, node]) => {
       // Находим расширенную информацию о позиции из API
-      const posWithDeptInfo = posWithDepartments.find(
+      const posWithDeptInfo = positionsWithDepartments.find(
         (p) => p.position_id === parseInt(positionId),
       );
 
@@ -1447,70 +1393,65 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         : "отсутствуют",
     );
 
+    const hierarchyLinks =
+      positionPositionsData?.filter((link: any) => {
+        const hasParentPosition = link.parent_position_id !== null;
+        const hasDepartment = link.department_id !== null;
+
+        if (hasParentPosition && hasDepartment) return true;
+        if (hasParentPosition && !hasDepartment) return true;
+        if (!hasParentPosition && hasDepartment) return false;
+
+        return false;
+      }) || [];
+
     // Создаем мапу с должностями по ID для быстрого доступа
     const positionMap: Record<number, PositionHierarchyNode> = {};
 
-    // Используем логику из OrganizationStructure.tsx для получения должностей отдела
-    // Получаем все должности, связанные с этим отделом
-    // Ищем все должности, которые имеют deptId в своем массиве departments    
-    const linked = positionsWithDepartments.filter((p: any) =>
-      p.departments && Array.isArray(p.departments) && 
-      p.departments.some((d: any) => d.department_id === rootDepartment.department_id),
-    );
-    
-    // Получаем связи position_position для этого отдела
-    const positionRelations = positionPositionsData?.filter((pp: any) => 
-      !pp.deleted && pp.department_id === rootDepartment.department_id
-    ) || [];
-    
+    // Создание множества подчинённых должностей
+    const childPositionIds = new Set<number>();
+    hierarchyLinks.forEach((link: any) => {
+      childPositionIds.add(link.position_id);
+    });
+
+    hierarchyLinks.forEach((link: any) => {
+      const parentId = link.parent_position_id;
+      const childId = link.position_id;
+
+      if (positionMap[parentId] && positionMap[childId]) {
+        positionMap[parentId].subordinates.push(positionMap[childId]);
+      }
+    });
+
     // Логируем активные связи position_position
     console.log(
       "Активные связи position_position:",
-      positionRelations.map(
+      hierarchyLinks.map(
         (link: any) =>
           `Должность ID ${link.position_id} подчиняется должности ID ${link.parent_position_id}`,
       ),
     );
-    
+
     console.log("Найден корневой отдел:", rootDepartment);
-    
-    // Создаем карту всех должностей этого отдела для построения иерархии
-    const map: { [k: number]: any } = {};
-    linked.forEach((p) => {
-      map[p.position_id] = { ...p, children: [] };
-    });
-    
-    // Строим иерархию на основе данных position_position
-    positionRelations.forEach((relation) => {
-      const childId = relation.position_id;
-      const parentId = relation.parent_position_id;
-      
-      // Проверяем, что обе должности существуют в этом отделе
-      if (map[childId] && map[parentId]) {
-        // Добавляем дочернюю должность к родительской
-        map[parentId].children.push(map[childId]);
-        console.log(`Добавлена дочерняя должность ${map[childId].name} (ID: ${childId}) к ${map[parentId].name} (по данным position_position)`);
-      }
-    });
-    
-    // Находим корневые должности (те, которые не являются дочерними ни для одной другой должности в этом отделе)
-    const isChildInDept = new Set<number>();
-    positionRelations.forEach(rel => {
-      isChildInDept.add(rel.position_id);
-    });
-    
-    // Корневые должности - это те, которые есть в отделе, но не являются дочерними
-    const rootPositions = linked.filter(p => !isChildInDept.has(p.position_id));
-    
-    console.log(`Найдено ${rootPositions.length} корневых должностей для отдела ${rootDepartment.department_id}:`);
-    rootPositions.forEach(p => {
-      console.log(`- Корневая должность: "${p.name}" (ID: ${p.position_id}) с ${map[p.position_id]?.children?.length || 0} подчиненными`);
-    });
 
-    // Шаг 1: Используем найденные должности корневого отдела
-    let adminPositions = rootPositions;
+    // Шаг 1: Находим все должности корневого отдела
+    let adminPositions = [];
 
-    // Если мы не нашли должности через новую логику, используем резервную логику
+    // Сначала проверим positions с отделами (из /api/positions/with-departments)
+    if (positionsWithDepartments && positionsWithDepartments.length > 0) {
+      adminPositions = positionsWithDepartments.filter((pos) => {
+        // Проверяем, есть ли у должности привязка к корневому отделу
+        return (
+          pos.departments &&
+          Array.isArray(pos.departments) &&
+          pos.departments.some(
+            (d: any) => d.department_id === rootDepartment.department_id,
+          )
+        );
+      });
+    }
+
+    // Если мы не нашли должности через positionsWithDepartments, используем резервную логику
     if (adminPositions.length === 0) {
       adminPositions = positions.filter((pos) => {
         // Проверяем, есть ли у должности привязка к корневому отделу
@@ -1528,7 +1469,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       adminPositions.map((p) => `${p.name} (ID: ${p.position_id})`),
     );
 
-    // Продолжаем использовать ту же mapу с должностями, которая была объявлена выше
+    // Создаем мапу с должностями по ID для быстрого доступа
+    const positionMapRoot: Record<number, PositionHierarchyNode> = {};
 
     // Инициализация узлов для всех должностей корневого отдела
     adminPositions.forEach((position) => {
@@ -1540,7 +1482,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       );
 
       // Создаем новый узел-должность
-      positionMap[position.position_id] = {
+      positionMapRoot[position.position_id] = {
         position,
         employees: positionEmployees,
         subordinates: [],
@@ -1575,7 +1517,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
             // Поиск должностей в positionsWithDepartments
             const digitalDeptPositions = positionsWithDepartments.filter(
-              (pos: any) =>
+              (pos) =>
                 pos.departments &&
                 Array.isArray(pos.departments) &&
                 pos.departments.some((d: any) => d.department_id === 20),
@@ -1732,8 +1674,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       rootNodes.push(currentNode);
     });
 
-    // Используем positionRelations вместо hierarchyLinks
-    positionRelations.forEach((link: any) => {
+    hierarchyLinks.forEach((link: any) => {
       const childId = link.position_id;
       const parentId = link.parent_position_id;
 
@@ -1745,21 +1686,12 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         if (childIndex !== -1) {
           const childNode = rootNodes.splice(childIndex, 1)[0];
           positionMap[parentId].subordinates.push(childNode);
-          console.log(
-            `Перемещаем должность ${childId} в подчиненные к ${parentId}`,
-          );
         }
       }
     });
 
     // Если все еще остались позиции с parent_position_id, которые не были обработаны через position_position,
     // обрабатываем их
-    // Создаем множество дочерних должностей из positionRelations
-    const childPositionIds = new Set<number>();
-    positionRelations.forEach(rel => {
-      childPositionIds.add(rel.position_id);
-    });
-    
     adminPositions.forEach((position) => {
       // Пропускаем позиции, которые уже были перемещены на основе position_position
       if (childPositionIds.has(position.position_id)) {
@@ -1802,35 +1734,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
     // Обновляем ID выбранной должности
     setSelectedPositionId(positionId);
-    
-    // Если используем новую структуру данных от API /api/tree
-    if (treeResponse?.data) {
-      try {
-        // Найдем выбранную должность в дереве на основе данных /api/tree
-        const findPositionRecursively = (nodes: PositionHierarchyNode[]): PositionHierarchyNode | null => {
-          for (const node of nodes) {
-            if (node.position.position_id === positionId) {
-              return node;
-            }
-            
-            if (node.subordinates && node.subordinates.length > 0) {
-              const foundInSubordinates = findPositionRecursively(node.subordinates);
-              if (foundInSubordinates) return foundInSubordinates;
-            }
-          }
-          return null;
-        };
-        
-        const selectedNode = findPositionRecursively(positionHierarchy);
-        if (selectedNode) {
-          // Показываем выбранную должность как новый корень дерева
-          setFilteredHierarchy([selectedNode]);
-          console.log(`Установлен новый корень дерева: ${selectedNode.position.name}`);
-        }
-      } catch (error) {
-        console.error("Ошибка при обработке клика на должность:", error);
-      }
-    }
 
     // Если передан внешний обработчик, вызываем его
     if (onPositionClick) {
@@ -1850,43 +1753,10 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
       // Устанавливаем как текущую позицию
       setSelectedPositionId(prevPosition);
-      
-      // Если используем новые данные из API /api/tree
-      if (treeResponse?.data && prevPosition) {
-        try {
-          const findPositionRecursively = (nodes: PositionHierarchyNode[]): PositionHierarchyNode | null => {
-            for (const node of nodes) {
-              if (node.position.position_id === prevPosition) {
-                return node;
-              }
-              
-              if (node.subordinates && node.subordinates.length > 0) {
-                const foundInSubordinates = findPositionRecursively(node.subordinates);
-                if (foundInSubordinates) return foundInSubordinates;
-              }
-            }
-            return null;
-          };
-          
-          const previousNode = findPositionRecursively(positionHierarchy);
-          if (previousNode) {
-            // Устанавливаем предыдущую позицию как корень дерева
-            setFilteredHierarchy([previousNode]);
-            console.log(`Установлен предыдущий корень дерева: ${previousNode.position.name}`);
-          }
-        } catch (error) {
-          console.error("Ошибка при обработке возврата к предыдущей позиции:", error);
-        }
-      }
     } else {
       // Если история пуста, возвращаемся к корню
-      console.log("История пуста, возвращаемся к корню иерархии");
+      console.log("История пуста, возвращаемся к корню");
       setSelectedPositionId(undefined);
-      
-      // Устанавливаем исходное дерево
-      if (positionHierarchy.length > 0) {
-        setFilteredHierarchy(positionHierarchy);
-      }
     }
   };
 
@@ -1924,23 +1794,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         setPositionHierarchy(rootDepartmentHierarchy);
       } else {
         // Резервный вариант - строим на основе manager_id
-        const rootDept = departments.find(
-          (d) => d.parent_department_id === null && d.parent_position_id === null
-        );
-        if (rootDept) {
-          const hierarchy = buildPositionHierarchy(
-            rootDept,
-            positions,
-            positionsWithDepartments,
-            employees,
-            departments,
-            positionPositionsData
-          );
-          setPositionHierarchy(hierarchy);
-        }
+        const hierarchy = buildPositionHierarchy();
+        setPositionHierarchy(hierarchy);
       }
     }
-  }, [departments, positions, employees, positionsWithDepartments, positionPositionsData]);
+  }, [departments, positions, employees, positionsWithDepartments]);
 
   // Фильтруем иерархию при изменении выбранной должности
   useEffect(() => {
