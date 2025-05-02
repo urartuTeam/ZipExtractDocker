@@ -1719,23 +1719,23 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     
     // Специальная проверка для Генерального директора и Заместителя руководителя департамента
     // Жестко задаем связь, которая должна быть всегда (по данным из БД)
-    const genDirectorPosition = positions.find(p => p.position_id === 39); // Генеральный директор
-    const zamRukPosition = positions.find(p => p.position_id === 40); // Заместитель руководителя департамента
+    const genDirectorPosition = positions.find(p => p.position_id === 43); // Генеральный директор
+    const zamRukPosition = positions.find(p => p.position_id === 39); // Заместитель руководителя департамента
     
     if (genDirectorPosition && zamRukPosition) {
       // Проверяем, не находится ли уже Ген.директор в подчинении у Зам.рук.
       const genDirectorNode = rootNodes.find(
-        (node) => node.position.position_id === 39
+        (node) => node.position.position_id === 43
       );
       
       const zamRukNode = rootNodes.find(
-        (node) => node.position.position_id === 40
+        (node) => node.position.position_id === 39
       );
       
       // Если оба узла существуют и Ген.директор все еще в корне дерева
       if (genDirectorNode && zamRukNode) {
         const genDirectorIndex = rootNodes.findIndex(
-          (node) => node.position.position_id === 39
+          (node) => node.position.position_id === 43
         );
         
         if (genDirectorIndex !== -1) {
