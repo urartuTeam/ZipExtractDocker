@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import OrganizationTree from "@/components/OrganizationTree";
 import TreeView from "@/components/TreeView";
 import VerticalTreeView from "@/components/VerticalTreeView";
+import NewStructureView from "@/components/NewStructureView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Home() {
@@ -95,12 +96,19 @@ export default function Home() {
               <Skeleton className="h-8 w-1/2 ml-8" />
             </div>
           ) : (
-            <Tabs defaultValue="tree" className="w-full">
-              <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 mb-4">
+            <Tabs defaultValue="new-structure" className="w-full">
+              <TabsList className="grid w-full max-w-md mx-auto grid-cols-4 mb-4">
+                <TabsTrigger value="new-structure">Новая структура</TabsTrigger>
                 <TabsTrigger value="tree">Горизонтальное</TabsTrigger>
                 <TabsTrigger value="vertical">Вертикальное</TabsTrigger>
                 <TabsTrigger value="legacy">Прежний вид</TabsTrigger>
               </TabsList>
+              
+              <TabsContent value="new-structure" className="border rounded-md p-4">
+                <NewStructureView onNodeSelect={(id, type) => {
+                  console.log(`Выбран узел: ${id}, тип: ${type}`);
+                }} />
+              </TabsContent>
               
               <TabsContent value="tree" className="border rounded-md p-4">
                 <TreeView onNodeSelect={(id, type) => {
