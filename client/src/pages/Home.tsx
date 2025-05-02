@@ -96,13 +96,20 @@ export default function Home() {
             </div>
           ) : (
             <Tabs defaultValue="tree" className="w-full">
-              <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-4">
-                <TabsTrigger value="tree">Новое дерево</TabsTrigger>
+              <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 mb-4">
+                <TabsTrigger value="tree">Горизонтальное</TabsTrigger>
+                <TabsTrigger value="vertical">Вертикальное</TabsTrigger>
                 <TabsTrigger value="legacy">Прежний вид</TabsTrigger>
               </TabsList>
               
               <TabsContent value="tree" className="border rounded-md p-4">
                 <TreeView onNodeSelect={(id, type) => {
+                  console.log(`Выбран узел: ${id}, тип: ${type}`);
+                }} />
+              </TabsContent>
+              
+              <TabsContent value="vertical" className="border rounded-md p-4">
+                <VerticalTreeView onNodeSelect={(id, type) => {
                   console.log(`Выбран узел: ${id}, тип: ${type}`);
                 }} />
               </TabsContent>

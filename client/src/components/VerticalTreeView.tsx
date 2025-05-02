@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { User } from "lucide-react";
+import { User, ChevronDown, ChevronUp } from "lucide-react";
 import "./VerticalTreeView.css";
 
 // Тип данных для информации о сотруднике
@@ -44,15 +44,19 @@ const VerticalTreeView: React.FC<VerticalTreeViewProps> = ({ onNodeSelect }) => 
     return <div className="p-4">Нет данных для отображения</div>;
   }
 
+  // Сортируем корневые узлы по полю sort
+  const sortedRootNodes = [...treeData.data].sort((a, b) => a.sort - b.sort);
+
   return (
     <div className="vertical-tree-container">
       <h2 className="tree-title">Организационная структура</h2>
       <div className="tree-content">
-        {treeData.data.map((rootNode) => (
+        {sortedRootNodes.map((rootNode) => (
           <DepartmentNode 
             key={rootNode.id} 
             node={rootNode} 
-            onNodeSelect={onNodeSelect} 
+            onNodeSelect={onNodeSelect}
+            level={1}
           />
         ))}
       </div>
@@ -64,12 +68,21 @@ const VerticalTreeView: React.FC<VerticalTreeViewProps> = ({ onNodeSelect }) => 
 const DepartmentNode: React.FC<{
   node: TreeNode;
   onNodeSelect?: (id: string, type: string) => void;
-}> = ({ node, onNodeSelect }) => {
+  level: number;
+}> = ({ node, onNodeSelect, level }) => {
   const [expanded, setExpanded] = useState(true);
+  const nodeRef = useRef<HTMLDivElement>(null);
   
-  // Разделяем дочерние узлы по типу
-  const childDepartments = node.children.filter(child => child.type === "department");
-  const childPositions = node.children.filter(child => child.type === "position");
+  // Разделяем дочерние узлы по типу и сортируем их
+  const childDepartments = node.children
+    .filter(child => child.type === "department")
+    .sort((a, b) => a.sort - b.sort);
+    
+  const childPositions = node.children
+    .filter(child => child.type === "position")
+    .sort((a, b) => a.sort - b.sort);
+  
+  const hasChildren = childPositions.length > 0 || childDepartments.length > 0;
   
   const handleClick = () => {
     if (onNodeSelect) {
@@ -77,20 +90,38 @@ const DepartmentNode: React.FC<{
       const numericId = node.id.substring(1);
       onNodeSelect(numericId, node.type);
     }
-    setExpanded(!expanded); // Разворачиваем/сворачиваем при клике
+  };
+  
+  const toggleExpand = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpanded(!expanded);
   };
 
   return (
-    <div className="department-root">
+    <div className="department-root" ref={nodeRef}>
       {/* Карточка отдела */}
       <div className="department-card" onClick={handleClick}>
         <div className="department-title">{node.name}</div>
         <div className="position-divider"></div>
         <div className="department-type">Отдел</div>
+        
+        {/* Индикатор количества подчиненных элементов */}
+        {hasChildren && (
+          <div className="count-badge">
+            {childPositions.length + childDepartments.length}
+          </div>
+        )}
       </div>
       
+      {/* Индикатор развернутости */}
+      {hasChildren && (
+        <div className="expanded-indicator" onClick={toggleExpand}>
+          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </div>
+      )}
+      
       {/* Отображаем дочерние элементы, если отдел развернут */}
-      {expanded && (childPositions.length > 0 || childDepartments.length > 0) && (
+      {expanded && hasChildren && (
         <div className="children-container">
           {/* Вертикальная линия под отделом */}
           <div 
@@ -119,11 +150,12 @@ const DepartmentNode: React.FC<{
                 )}
                 
                 {/* Отображаем должности */}
-                {childPositions.map((position, index) => (
+                {childPositions.map((position) => (
                   <PositionNode 
                     key={position.id} 
                     node={position} 
-                    onNodeSelect={onNodeSelect} 
+                    onNodeSelect={onNodeSelect}
+                    level={level + 1}
                   />
                 ))}
               </div>
@@ -137,7 +169,8 @@ const DepartmentNode: React.FC<{
                 <DepartmentNode 
                   key={department.id} 
                   node={department} 
-                  onNodeSelect={onNodeSelect} 
+                  onNodeSelect={onNodeSelect}
+                  level={level + 1}
                 />
               ))}
             </div>
@@ -152,12 +185,21 @@ const DepartmentNode: React.FC<{
 const PositionNode: React.FC<{
   node: TreeNode;
   onNodeSelect?: (id: string, type: string) => void;
-}> = ({ node, onNodeSelect }) => {
+  level: number;
+}> = ({ node, onNodeSelect, level }) => {
   const [expanded, setExpanded] = useState(true);
+  const nodeRef = useRef<HTMLDivElement>(null);
   
-  // Разделяем дочерние узлы по типу
-  const childDepartments = node.children.filter(child => child.type === "department");
-  const childPositions = node.children.filter(child => child.type === "position");
+  // Разделяем дочерние узлы по типу и сортируем их
+  const childDepartments = node.children
+    .filter(child => child.type === "department")
+    .sort((a, b) => a.sort - b.sort);
+    
+  const childPositions = node.children
+    .filter(child => child.type === "position")
+    .sort((a, b) => a.sort - b.sort);
+  
+  const hasChildren = childPositions.length > 0 || childDepartments.length > 0;
   
   const handleClick = () => {
     if (onNodeSelect) {
@@ -165,12 +207,19 @@ const PositionNode: React.FC<{
       const numericId = node.id.substring(1);
       onNodeSelect(numericId, node.type);
     }
-    setExpanded(!expanded); // Разворачиваем/сворачиваем при клике
+  };
+  
+  const toggleExpand = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setExpanded(!expanded);
   };
 
+  // Определяем класс уровня для применения разных стилей в зависимости от глубины
+  const levelClass = `level-${Math.min(level, 3)}`;
+
   return (
-    <div className="position-node" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      {/* Вертикальная линия над должностью, если не первая */}
+    <div className={`position-node ${levelClass}`} ref={nodeRef}>
+      {/* Вертикальная линия над должностью */}
       <div 
         className="vertical-line" 
         style={{
@@ -196,15 +245,22 @@ const PositionNode: React.FC<{
         )}
         
         {/* Показываем количество дочерних элементов */}
-        {(childPositions.length > 0 || childDepartments.length > 0) && (
+        {hasChildren && (
           <div className="count-badge">
             {childPositions.length + childDepartments.length}
           </div>
         )}
       </div>
       
+      {/* Индикатор развернутости */}
+      {hasChildren && (
+        <div className="expanded-indicator" onClick={toggleExpand}>
+          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </div>
+      )}
+      
       {/* Отображаем дочерние элементы, если должность развернута */}
-      {expanded && (childPositions.length > 0 || childDepartments.length > 0) && (
+      {expanded && hasChildren && (
         <div className="children-container">
           {/* Вертикальная линия под должностью */}
           <div 
@@ -238,6 +294,7 @@ const PositionNode: React.FC<{
                     key={position.id} 
                     node={position} 
                     onNodeSelect={onNodeSelect} 
+                    level={level + 1}
                   />
                 ))}
               </div>
@@ -251,7 +308,8 @@ const PositionNode: React.FC<{
                 <DepartmentNode 
                   key={department.id} 
                   node={department} 
-                  onNodeSelect={onNodeSelect} 
+                  onNodeSelect={onNodeSelect}
+                  level={level + 1}
                 />
               ))}
             </div>
