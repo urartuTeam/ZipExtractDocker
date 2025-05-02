@@ -728,12 +728,29 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       );
     });
 
-    // Получаем связи должностей из position_position для этого отдела
-    // Используем уже отфильтрованные данные по активным связям
-    const deptPositionRelations = positionRelations || [];
+    // Получаем ID должностей, привязанных к текущему отделу
+    const deptPositionIds = linkedPositions.map(p => p.position_id);
+    
+    // Фильтруем связи должностей только для текущего отдела, используя department_id из relation
+    const deptPositionRelations = positionRelations
+      // Только связи этого отдела (проверяем department_id)
+      .filter(relation => relation.department_id === deptId)
+      // Дополнительно проверяем, что должности действительно связаны с этим отделом
+      .filter(relation => 
+        deptPositionIds.includes(relation.parent_position_id) && 
+        deptPositionIds.includes(relation.position_id)
+      )
+      // Убираем дубликаты (одну и ту же пару parent-child в одном отделе)
+      .filter((relation, index, arr) => 
+        arr.findIndex(r => 
+          r.parent_position_id === relation.parent_position_id && 
+          r.position_id === relation.position_id &&
+          r.department_id === relation.department_id
+        ) === index
+      );
 
     console.log(
-      `Найдено ${deptPositionRelations.length} связей должностей для отдела ${deptId}`,
+      `Найдено ${deptPositionRelations.length} связей должностей для отдела ${deptId} (из ${positionRelations.length} общих)`,
     );
 
     // Создаем словарь для быстрого доступа к должностям и их дочерним элементам
@@ -744,7 +761,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       positionsMap[p.position_id] = { ...p, children: [] };
     });
 
-    // Строим иерархию на основе position_position
+    // Строим иерархию на основе отфильтрованных связей для этого отдела
     deptPositionRelations.forEach((relation) => {
       const childId = relation.position_id;
       const parentId = relation.parent_position_id;
