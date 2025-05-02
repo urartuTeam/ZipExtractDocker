@@ -1651,51 +1651,61 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
     // Список корневых должностей (пока пустой)
     const rootNodes: PositionHierarchyNode[] = [];
-
-    // Распределяем должности в иерархии на основе parent_position_id
+    
+    // Сначала добавляем все должности в список корневых узлов
+    // Затем на основе данных из position_position будем перемещать их в подчиненные
     adminPositions.forEach((position) => {
       const currentNode = positionMap[position.position_id];
-
-      if (
-        position.parent_position_id === null ||
-        position.parent_position_id === undefined
-      ) {
-        // Это корневая должность
-        rootNodes.push(currentNode);
-      } else if (positionMap[position.parent_position_id]) {
-        // Это подчиненная должность, у которой родительская должность находится в этом отделе
-        positionMap[position.parent_position_id].subordinates.push(currentNode);
-      } else {
-        // Родитель не найден в этом отделе, считаем должность корневой
-        rootNodes.push(currentNode);
+      rootNodes.push(currentNode);
+    });
+    
+    console.log("ВСЕ СВЯЗИ POSITION_POSITION:", departmentPositionLinks);
+    
+    // Теперь обрабатываем связи из position_position
+    // Они имеют приоритет над связями из parent_position_id
+    departmentPositionLinks.forEach((link: any) => {
+      const childId = link.position_id;
+      const parentId = link.parent_position_id;
+      
+      // Проверяем, что обе должности существуют
+      if (positionMap[childId] && positionMap[parentId]) {
+        console.log(`СВЯЗЬ ИЗ POSITION_POSITION: ${childId} подчиняется ${parentId}`);
+        
+        // Находим индекс дочерней должности в корневом списке
+        const childIndex = rootNodes.findIndex(node => 
+          node.position.position_id === childId
+        );
+        
+        // Если дочерняя должность в корневом списке, перемещаем её в подчиненные к родительской
+        if (childIndex !== -1) {
+          // Извлекаем ноду из корня
+          const childNode = rootNodes.splice(childIndex, 1)[0];
+          
+          // Добавляем её к родительской должности
+          positionMap[parentId].subordinates.push(childNode);
+          console.log(`ПЕРЕМЕЩЕНО: должность ${childId} перемещена в подчиненные к ${parentId}`);
+        }
       }
     });
-
-    // В этом месте находилась жестко закодированная корректировка иерархии для Генерального директора
-    // Убираем жесткие привязки к конкретным ID должностей в пользу структуры из базы данных
-    // Вместо этого все связи должны следовать из данных, получаемых из parent_position_id
-
-    // Проходим по всем позициям и собираем корректную иерархию на основе parent_position_id
-    // В этой версии мы устраняем жестко закодированную привязку к ID директоров и заместителей
-    // Все позиции изначально помещаются в корень, а затем перемещаются в подчиненные,
-    // если есть соответствующее значение parent_position_id
-
-    // Повторно обрабатываем, чтобы исправить случаи, когда дочерние ноды могут быть созданы
-    // раньше родительских (в зависимости от порядка данных)
+    
+    // Если все еще остались позиции с parent_position_id, которые не были обработаны через position_position,
+    // обрабатываем их
     adminPositions.forEach((position) => {
-      if (
-        position.parent_position_id &&
-        positionMap[position.parent_position_id]
-      ) {
-        // Если у позиции есть родитель, и этот родитель в нашем списке позиций
+      // Пропускаем позиции, которые уже были перемещены на основе position_position
+      if (childPositionIds.has(position.position_id)) {
+        return;
+      }
+      
+      // Обрабатываем стандартную связь parent_position_id -> position_id
+      if (position.parent_position_id && positionMap[position.parent_position_id]) {
         const childIndex = rootNodes.findIndex(
           (node) => node.position.position_id === position.position_id,
         );
+        
         if (childIndex !== -1) {
-          // Если эта позиция уже в корне, убираем её оттуда
           const childNode = rootNodes.splice(childIndex, 1)[0];
-          // И добавляем в подчиненные к родителю
           positionMap[position.parent_position_id].subordinates.push(childNode);
+          console.log(`СТАНДАРТНАЯ СВЯЗЬ: ${position.position_id} -> ${position.parent_position_id}`);
         }
       }
     });
