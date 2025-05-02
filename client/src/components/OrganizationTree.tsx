@@ -729,12 +729,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
 
     // Получаем связи должностей из position_position для этого отдела
-    const positionRelations =
-      positionPositionsData?.filter((relation) => !relation.deleted) ||
-      [];
+    // Используем уже отфильтрованные данные по активным связям
+    const deptPositionRelations = positionRelations || [];
 
     console.log(
-      `Найдено ${positionRelations.length} связей должностей для отдела ${deptId}`,
+      `Найдено ${deptPositionRelations.length} связей должностей для отдела ${deptId}`,
     );
 
     // Создаем словарь для быстрого доступа к должностям и их дочерним элементам
@@ -746,7 +745,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
 
     // Строим иерархию на основе position_position
-    positionRelations.forEach((relation) => {
+    deptPositionRelations.forEach((relation) => {
       const childId = relation.position_id;
       const parentId = relation.parent_position_id;
 
@@ -760,9 +759,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
 
     // Фильтруем только корневые должности (те, которые не являются ни чьими дочерними)
-    // Для этого находим все должности, которые не упоминаются как position_id в positionRelations
+    // Для этого находим все должности, которые не упоминаются как position_id в deptPositionRelations
     const childPositionIds = new Set(
-      positionRelations.map((r) => r.position_id),
+      deptPositionRelations.map((r) => r.position_id),
     );
     const rootPositions = Object.values(positionsMap).filter(
       (p: any) => !childPositionIds.has(p.position_id),
@@ -1737,10 +1736,18 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // Строим дерево, когда данные загружены
   useEffect(() => {
+    console.log("Проверка готовности данных для построения дерева:");
+    console.log(`- Отделы: ${departments.length}`);
+    console.log(`- Должности: ${positions.length || positionsWithDepartments.length}`);
+    console.log(`- Связи должностей: ${positionRelations.length}`);
+    
     if (
       departments.length > 0 &&
-      (positions.length > 0 || positionsWithDepartments.length > 0)
+      (positions.length > 0 || positionsWithDepartments.length > 0) &&
+      positionRelations.length > 0 // Добавляем проверку наличия данных о связях должностей
     ) {
+      console.log("Все данные загружены, строим дерево...");
+      
       // Находим корневые отделы (без родительской должности)
       const rootDepartments = departments.filter(
         (d) => d.parent_department_id === null,
@@ -1765,15 +1772,19 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
       // Строим иерархию должностей для корневого отдела
       const rootDepartmentHierarchy = buildRootDepartmentHierarchy();
-      if (rootDepartmentHierarchy) {
+      if (rootDepartmentHierarchy && rootDepartmentHierarchy.length > 0) {
+        console.log("Использована основная иерархия через buildRootDepartmentHierarchy");
         setPositionHierarchy(rootDepartmentHierarchy);
       } else {
         // Резервный вариант - строим на основе manager_id
+        console.log("Использован резервный метод buildPositionHierarchy");
         const hierarchy = buildPositionHierarchy();
         setPositionHierarchy(hierarchy);
       }
+    } else {
+      console.log("Недостаточно данных для построения дерева, ожидаем загрузки...");
     }
-  }, [departments, positions, employees, positionsWithDepartments]);
+  }, [departments, positions, employees, positionsWithDepartments, positionRelations]);
 
   // Фильтруем иерархию при изменении выбранной должности
   useEffect(() => {
@@ -1817,11 +1828,16 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Если данные еще не загружены, показываем загрузку
   if (
     departments.length === 0 ||
-    (positions.length === 0 && positionsWithDepartments.length === 0)
+    (positions.length === 0 && positionsWithDepartments.length === 0) ||
+    positionRelations.length === 0 // Добавлена проверка на загрузку данных о связях должностей
   ) {
     return (
       <div className="loading-message">
         Загрузка организационной структуры...
+        {departments.length > 0 && 
+         ((positions.length > 0 || positionsWithDepartments.length > 0)) && 
+         positionRelations.length === 0 && 
+         <div>Ожидание загрузки связей между должностями...</div>}
       </div>
     );
   }
