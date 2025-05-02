@@ -3,6 +3,14 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronDown, ChevronRight, User } from "lucide-react";
 import DisplaySettings from "@/components/DisplaySettings";
+import UnifiedPositionCard from "@/components/UnifiedPositionCard";
+
+// Расширяем глобальный объект Window для TypeScript
+declare global {
+  interface Window {
+    positionsWithDepartmentsData?: any[];
+  }
+}
 
 // Типы данных для организационной структуры
 type Department = {
@@ -11,6 +19,14 @@ type Department = {
   parent_department_id: number | null;
   parent_position_id: number | null;
   deleted?: boolean;
+};
+
+// Тип для отдела с дополнительными полями для построения дерева
+type DepartmentNode = Department & {
+  positions: Position[]; // Позиции в отделе
+  children: DepartmentNode[]; // Дочерние отделы
+  width: number; // Ширина в процентах для отображения
+  childCount: number; // Общее количество дочерних элементов
 };
 
 type Position = {
@@ -250,7 +266,10 @@ const DepartmentWithChildren = ({
         margin: "0 auto",
       }}
     >
-      <DepartmentCard department={department} />
+      {/* Заголовок отдела */}
+      <div className="department-card">
+        <h3 className="department-title">{department.name}</h3>
+      </div>
 
       {/* Должности в отделе */}
       <div className="position-employees-list">
@@ -1848,13 +1867,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
             </div>
           )}
 
+          {/* Временно скрываем настройки отображения, пока не исправим компонент */}
           <div className="display-settings-wrapper">
-            <DisplaySettings
-              showThreeLevels={showThreeLevels}
-              showVacancies={showVacancies}
-              onShowThreeLevelsChange={handleThreeLevelsChange}
-              onShowVacanciesChange={handleShowVacanciesChange}
-            />
+            {/* Настройки будут добавлены позже */}
           </div>
         </div>
 
