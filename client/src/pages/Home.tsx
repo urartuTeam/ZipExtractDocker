@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/use-auth";
 import OrganizationTree from "@/components/OrganizationTree";
 import TreeView from "@/components/TreeView";
 import VerticalTreeView from "@/components/VerticalTreeView";
-import NewStructureView from "@/components/NewStructureView";
+import AdminStructureView from "@/components/AdminStructureView";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Home() {
@@ -105,9 +105,7 @@ export default function Home() {
               </TabsList>
               
               <TabsContent value="new-structure" className="border rounded-md p-4">
-                <NewStructureView onNodeSelect={(id, type) => {
-                  console.log(`Выбран узел: ${id}, тип: ${type}`);
-                }} />
+                <AdminStructureView />
               </TabsContent>
               
               <TabsContent value="tree" className="border rounded-md p-4">
