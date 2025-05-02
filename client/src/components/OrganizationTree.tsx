@@ -1029,6 +1029,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     );
     console.log("Должности с отделами:", positionsWithDepartments.length);
 
+    // Загружаем данные о связях должностей из positionHierarchyResponse, 
+    // который загружается на уровне компонента через хук useQuery
+    // Важно: этот запрос уже выполнен на уровне компонента
+    const hierarchyRelations = positionHierarchyResponse?.data?.filter(pr => !pr.deleted) || [];
+    
     // Выводим отладочную информацию для проверки связей
     positions.forEach((position) => {
       if (position.parent_position_id) {
@@ -1071,18 +1076,18 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       };
     });
 
-    // Используем уже полученные данные о связях должностей, которые были запрошены на уровне компонента
+    // Используем данные о связях должностей, полученные выше
     // Это исправляет проблему с вызовом useQuery внутри функции
 
     console.log(
-      `Загружено ${positionRelations.length} связей позиций из position_positions`,
+      `Загружено ${hierarchyRelations.length} связей позиций из position_positions`,
     );
 
     // Создаем множество для отслеживания дочерних должностей
     const childPositions = new Set<number>();
 
     // Строим иерархию на основе position_position
-    positionRelations.forEach((relation) => {
+    hierarchyRelations.forEach((relation) => {
       const childId = relation.position_id;
       const parentId = relation.parent_position_id;
       const deptId = relation.department_id;
