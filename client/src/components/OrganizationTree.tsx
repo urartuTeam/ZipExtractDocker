@@ -612,78 +612,117 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     if (treeResponse?.data && treeResponse.data.length > 0) {
       console.log("Получены данные из API /api/tree, конвертируем в формат PositionHierarchyNode");
       
-      // Функция для рекурсивного преобразования TreeNodeAPI в PositionHierarchyNode
-      const convertTreeNodes = (nodes: TreeNodeAPI[]): PositionHierarchyNode[] => {
-        // Фильтруем только корневые позиции (не отделы)
-        const rootPositions = nodes
-          .filter(node => node.type === "position")
-          .map(node => convertNodeToPositionHierarchy(node));
-        
-        return rootPositions;
-      };
-      
-      // Преобразование одного узла TreeNodeAPI в PositionHierarchyNode
-      const convertNodeToPositionHierarchy = (node: TreeNodeAPI): PositionHierarchyNode => {
-        // Создаем позицию из узла TreeNodeAPI
-        const position: Position = {
-          position_id: node.positionId || parseInt(node.id.substring(1)), // Удаляем префикс 'p'
-          name: node.name,
-          parent_position_id: node.parent_position_id,
-          department_id: node.parent_department_id
-        };
-        
-        // Создаем сотрудника, если он есть
-        const employee = node.employee ? {
-          employee_id: node.employee.id,
-          full_name: node.employee.fullName,
-          position_id: position.position_id,
-          department_id: node.parent_department_id,
-          manager_id: null
-        } : undefined;
-        
-        // Находим дочерние отделы
-        const childDepartments = node.children
-          .filter(child => child.type === "department")
-          .map(child => ({
-            department_id: child.departmentId || parseInt(child.id.substring(1)), // Удаляем префикс 'd'
-            name: child.name,
-            parent_department_id: null,
-            parent_position_id: position.position_id
-          }));
-        
-        // Находим подчиненные должности
-        const subordinates = node.children
-          .filter(child => child.type === "position")
-          .map(child => convertNodeToPositionHierarchy(child));
-        
-        return {
-          position,
-          employees: employee ? [employee] : [],
-          subordinates,
-          childDepartments
-        };
-      };
-      
-      // Преобразуем данные из API
-      const hierarchy = convertTreeNodes(treeResponse.data);
-      
-      console.log(`Преобразовано ${hierarchy.length} корневых узлов из API /api/tree`);
-      
-      // Обновляем состояние
-      setPositionHierarchy(hierarchy);
-      
-      // Если есть выбранная должность, обновляем фильтрованное дерево
-      if (selectedPositionId) {
-        const selectedNode = findPositionNodeById(hierarchy, selectedPositionId);
-        if (selectedNode) {
-          setFilteredHierarchy([selectedNode]);
-        } else {
-          setSelectedPositionId(undefined);
-          setFilteredHierarchy([]);
+      try {
+        // Сначала найдем первый уровень должностей
+        const rootDepartment = treeResponse.data[0]; // Берем первый элемент - обычно корневой отдел
+        if (!rootDepartment || rootDepartment.type !== "department") {
+          console.error("Не найден корневой отдел в данных API /api/tree");
+          return;
         }
+        
+        // Получаем все должности первого уровня из корневого отдела
+        const topLevelPositions: TreeNodeAPI[] = [];
+        
+        // Проверяем наличие детей и применяем фильтр
+        if (rootDepartment.children && Array.isArray(rootDepartment.children)) {
+          rootDepartment.children.forEach((child: TreeNodeAPI) => {
+            if (child.type === "position") {
+              topLevelPositions.push(child);
+            }
+          });
+        }
+        console.log(`Получено ${topLevelPositions.length} должностей первого уровня из корневого отдела ${rootDepartment.name}`);
+        
+        // Функция для преобразования одного узла в формат PositionHierarchyNode
+        const convertNodeToPositionHierarchy = (node: TreeNodeAPI): PositionHierarchyNode => {
+          // Извлекаем ID позиции
+          const positionId = node.positionId || parseInt(node.id.substring(1));
+          
+          // Создаем позицию
+          const position: Position = {
+            position_id: positionId,
+            name: node.name,
+            parent_position_id: node.parent_position_id || null,
+            department_id: node.parent_department_id || null
+          };
+          
+          // Получаем информацию о сотруднике, если есть
+          const employeeList: Employee[] = [];
+          if (node.employee) {
+            employeeList.push({
+              employee_id: node.employee.id,
+              full_name: node.employee.fullName,
+              position_id: positionId,
+              department_id: node.parent_department_id !== undefined ? node.parent_department_id : null,
+              manager_id: null
+            });
+          }
+          
+          // Находим дочерние отделы этой должности
+          const childDepartments: Department[] = [];
+          const childPositions: PositionHierarchyNode[] = [];
+          
+          // Обрабатываем всех детей
+          node.children.forEach((child: TreeNodeAPI) => {
+            if (child.type === "department") {
+              // Это отдел
+              childDepartments.push({
+                department_id: child.departmentId || parseInt(child.id.substring(1)),
+                name: child.name,
+                parent_department_id: null,
+                parent_position_id: positionId
+              });
+            } else if (child.type === "position") {
+              // Это должность - рекурсивно обрабатываем
+              childPositions.push(convertNodeToPositionHierarchy(child));
+            }
+          });
+          
+          // Возвращаем узел иерархии должностей
+          return {
+            position,
+            employees: employeeList,
+            subordinates: childPositions,
+            childDepartments
+          };
+        };
+        
+        // Преобразуем каждую должность верхнего уровня
+        const hierarchy = topLevelPositions.map(convertNodeToPositionHierarchy);
+        console.log(`Преобразовано ${hierarchy.length} корневых узлов из API /api/tree`);
+        
+        // Обновляем состояние только если что-то изменилось
+        if (hierarchy.length > 0) {
+          setPositionHierarchy(hierarchy);
+        }
+        
+        // Если есть выбранная должность, находим соответствующий узел
+        if (selectedPositionId) {
+          const findNode = (nodes: PositionHierarchyNode[]): PositionHierarchyNode | null => {
+            for (const node of nodes) {
+              if (node.position.position_id === selectedPositionId) {
+                return node;
+              }
+              
+              // Проверяем в подчиненных
+              if (node.subordinates.length > 0) {
+                const found = findNode(node.subordinates);
+                if (found) return found;
+              }
+            }
+            return null;
+          };
+          
+          const selectedNode = findNode(hierarchy);
+          if (selectedNode) {
+            setFilteredHierarchy([selectedNode]);
+          }
+        }
+      } catch (error) {
+        console.error("Ошибка при преобразовании данных дерева:", error);
       }
     }
-  }, [treeResponse?.data, selectedPositionId]);
+  }, [treeResponse?.data]);
 
   // Запрос настроек для получения количества показываемых уровней иерархии
   const { data: settingsResponse, isError } = useQuery<{
