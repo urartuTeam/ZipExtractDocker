@@ -595,6 +595,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   }>({
     queryKey: ["/api/positionpositions"],
   });
+  const positionPositionsData = positionHierarchyResponse?.data || [];
 
   const { data: positionsResponse } = useQuery<{
     status: string;
@@ -1387,6 +1388,34 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       console.error("Корневой отдел не найден");
       return [];
     }
+    
+    // В buildRootDepartmentHierarchy используем данные о связях, которые были получены через useQuery
+    // positionPositionsData содержит данные из `/api/positionpositions`
+    
+    console.log("Данные о связях position_position:", 
+      positionPositionsData ? 
+      `получено ${positionPositionsData.length} связей` : 
+      "отсутствуют"
+    );
+    
+    // Фильтруем связи для корневого отдела
+    const departmentPositionLinks = positionPositionsData
+      ?.filter((link: any) => 
+        !link.deleted && 
+        link.department_id === rootDepartment.department_id
+      ) || [];
+    
+    console.log(`Найдено ${departmentPositionLinks.length} связей между должностями для корневого отдела`);
+    
+    // Создаем множество для отслеживания должностей, которые являются подчиненными другим должностям
+    // (чтобы потом исключить их из корневых узлов)
+    const childPositionIds = new Set<number>();
+    
+    // Заполняем множество подчиненных позиций
+    departmentPositionLinks.forEach((link: any) => {
+      childPositionIds.add(link.position_id);
+      console.log(`Должность ID: ${link.position_id} подчиняется должности ID: ${link.parent_position_id}`);
+    });
 
     console.log("Найден корневой отдел:", rootDepartment);
 
