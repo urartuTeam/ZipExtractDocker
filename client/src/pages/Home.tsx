@@ -34,6 +34,12 @@ export default function Home() {
   const projects = projectsResponse?.data || [];
   const positionsWithDepartments = positionsWithDepartmentsResponse?.data || [];
   
+  // Записываем данные в глобальный объект для доступа из других компонентов
+  if (positionsWithDepartments.length > 0) {
+    window.positionsWithDepartmentsData = positionsWithDepartments;
+    console.log("Данные positionsWithDepartmentsData инициализированы:", positionsWithDepartments.length);
+  }
+  
   const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects || isLoadingPositionsWithDepartments;
 
   return (

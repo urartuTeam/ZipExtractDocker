@@ -993,7 +993,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   };
 
   // Функция для построения иерархии должностей на основе новой таблицы position_position
-  const buildPositionHierarchy = () => {
+  const buildPositionHierarchy = (positionRelations: any[] = []) => {
     if (positions.length === 0) {
       return [];
     }
@@ -1016,9 +1016,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         );
       }
     });
-
-    // В функциях нельзя использовать хуки, поэтому используем positionsWithDepartments
-    // для получения информации о связях должностей и отделов
 
     // Сначала создаем узлы для всех должностей
     const positionNodes: Record<number, PositionHierarchyNode> = {};
@@ -1049,25 +1046,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         childDepartments: [],
       };
     });
-
-    // Загружаем данные о связях должностей из positionPositions
-    // Нам нужны связи position_position для всех отделов
-    // Получаем из запросов
-    const { data: positionPositionsResponse } = useQuery<{
-      status: string;
-      data: {
-        position_relation_id: number;
-        position_id: number;
-        parent_position_id: number;
-        department_id: number;
-        deleted: boolean;
-      }[];
-    }>({
-      queryKey: [`/api/positionpositions`],
-    });
-
-    const positionRelations =
-      positionPositionsResponse?.data?.filter((pp) => !pp.deleted) || [];
 
     console.log(
       `Загружено ${positionRelations.length} связей позиций из position_positions`,
