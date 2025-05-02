@@ -1274,54 +1274,19 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       }
     });
 
-    // Находим корневые узлы для организационной структуры
+    // Находим корневые узлы, используя собранный set childPositions
     const rootNodes: PositionHierarchyNode[] = [];
 
-    // Сначала проверяем, есть ли в API-ответе информация о parent_position_ids
-    const hasDependencyData = positionsWithDepartments.some(p => 
-      p.parent_position_ids && Array.isArray(p.parent_position_ids) && p.parent_position_ids.length > 0
-    );
-
-    if (hasDependencyData) {
-      // Используем логику на основе parent_position_ids
-      console.log('Используем логику на основе parent_position_ids из API');
-      
-      // Проходим по всем позициям
-      Object.entries(positionNodes).forEach(([positionId, node]) => {
-        // Получаем информацию о родительских позициях из API
-        const position = positionsWithDepartments.find(p => p.position_id === parseInt(positionId));
-        
-        if (position) {
-          // Если у позиции нет родительских позиций, то это корневая позиция
-          if (!position.parent_position_ids || position.parent_position_ids.length === 0) {
-            rootNodes.push(node);
-            console.log(
-              `Добавлена корневая должность (из API): "${node.position.name}" (ID: ${positionId}) с ${node.subordinates.length} подчиненными`,
-            );
-          }
-        } else {
-          // Резервная логика: если нет данных об этой позиции в API, проверяем childPositions
-          if (!childPositions.has(parseInt(positionId))) {
-            rootNodes.push(node);
-            console.log(
-              `Добавлена корневая должность (резервная логика): "${node.position.name}" (ID: ${positionId}) с ${node.subordinates.length} подчиненными`,
-            );
-          }
-        }
-      });
-    } else {
-      // Резервная логика: используем childPositions
-      // Проходим по всем узлам и проверяем, не являются ли они дочерними
-      Object.entries(positionNodes).forEach(([positionId, node]) => {
-        // Если позиция не в множестве дочерних, то это корневой узел
-        if (!childPositions.has(parseInt(positionId))) {
-          rootNodes.push(node);
-          console.log(
-            `Добавлена корневая должность (из childPositions): "${node.position.name}" (ID: ${positionId}) с ${node.subordinates.length} подчиненными`,
-          );
-        }
-      });
-    }
+    // Проходим по всем узлам и проверяем, не являются ли они дочерними
+    Object.entries(positionNodes).forEach(([positionId, node]) => {
+      // Если позиция не в множестве дочерних и у нее есть subordinates, то это корневой узел
+      if (!childPositions.has(parseInt(positionId))) {
+        rootNodes.push(node);
+        console.log(
+          `Добавлена корневая должность: "${node.position.name}" (ID: ${positionId}) с ${node.subordinates.length} подчиненными`,
+        );
+      }
+    });
 
     // Когда есть связь между должностью "Генеральный директор" (ID 25) и "Заместитель руководителя департамента" (ID 23),
     // мы должны убедиться, что эта связь отображается правильно
