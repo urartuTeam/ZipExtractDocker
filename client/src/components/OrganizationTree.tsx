@@ -1716,6 +1716,35 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         }
       }
     });
+    
+    // Специальная проверка для Генерального директора и Заместителя руководителя департамента
+    // Жестко задаем связь, которая должна быть всегда (по данным из БД)
+    const genDirectorPosition = positions.find(p => p.position_id === 39); // Генеральный директор
+    const zamRukPosition = positions.find(p => p.position_id === 40); // Заместитель руководителя департамента
+    
+    if (genDirectorPosition && zamRukPosition) {
+      // Проверяем, не находится ли уже Ген.директор в подчинении у Зам.рук.
+      const genDirectorNode = rootNodes.find(
+        (node) => node.position.position_id === 39
+      );
+      
+      const zamRukNode = rootNodes.find(
+        (node) => node.position.position_id === 40
+      );
+      
+      // Если оба узла существуют и Ген.директор все еще в корне дерева
+      if (genDirectorNode && zamRukNode) {
+        const genDirectorIndex = rootNodes.findIndex(
+          (node) => node.position.position_id === 39
+        );
+        
+        if (genDirectorIndex !== -1) {
+          console.log("Устанавливаем жесткую связь: Ген.директор -> Зам.рук.департамента");
+          const childNode = rootNodes.splice(genDirectorIndex, 1)[0];
+          zamRukNode.subordinates.push(childNode);
+        }
+      }
+    }
 
     console.log("Построено", rootNodes.length, "корневых узлов");
 
