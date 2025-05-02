@@ -1800,7 +1800,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         setPositionHierarchy(hierarchy);
       }
     }
-  }, [departments, positions, employees, positionsWithDepartments]);
+  }, [departments, positions, employees, positionsWithDepartments, positionPositionsData]);
 
   // Фильтруем иерархию при изменении выбранной должности
   useEffect(() => {
@@ -1844,7 +1844,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Если данные еще не загружены, показываем загрузку
   if (
     departments.length === 0 ||
-    (positions.length === 0 && positionsWithDepartments.length === 0)
+    (positions.length === 0 && positionsWithDepartments.length === 0) ||
+    !positionPositionsData || positionPositionsData.length === 0
   ) {
     return (
       <div className="loading-message">
