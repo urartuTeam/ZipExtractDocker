@@ -1305,107 +1305,63 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       }
     });
 
-    // Когда есть связь между должностью "Генеральный директор" (ID 25) и "Заместитель руководителя департамента" (ID 23),
-    // мы должны убедиться, что эта связь отображается правильно
-    const generalDirectorPosition = positions.find(
-      (p) => p.name === "Генеральный директор",
-    );
-    const deputyPosition = positions.find(
-      (p) => p.name === "Заместитель руководителя департамента",
-    );
-
-    if (generalDirectorPosition && deputyPosition) {
-      console.log(
-        `Найдены должности "Генеральный директор" (ID: ${generalDirectorPosition.position_id}) и "Заместитель руководителя департамента" (ID: ${deputyPosition.position_id})`,
-      );
-
-      // Проверяем, является ли Генеральный директор подчиненным Заместителя
-      const directorNode = positionNodes[generalDirectorPosition.position_id];
-      const deputyNode = positionNodes[deputyPosition.position_id];
-
-      if (directorNode && deputyNode) {
-        // Проверяем текущую иерархию
-        const directorIsSubordinateToDeputy = deputyNode.subordinates.some(
-          (sub) =>
-            sub.position.position_id === generalDirectorPosition.position_id,
-        );
-
-        if (
-          !directorIsSubordinateToDeputy &&
-          generalDirectorPosition.parent_position_id ===
-            deputyPosition.position_id
-        ) {
-          console.log(
-            `Добавляем "Генеральный директор" как подчиненного "Заместителю руководителя департамента"`,
-          );
-          deputyNode.subordinates.push(directorNode);
-
-          // Удаляем Генерального директора из корневых узлов, если он там есть
-          const directorIndex = rootNodes.findIndex(
-            (node) =>
-              node.position.position_id === generalDirectorPosition.position_id,
-          );
-          if (directorIndex !== -1) {
-            rootNodes.splice(directorIndex, 1);
-          }
-        }
-      }
-    }
+    // Обрабатываем позиции, для которых связи не образовались по стандартным алгоритмам
+    console.log("Проверяем корректность построенных связей на основе связей position_positions...");
     
-    // Аналогично обрабатываем связь между Начальником управления и Заместителем начальника управления
-    const headPosition = positions.find(
-      (p) => p.name === "Начальник управления",
-    );
-    const deputyHeadPosition = positions.find(
-      (p) => p.name === "Заместитель начальника управления",
-    );
-
-    if (headPosition && deputyHeadPosition) {
-      console.log(
-        `Найдены должности "Начальник управления" (ID: ${headPosition.position_id}) и "Заместитель начальника управления" (ID: ${deputyHeadPosition.position_id})`,
-      );
-
-      // Проверяем, является ли Заместитель начальника управления подчиненным Начальника управления
-      const headNode = positionNodes[headPosition.position_id];
-      const deputyHeadNode = positionNodes[deputyHeadPosition.position_id];
-
-      if (headNode && deputyHeadNode) {
-        // Проверяем текущую иерархию
-        const deputyHeadIsSubordinateToHead = headNode.subordinates.some(
-          (sub) =>
-            sub.position.position_id === deputyHeadPosition.position_id,
+    // Проходим по всем позициям и убеждаемся, что их parent_position_id правильно отображен в иерархии
+    positionRelations.forEach((relation) => {
+      const childId = relation.position_id;
+      const parentId = relation.parent_position_id;
+      
+      // Пропускаем уже обработанные связи
+      if (childPositions.has(childId)) {
+        return;
+      }
+      
+      // Получаем узлы для проверки
+      const childNode = positionNodes[childId];
+      const parentNode = positionNodes[parentId];
+      
+      if (childNode && parentNode) {
+        // Проверяем, что дочерняя позиция не является уже подчинённой родительской
+        const isAlreadySubordinate = parentNode.subordinates.some(
+          sub => sub.position.position_id === childId
         );
-
-        if (!deputyHeadIsSubordinateToHead) {
+        
+        if (!isAlreadySubordinate) {
           console.log(
-            `Добавляем "Заместитель начальника управления" как подчиненного "Начальнику управления"`,
+            `Добавляем связь из positionRelations: "${childNode.position.name}" (ID: ${childId}) подчиняется "${parentNode.position.name}" (ID: ${parentId}) в отделе ${relation.department_id}`
           );
-          headNode.subordinates.push(deputyHeadNode);
-
-          // Удаляем Заместителя начальника управления из корневых узлов, если он там есть
-          const deputyHeadIndex = rootNodes.findIndex(
-            (node) =>
-              node.position.position_id === deputyHeadPosition.position_id,
+          
+          // Добавляем связь
+          parentNode.subordinates.push(childNode);
+          childPositions.add(childId);
+          
+          // Удаляем из корневых узлов, если там есть
+          const childNodeIndex = rootNodes.findIndex(
+            node => node.position.position_id === childId
           );
-          if (deputyHeadIndex !== -1) {
-            rootNodes.splice(deputyHeadIndex, 1);
+          if (childNodeIndex !== -1) {
+            rootNodes.splice(childNodeIndex, 1);
           }
-
-          // Также удаляем Заместителя начальника управления из подчиненных любых других узлов (кроме Начальника управления)
-          Object.values(positionNodes).forEach((node) => {
-            if (node.position.position_id !== headPosition.position_id) {
+          
+          // И удаляем из подчинённых других узлов (если есть)
+          Object.values(positionNodes).forEach(node => {
+            if (node.position.position_id !== parentId) {
               const subIndex = node.subordinates.findIndex(
-                (sub) => sub.position.position_id === deputyHeadPosition.position_id
+                sub => sub.position.position_id === childId
               );
               if (subIndex !== -1) {
-                console.log(`Удаляем "Заместитель начальника управления" из подчиненных должности "${node.position.name}"`);
+                console.log(
+                  `Удаляем позицию "${childNode.position.name}" из подчинённых позиции "${node.position.name}", так как она должна быть подчинена "${parentNode.position.name}"`
+                );
                 node.subordinates.splice(subIndex, 1);
               }
             }
           });
         }
       }
-    }
+    });
 
     console.log(`Построено ${rootNodes.length} корневых узлов`);
     // Выводим информацию о корневых узлах
