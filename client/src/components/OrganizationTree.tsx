@@ -731,6 +731,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   }>({
     queryKey: ["/api/settings"],
     retry: false, // Не повторять запрос в случае ошибки
+    // Добавляем обработку ошибок 401, чтобы использовать дефолтные значения
+    throwOnError: false,
   });
 
   // Если есть ошибка с запросом настроек, просто логируем
@@ -1800,6 +1802,35 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
     // Обновляем ID выбранной должности
     setSelectedPositionId(positionId);
+    
+    // Если используем новую структуру данных от API /api/tree
+    if (treeResponse?.data) {
+      try {
+        // Найдем выбранную должность в дереве на основе данных /api/tree
+        const findPositionRecursively = (nodes: PositionHierarchyNode[]): PositionHierarchyNode | null => {
+          for (const node of nodes) {
+            if (node.position.position_id === positionId) {
+              return node;
+            }
+            
+            if (node.subordinates && node.subordinates.length > 0) {
+              const foundInSubordinates = findPositionRecursively(node.subordinates);
+              if (foundInSubordinates) return foundInSubordinates;
+            }
+          }
+          return null;
+        };
+        
+        const selectedNode = findPositionRecursively(positionHierarchy);
+        if (selectedNode) {
+          // Показываем выбранную должность как новый корень дерева
+          setFilteredHierarchy([selectedNode]);
+          console.log(`Установлен новый корень дерева: ${selectedNode.position.name}`);
+        }
+      } catch (error) {
+        console.error("Ошибка при обработке клика на должность:", error);
+      }
+    }
 
     // Если передан внешний обработчик, вызываем его
     if (onPositionClick) {
@@ -1819,10 +1850,43 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
       // Устанавливаем как текущую позицию
       setSelectedPositionId(prevPosition);
+      
+      // Если используем новые данные из API /api/tree
+      if (treeResponse?.data && prevPosition) {
+        try {
+          const findPositionRecursively = (nodes: PositionHierarchyNode[]): PositionHierarchyNode | null => {
+            for (const node of nodes) {
+              if (node.position.position_id === prevPosition) {
+                return node;
+              }
+              
+              if (node.subordinates && node.subordinates.length > 0) {
+                const foundInSubordinates = findPositionRecursively(node.subordinates);
+                if (foundInSubordinates) return foundInSubordinates;
+              }
+            }
+            return null;
+          };
+          
+          const previousNode = findPositionRecursively(positionHierarchy);
+          if (previousNode) {
+            // Устанавливаем предыдущую позицию как корень дерева
+            setFilteredHierarchy([previousNode]);
+            console.log(`Установлен предыдущий корень дерева: ${previousNode.position.name}`);
+          }
+        } catch (error) {
+          console.error("Ошибка при обработке возврата к предыдущей позиции:", error);
+        }
+      }
     } else {
       // Если история пуста, возвращаемся к корню
-      console.log("История пуста, возвращаемся к корню");
+      console.log("История пуста, возвращаемся к корню иерархии");
       setSelectedPositionId(undefined);
+      
+      // Устанавливаем исходное дерево
+      if (positionHierarchy.length > 0) {
+        setFilteredHierarchy(positionHierarchy);
+      }
     }
   };
 
