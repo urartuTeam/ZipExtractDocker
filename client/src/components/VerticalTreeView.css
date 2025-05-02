@@ -168,6 +168,15 @@
   position: relative;
 }
 
+.unified-children-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  width: 100%;
+  position: relative;
+}
+
 .child-row {
   display: flex;
   justify-content: center;
@@ -184,6 +193,23 @@
   gap: 40px;
   width: 100%;
   margin-top: 30px;
+}
+
+/* Стили для отделов, отображаемых на одном уровне с должностями */
+.department-as-child {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin: 0 15px;
+}
+
+/* Стили для расположения элементов в одной строке */
+.position-row {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  position: relative;
+  flex-wrap: wrap; /* Разрешаем перенос на новую строку при необходимости */
 }
 
 /* Индикаторы количества */

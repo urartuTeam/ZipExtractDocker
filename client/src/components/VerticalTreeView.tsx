@@ -133,48 +133,43 @@ const DepartmentNode: React.FC<{
             }}
           ></div>
           
-          {/* Дочерние должности */}
-          {childPositions.length > 0 && (
-            <div className="positions-container">
-              <div className="position-row">
-                {/* Горизонтальная линия, соединяющая все должности */}
-                {childPositions.length > 1 && (
-                  <div 
-                    className="horizontal-line" 
-                    style={{
-                      top: '50%',
-                      width: `${(childPositions.length - 1) * 250}px`,
-                      left: `${125 - ((childPositions.length - 1) * 250) / 2}px`,
-                    }}
-                  ></div>
-                )}
-                
-                {/* Отображаем должности */}
-                {childPositions.map((position) => (
-                  <PositionNode 
-                    key={position.id} 
-                    node={position} 
-                    onNodeSelect={onNodeSelect}
-                    level={level + 1}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Дочерние отделы */}
-          {childDepartments.length > 0 && (
-            <div className="child-department-container">
-              {childDepartments.map((department) => (
-                <DepartmentNode 
-                  key={department.id} 
-                  node={department} 
+          {/* Отображаем все дочерние элементы (и должности, и отделы) в одном ряду */}
+          <div className="unified-children-container">
+            <div className="position-row">
+              {/* Горизонтальная линия, соединяющая все элементы */}
+              {(childPositions.length + childDepartments.length) > 1 && (
+                <div 
+                  className="horizontal-line" 
+                  style={{
+                    top: '50%',
+                    width: `${((childPositions.length + childDepartments.length) - 1) * 250}px`,
+                    left: `${125 - (((childPositions.length + childDepartments.length) - 1) * 250) / 2}px`,
+                  }}
+                ></div>
+              )}
+              
+              {/* Дочерние должности */}
+              {childPositions.map((position) => (
+                <PositionNode 
+                  key={position.id} 
+                  node={position} 
                   onNodeSelect={onNodeSelect}
                   level={level + 1}
                 />
               ))}
+              
+              {/* Дочерние отделы - отображаем в том же ряду */}
+              {childDepartments.map((department) => (
+                <div className="department-as-child" key={department.id}>
+                  <DepartmentNode 
+                    node={department} 
+                    onNodeSelect={onNodeSelect}
+                    level={level + 1}
+                  />
+                </div>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
@@ -272,48 +267,43 @@ const PositionNode: React.FC<{
             }}
           ></div>
           
-          {/* Дочерние должности */}
-          {childPositions.length > 0 && (
-            <div className="positions-container">
-              <div className="position-row">
-                {/* Горизонтальная линия, соединяющая все должности */}
-                {childPositions.length > 1 && (
-                  <div 
-                    className="horizontal-line" 
-                    style={{
-                      top: '50%',
-                      width: `${(childPositions.length - 1) * 250}px`,
-                      left: `${125 - ((childPositions.length - 1) * 250) / 2}px`,
-                    }}
-                  ></div>
-                )}
-                
-                {/* Отображаем должности */}
-                {childPositions.map((position) => (
-                  <PositionNode 
-                    key={position.id} 
-                    node={position} 
-                    onNodeSelect={onNodeSelect} 
-                    level={level + 1}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-          
-          {/* Дочерние отделы */}
-          {childDepartments.length > 0 && (
-            <div className="child-department-container">
-              {childDepartments.map((department) => (
-                <DepartmentNode 
-                  key={department.id} 
-                  node={department} 
-                  onNodeSelect={onNodeSelect}
+          {/* Отображаем все дочерние элементы (и должности, и отделы) в одном ряду */}
+          <div className="unified-children-container">
+            <div className="position-row">
+              {/* Горизонтальная линия, соединяющая все элементы */}
+              {(childPositions.length + childDepartments.length) > 1 && (
+                <div 
+                  className="horizontal-line" 
+                  style={{
+                    top: '50%',
+                    width: `${((childPositions.length + childDepartments.length) - 1) * 250}px`,
+                    left: `${125 - (((childPositions.length + childDepartments.length) - 1) * 250) / 2}px`,
+                  }}
+                ></div>
+              )}
+              
+              {/* Дочерние должности */}
+              {childPositions.map((position) => (
+                <PositionNode 
+                  key={position.id} 
+                  node={position} 
+                  onNodeSelect={onNodeSelect} 
                   level={level + 1}
                 />
               ))}
+              
+              {/* Дочерние отделы - отображаем в том же ряду */}
+              {childDepartments.map((department) => (
+                <div className="department-as-child" key={department.id}>
+                  <DepartmentNode 
+                    node={department} 
+                    onNodeSelect={onNodeSelect}
+                    level={level + 1}
+                  />
+                </div>
+              ))}
             </div>
-          )}
+          </div>
         </div>
       )}
     </div>
