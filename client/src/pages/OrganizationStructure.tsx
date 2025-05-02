@@ -500,14 +500,42 @@ export default function OrganizationStructure() {
       p.departments.some((dd) => dd.department_id === deptId),
     );
     
-    // Получаем связи position_position для этого отдела
-    const positionRelations = positionPositionsR?.data?.filter(pp => 
-      !pp.deleted && pp.department_id === deptId
-    ) || [];
+    // ВАЖНО: Получаем ВСЕ связи position_position, а не только для этого отдела
+    // Это критически важно для случаев, когда должности из разных отделов связаны между собой
+    const allPositionRelations = positionPositionsR?.data?.filter(pp => !pp.deleted) || [];
     
-    console.log(`Найдено ${positionRelations.length} связей должностей для отдела ${deptId}`);
+    // Отфильтруем связи, где хотя бы одна из должностей (дочерняя или родительская) находится в нашем отделе
+    const positionRelations = allPositionRelations.filter(rel => {
+      // Проверяем, есть ли дочерняя должность в нашем отделе
+      const childInThisDept = linked.some(p => p.position_id === rel.position_id);
+      
+      // Проверяем, есть ли родительская должность в нашем отделе
+      const parentInThisDept = linked.some(p => p.position_id === rel.parent_position_id);
+      
+      // Включаем связь, если хотя бы одна из должностей находится в нашем отделе
+      return childInThisDept || parentInThisDept;
+    });
+    
+    console.log(`Найдено ${positionRelations.length} связей должностей для отдела ${deptId} (из ${allPositionRelations.length} всего)`);
+    
+    // Более подробное логирование связей
     positionRelations.forEach(rel => {
-      console.log(`- Связь: должность ${rel.position_id} подчиняется ${rel.parent_position_id}`);
+      const childPosition = positions.find(p => p.position_id === rel.position_id);
+      const parentPosition = positions.find(p => p.position_id === rel.parent_position_id);
+      
+      console.log(`- Связь: должность "${childPosition?.name}" (ID=${rel.position_id}) подчиняется "${parentPosition?.name}" (ID=${rel.parent_position_id})`);
+      
+      // Проверяем, находятся ли обе должности в текущем отделе
+      const childInThisDept = linked.some(p => p.position_id === rel.position_id);
+      const parentInThisDept = linked.some(p => p.position_id === rel.parent_position_id);
+      
+      if (!childInThisDept) {
+        console.log(`  ВНИМАНИЕ: Дочерняя должность "${childPosition?.name}" (ID=${rel.position_id}) НЕ НАЙДЕНА в отделе ${deptId}`);
+      }
+      
+      if (!parentInThisDept) {
+        console.log(`  ВНИМАНИЕ: Родительская должность "${parentPosition?.name}" (ID=${rel.parent_position_id}) НЕ НАЙДЕНА в отделе ${deptId}`);
+      }
     });
     
     // Проверка на случай, если дочерние должности не появляются
@@ -661,10 +689,9 @@ export default function OrganizationStructure() {
       }
       
       // Для должностей учитываем родительско-дочерние отношения в сортировке из таблицы position_position
-      // Получаем все связи position_position для текущего отдела
-      const positionPositions = positionPositionsR?.data?.filter(pp => 
-        !pp.deleted && pp.department_id === parentId
-      ) || [];
+      // Получаем ВСЕ связи position_position (не фильтруем по department_id)
+      // Это важно для корректной работы с должностями, у которых связи могут быть между разными отделами
+      const positionPositions = positionPositionsR?.data?.filter(pp => !pp.deleted) || [];
       
       return itemsToSort.sort((a, b) => {
         // Проверяем, является ли b родителем a в контексте текущего отдела
