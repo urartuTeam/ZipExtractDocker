@@ -1672,33 +1672,33 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       }
     });
     
-    // Специальная проверка для Генерального директора и Заместителя руководителя департамента
-    // Жестко задаем связь, которая должна быть всегда (по данным из БД)
-    const genDirectorPosition = positions.find(p => p.position_id === 43); // Генеральный директор
-    const zamRukPosition = positions.find(p => p.position_id === 39); // Заместитель руководителя департамента
-    
-    if (genDirectorPosition && zamRukPosition) {
-      // Проверяем, не находится ли уже Ген.директор в подчинении у Зам.рук.
-      const genDirectorNode = rootNodes.find(
-        (node) => node.position.position_id === 43
-      );
+    // Проверяем, что все связи position_positions корректно применены
+    // Используем данные от уже существующего запроса
+    // Если данные о связях есть и есть корневые ноды
+    if (positionPositionsData && rootNodes.length > 0) {
+      // Получаем только актуальные связи (не удаленные)
+      const positionPositions = positionPositionsData.filter(pp => !pp.deleted);
       
-      const zamRukNode = rootNodes.find(
-        (node) => node.position.position_id === 39
-      );
-      
-      // Если оба узла существуют и Ген.директор все еще в корне дерева
-      if (genDirectorNode && zamRukNode) {
-        const genDirectorIndex = rootNodes.findIndex(
-          (node) => node.position.position_id === 43
-        );
+      // Обрабатываем каждую связь между должностями
+      positionPositions.forEach(pp => {
+        const childId = pp.position_id;
+        const parentId = pp.parent_position_id;
         
-        if (genDirectorIndex !== -1) {
-          console.log("Устанавливаем жесткую связь: Ген.директор -> Зам.рук.департамента");
-          const childNode = rootNodes.splice(genDirectorIndex, 1)[0];
-          zamRukNode.subordinates.push(childNode);
+        // Находим узлы, соответствующие связи
+        const childNode = rootNodes.find(node => node.position.position_id === childId);
+        const parentNode = rootNodes.find(node => node.position.position_id === parentId);
+        
+        // Если оба узла найдены в корневых, то перемещаем дочерний под родительский
+        if (childNode && parentNode) {
+          const childIndex = rootNodes.findIndex(node => node.position.position_id === childId);
+          
+          if (childIndex !== -1) {
+            console.log(`Применяем связь из API: "${childNode.position.name}" -> "${parentNode.position.name}"`);
+            const childNodeObj = rootNodes.splice(childIndex, 1)[0];
+            parentNode.subordinates.push(childNodeObj);
+          }
         }
-      }
+      });
     }
 
     console.log("Построено", rootNodes.length, "корневых узлов");
