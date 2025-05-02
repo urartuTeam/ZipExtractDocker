@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { TreeNode } from "./TreeService";
+// Определяем тип TreeNode локально, чтобы не зависеть от импорта
+type TreeNode = {
+  id: string;
+  name: string;
+  type: "department" | "position";
+  children: TreeNode[];
+};
 import { cn } from "@/lib/utils";
 import { FolderIcon, BriefcaseIcon, ChevronDown, ChevronRight } from "lucide-react";
 

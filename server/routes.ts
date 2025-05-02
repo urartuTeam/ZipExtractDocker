@@ -2088,11 +2088,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/tree", isAuthenticated, async (req, res) => {
+  app.get("/api/tree", async (req, res) => {
     try {
       const tree = await import("./treeService").then((m) => m.fetchTree());
       res.json({ status: "success", data: tree });
-    } catch (e) {
+    } catch (e: any) {
       res.status(500).json({ status: "error", message: e.message });
     }
   });

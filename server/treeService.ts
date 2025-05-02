@@ -13,8 +13,8 @@ export async function fetchTree(): Promise<TreeNode[]> {
   // Получаем все необходимые данные из базы
   const depts = await db.select().from(departments).where(eq(departments.deleted, false));
   const poses = await db.select().from(positions).where(eq(positions.deleted, false));
-  const pd = await db.select().from(positionDepartments).where(eq(positionDepartments.deleted, false));
-  const pp = await db.select().from(positionPositions).where(eq(positionPositions.deleted, false));
+  const pd = await db.select().from(position_department).where(eq(position_department.deleted, false));
+  const pp = await db.select().from(position_position).where(eq(position_position.deleted, false));
 
   // Создаем карты для быстрого доступа
   const deptMap = new Map(
@@ -54,7 +54,7 @@ export async function fetchTree(): Promise<TreeNode[]> {
   const childPos = new Map<number, TreeNode[]>();
   pp.forEach((r) => {
     const pos = posMap.get(r.position_id);
-    if (pos) {
+    if (pos && r.parent_position_id !== null) {
       const node: TreeNode = {
         id: `p${r.position_id}`,
         name: pos.name,
