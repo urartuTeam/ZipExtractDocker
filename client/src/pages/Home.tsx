@@ -84,10 +84,8 @@ export default function Home() {
       
       {/* Основной контент */}
       <div className="flex-1 p-4 bg-gray-100 overflow-auto">
-        {/* Организационная структура */}
+        {/* Только дерево организации */}
         <div className="bg-white rounded-md shadow-sm p-6 mb-8">
-          <h2 className="text-2xl font-bold mb-4 text-center text-[#a40000]">Организационная структура</h2>
-          
           {isLoading ? (
             <div className="space-y-4">
               <Skeleton className="h-12 w-1/2" />
@@ -96,38 +94,13 @@ export default function Home() {
               <Skeleton className="h-8 w-1/2 ml-8" />
             </div>
           ) : (
-            <Tabs defaultValue="new-structure" className="w-full">
-              <TabsList className="grid w-full max-w-md mx-auto grid-cols-4 mb-4">
-                <TabsTrigger value="new-structure">Новая структура</TabsTrigger>
-                <TabsTrigger value="tree">Горизонтальное</TabsTrigger>
-                <TabsTrigger value="vertical">Вертикальное</TabsTrigger>
-                <TabsTrigger value="legacy">Прежний вид</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="new-structure" className="border rounded-md p-4">
-                <AdminStructureView />
-              </TabsContent>
-              
-              <TabsContent value="tree" className="border rounded-md p-4">
-                <TreeView onNodeSelect={(id, type) => {
-                  console.log(`Выбран узел: ${id}, тип: ${type}`);
-                }} />
-              </TabsContent>
-              
-              <TabsContent value="vertical" className="border rounded-md p-4">
-                <VerticalTreeView onNodeSelect={(id, type) => {
-                  console.log(`Выбран узел: ${id}, тип: ${type}`);
-                }} />
-              </TabsContent>
-              
-              <TabsContent value="legacy" className="flex justify-center">
-                <OrganizationTree
-                  departmentsData={departments}
-                  positionsData={positionsWithDepartments}
-                  employeesData={employees}
-                />
-              </TabsContent>
-            </Tabs>
+            <div className="flex justify-center">
+              <OrganizationTree
+                departmentsData={departments}
+                positionsData={positionsWithDepartments}
+                employeesData={employees}
+              />
+            </div>
           )}
         </div>
 
