@@ -1351,6 +1351,61 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         }
       }
     }
+    
+    // Аналогично обрабатываем связь между Начальником управления и Заместителем начальника управления
+    const headPosition = positions.find(
+      (p) => p.name === "Начальник управления",
+    );
+    const deputyHeadPosition = positions.find(
+      (p) => p.name === "Заместитель начальника управления",
+    );
+
+    if (headPosition && deputyHeadPosition) {
+      console.log(
+        `Найдены должности "Начальник управления" (ID: ${headPosition.position_id}) и "Заместитель начальника управления" (ID: ${deputyHeadPosition.position_id})`,
+      );
+
+      // Проверяем, является ли Заместитель начальника управления подчиненным Начальника управления
+      const headNode = positionNodes[headPosition.position_id];
+      const deputyHeadNode = positionNodes[deputyHeadPosition.position_id];
+
+      if (headNode && deputyHeadNode) {
+        // Проверяем текущую иерархию
+        const deputyHeadIsSubordinateToHead = headNode.subordinates.some(
+          (sub) =>
+            sub.position.position_id === deputyHeadPosition.position_id,
+        );
+
+        if (!deputyHeadIsSubordinateToHead) {
+          console.log(
+            `Добавляем "Заместитель начальника управления" как подчиненного "Начальнику управления"`,
+          );
+          headNode.subordinates.push(deputyHeadNode);
+
+          // Удаляем Заместителя начальника управления из корневых узлов, если он там есть
+          const deputyHeadIndex = rootNodes.findIndex(
+            (node) =>
+              node.position.position_id === deputyHeadPosition.position_id,
+          );
+          if (deputyHeadIndex !== -1) {
+            rootNodes.splice(deputyHeadIndex, 1);
+          }
+
+          // Также удаляем Заместителя начальника управления из подчиненных любых других узлов (кроме Начальника управления)
+          Object.values(positionNodes).forEach((node) => {
+            if (node.position.position_id !== headPosition.position_id) {
+              const subIndex = node.subordinates.findIndex(
+                (sub) => sub.position.position_id === deputyHeadPosition.position_id
+              );
+              if (subIndex !== -1) {
+                console.log(`Удаляем "Заместитель начальника управления" из подчиненных должности "${node.position.name}"`);
+                node.subordinates.splice(subIndex, 1);
+              }
+            }
+          });
+        }
+      }
+    }
 
     console.log(`Построено ${rootNodes.length} корневых узлов`);
     // Выводим информацию о корневых узлах
