@@ -1300,7 +1300,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     console.log("Проверяем корректность построенных связей на основе связей position_positions...");
     
     // Проходим по всем позициям и убеждаемся, что их parent_position_id правильно отображен в иерархии
-    positionRelations.forEach((relation) => {
+    hierarchyRelations.forEach((relation) => {
       const childId = relation.position_id;
       const parentId = relation.parent_position_id;
       
@@ -1321,7 +1321,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         
         if (!isAlreadySubordinate) {
           console.log(
-            `Добавляем связь из positionRelations: "${childNode.position.name}" (ID: ${childId}) подчиняется "${parentNode.position.name}" (ID: ${parentId}) в отделе ${relation.department_id}`
+            `Добавляем связь из иерархии: "${childNode.position.name}" (ID: ${childId}) подчиняется "${parentNode.position.name}" (ID: ${parentId}) в отделе ${relation.department_id}`
           );
           
           // Добавляем связь
