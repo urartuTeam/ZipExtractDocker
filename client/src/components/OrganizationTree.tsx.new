@@ -1,0 +1,426 @@
+import React, { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import UnifiedPositionCard from "./UnifiedPositionCard";
+import DisplaySettings from "./DisplaySettings";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft } from "lucide-react";
+
+// Тип данных для информации о сотруднике
+type EmployeeInfo = {
+  id: number;
+  fullName: string;
+};
+
+// Определяем тип TreeNode для API /api/tree
+type TreeNode = {
+  id: string;
+  name: string;
+  type: "department" | "position";
+  children: TreeNode[];
+  sort: number;
+  // Дополнительные поля
+  positionId?: number;
+  departmentId?: number;
+  employee?: EmployeeInfo;
+};
+
+// Для совместимости с UnifiedPositionCard
+type PositionHierarchyNode = {
+  position: {
+    position_id: number;
+    name: string;
+  };
+  employees: {
+    employee_id: number;
+    full_name: string;
+    position_id: number | null;
+    department_id: number | null;
+  }[];
+  subordinates: PositionHierarchyNode[];
+};
+
+// Для типов props компонента
+type Department = {
+  department_id: number;
+  name: string;
+  parent_department_id: number | null;
+  parent_position_id: number | null;
+};
+
+type Position = {
+  position_id: number;
+  name: string;
+  parent_position_id?: number | null;
+  department_id?: number | null;
+};
+
+type Employee = {
+  employee_id: number;
+  full_name: string;
+  position_id: number | null;
+  department_id: number | null;
+  manager_id: number | null;
+};
+
+// Компонент для отображения дерева организационной структуры
+const PositionTree = ({
+  nodes,
+  onPositionClick,
+  selectedPositionId,
+  showThreeLevels = false,
+  showVacancies = false,
+}: {
+  nodes: PositionHierarchyNode[];
+  onPositionClick?: (positionId: number) => void;
+  selectedPositionId?: number;
+  showThreeLevels?: boolean;
+  showVacancies?: boolean;
+}) => {
+  // Проверяем, есть ли хотя бы одна действительная должность
+  const validNodes = nodes.filter((node) => node && node.position);
+
+  // Берем первую должность для основной ветви (если есть)
+  const firstNode = validNodes.length > 0 ? validNodes[0] : null;
+
+  // Остальные должности верхнего уровня
+  const otherNodes = validNodes.length > 0 ? validNodes.slice(1) : [];
+
+  // Определяем, является ли это первичным показом организационного дерева с самой вершины
+  const isRootView = !selectedPositionId;
+
+  useEffect(() => {
+    const calculateWidthsRecursively = (container: HTMLElement): number => {
+      const branches = container.querySelectorAll<HTMLElement>(
+        ":scope > .subordinate-branch",
+      );
+      if (branches.length === 0) return 0;
+
+      let totalWidth = 0;
+
+      branches.forEach((branch) => {
+        const childSubContainer = branch.querySelector<HTMLElement>(
+          ":scope > .subordinates-container",
+        );
+        let branchWidth = 0;
+
+        if (childSubContainer) {
+          const childWidth = calculateWidthsRecursively(childSubContainer);
+          branchWidth = childWidth;
+          branch.style.width = `${childWidth}px`;
+        } else {
+          branchWidth = 240;
+          branch.style.width = "240px";
+        }
+
+        totalWidth += branchWidth + 20;
+      });
+
+      const line = container.querySelector<HTMLElement>(".tree-branch-line");
+      if (line) {
+        const first = branches[0]?.offsetWidth || 0;
+        const last = branches[branches.length - 1]?.offsetWidth || 0;
+        const totalLine = totalWidth - (first + last) / 2 - 20;
+        line.style.width = `${totalLine}px`;
+        line.style.left = `${first / 2 + 10}px`;
+      }
+
+      return totalWidth;
+    };
+
+    const recalc = () => {
+      document
+        .querySelectorAll<HTMLElement>(".subordinates-container")
+        .forEach((container) => {
+          calculateWidthsRecursively(container);
+        });
+    };
+
+    // Отложенный запуск после первого рендера
+    requestAnimationFrame(() => {
+      setTimeout(recalc, 0);
+    });
+
+    recalc();
+    window.addEventListener("resize", recalc);
+    return () => window.removeEventListener("resize", recalc);
+  }, [nodes, showThreeLevels]); // Добавили зависимость от showThreeLevels
+
+  return (
+    <div className="tree-node">
+      {firstNode && firstNode.position && (
+        <div className="tree-branch">
+          {/* Карточка первой должности верхнего уровня */}
+          <div className="tree-node-container">
+            <UnifiedPositionCard
+              node={firstNode}
+              onPositionClick={onPositionClick}
+              isTopLevel={isRootView} // Верхний уровень, если это корневой вид
+              showVacancies={showVacancies}
+            />
+          </div>
+
+          {/* Подчиненные первой должности */}
+          {firstNode.subordinates.length > 0 && (
+            <div className="subordinates-container">
+              <div className="tree-branch-connections">
+                {/* Горизонтальная линия */}
+                <div
+                  className="tree-branch-line"
+                  style={{
+                    width: `${Math.max(firstNode.subordinates.length * 120, 100)}px`,
+                  }}
+                ></div>
+              </div>
+
+              {/* Отображаем подчиненных */}
+              {firstNode.subordinates
+                .filter((sub) => sub && sub.position)
+                .map((subNode: PositionHierarchyNode, index: number) => (
+                  <div
+                    key={`${subNode.position.position_id}-${index}`}
+                    className="subordinate-branch"
+                  >
+                    <UnifiedPositionCard
+                      node={subNode}
+                      onPositionClick={onPositionClick}
+                      isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
+                      showVacancies={showVacancies}
+                    />
+
+                    {/* Рекурсивное отображение подчиненных подчиненного, если они есть И настройка позволяет (3 уровня) */}
+                    {subNode.subordinates.length > 0 && showThreeLevels && (
+                      <div className="subordinates-container">
+                        <div className="tree-branch-connections">
+                          <div
+                            className="tree-branch-line"
+                            style={{
+                              width: `${Math.max(subNode.subordinates.length * 120, 100)}px`,
+                            }}
+                          ></div>
+                        </div>
+
+                        {subNode.subordinates
+                          .filter((sub) => sub && sub.position)
+                          .map(
+                            (
+                              grandChild: PositionHierarchyNode,
+                              grandIndex: number,
+                            ) => (
+                              <div
+                                key={`${grandChild.position.position_id}-${grandIndex}`}
+                                className="subordinate-branch"
+                              >
+                                <UnifiedPositionCard
+                                  node={grandChild}
+                                  onPositionClick={onPositionClick}
+                                  isTopLevel={false} // Третий уровень не верхний
+                                  showVacancies={showVacancies}
+                                />
+                              </div>
+                            ),
+                          )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Отображаем остальные должности верхнего уровня */}
+      {otherNodes.map((node: PositionHierarchyNode, index: number) => (
+        <div
+          key={`${node.position.position_id}-${index}`}
+          className="tree-branch"
+          style={{ marginLeft: "30px" }}
+        >
+          <div className="tree-node-container">
+            <UnifiedPositionCard
+              node={node}
+              onPositionClick={onPositionClick}
+              isTopLevel={isRootView} // Верхний уровень, если это корневой вид
+              showVacancies={showVacancies}
+            />
+          </div>
+
+          {/* Подчиненные других должностей */}
+          {node.subordinates.length > 0 && (
+            <div className="subordinates-container">
+              <div className="tree-branch-connections">
+                <div
+                  className="tree-branch-line"
+                  style={{
+                    width: `${Math.max(node.subordinates.length * 120, 100)}px`,
+                  }}
+                ></div>
+              </div>
+
+              {node.subordinates
+                .filter((sub) => sub && sub.position)
+                .map((subNode: PositionHierarchyNode, subIndex: number) => (
+                  <div
+                    key={`${subNode.position.position_id}-${subIndex}`}
+                    className="subordinate-branch"
+                  >
+                    <UnifiedPositionCard
+                      node={subNode}
+                      onPositionClick={onPositionClick}
+                      showVacancies={showVacancies}
+                      isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
+                    />
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+type OrganizationTreeProps = {
+  initialPositionId?: number;
+  onPositionClick?: (positionId: number) => void;
+  departmentsData?: Department[];
+  positionsData?: any[];
+  employeesData?: Employee[];
+};
+
+const OrganizationTree: React.FC<OrganizationTreeProps> = ({
+  initialPositionId,
+  onPositionClick,
+}) => {
+  // Состояние для настроек отображения
+  const [showThreeLevels, setShowThreeLevels] = useState<boolean>(false);
+  const [showVacancies, setShowVacancies] = useState<boolean>(false);
+  
+  // Состояние для хранения текущей выбранной должности
+  const [selectedPositionId, setSelectedPositionId] = useState<number | undefined>(initialPositionId);
+  
+  // Состояние для хранения иерархии должностей
+  const [positionHierarchy, setPositionHierarchy] = useState<PositionHierarchyNode[]>([]);
+  
+  // Запрос настроек для получения количества показываемых уровней иерархии
+  const { data: settingsResponse, isError } = useQuery<{status: string, data: any[]}>({
+    queryKey: ['/api/settings'],
+    retry: false // Не повторять запрос в случае ошибки
+  });
+  
+  // Получаем настройки из ответа или используем значение по умолчанию
+  const defaultLevels = 2; // По умолчанию 2 уровня
+  
+  // Пытаемся получить настройку из ответа API
+  const hierarchyInitialLevels = settingsResponse?.data
+    ? settingsResponse.data.find((item: any) => item.data_key === 'hierarchy_initial_levels')?.data_value || defaultLevels
+    : defaultLevels;
+  
+  // Инициализируем состояние showThreeLevels на основе настроек
+  useEffect(() => {
+    const threeLevels = Number(hierarchyInitialLevels) === 3;
+    setShowThreeLevels(threeLevels);
+  }, [hierarchyInitialLevels]);
+  
+  // Обработчики для изменения настроек отображения
+  const handleThreeLevelsChange = (value: boolean) => {
+    setShowThreeLevels(value);
+  };
+  
+  const handleShowVacanciesChange = (value: boolean) => {
+    setShowVacancies(value);
+  };
+  
+  // Получаем данные от API /api/tree
+  const { data: treeData, isLoading, error } = useQuery<{status: string, data: TreeNode[]}>({
+    queryKey: ["/api/tree"],
+    staleTime: 60000, // кэшировать данные на 1 минуту
+  });
+  
+  // Конвертируем данные из API дерева в формат, понятный нашему компоненту PositionTree
+  useEffect(() => {
+    if (treeData?.data) {
+      // Преобразуем дерево из API в формат PositionHierarchyNode
+      const convertTreeToPositionHierarchy = (node: TreeNode): PositionHierarchyNode => {
+        // Создаем объект типа Position
+        const position = {
+          position_id: node.positionId || parseInt(node.id.substring(1)), // Извлекаем ID из строки id
+          name: node.name,
+        };
+        
+        // Создаем массив сотрудников (если есть)
+        const employees = node.employee 
+          ? [{
+              employee_id: node.employee.id,
+              full_name: node.employee.fullName,
+              position_id: node.positionId || null,
+              department_id: node.departmentId || null,
+            }]
+          : [];
+        
+        // Рекурсивно преобразуем дочерние узлы
+        const subordinates = node.children
+          .filter(child => child.type === 'position') // Фильтруем только должности
+          .map(convertTreeToPositionHierarchy);
+        
+        return {
+          position,
+          employees,
+          subordinates,
+        };
+      };
+      
+      // Находим все узлы типа position верхнего уровня
+      const topLevelPositions = treeData.data
+        .flatMap(department => department.children)
+        .filter(node => node.type === 'position')
+        .map(convertTreeToPositionHierarchy);
+      
+      setPositionHierarchy(topLevelPositions);
+    }
+  }, [treeData]);
+  
+  // Обработчик для выбора должности
+  const handlePositionSelected = (positionId: number) => {
+    if (onPositionClick) {
+      onPositionClick(positionId);
+    }
+    setSelectedPositionId(positionId);
+  };
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center p-8">Загрузка структуры организации...</div>;
+  }
+  
+  if (error) {
+    return <div className="text-red-500 p-4">Ошибка загрузки данных: {(error as Error).message}</div>;
+  }
+  
+  if (!treeData || !treeData.data || treeData.data.length === 0) {
+    return <div className="p-4">Нет данных для отображения</div>;
+  }
+  
+  return (
+    <div className="organization-tree-container">
+      {/* Настройки отображения */}
+      <div className="mb-4">
+        <DisplaySettings
+          showThreeLevels={showThreeLevels}
+          onThreeLevelsChange={handleThreeLevelsChange}
+          showVacancies={showVacancies}
+          onShowVacanciesChange={handleShowVacanciesChange}
+        />
+      </div>
+      
+      {/* Дерево организационной структуры */}
+      <PositionTree
+        nodes={positionHierarchy}
+        onPositionClick={handlePositionSelected}
+        selectedPositionId={selectedPositionId}
+        showThreeLevels={showThreeLevels}
+        showVacancies={showVacancies}
+      />
+    </div>
+  );
+};
+
+export default OrganizationTree;
