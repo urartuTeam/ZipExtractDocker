@@ -87,7 +87,7 @@ export default function OrganizationTree({
   
   // Получаем настройки отображения уровней иерархии
   const settingsData = settingsResponse?.data || [];
-  const hierarchyLevelsSetting = settingsData.find(item => item.data_key === 'hierarchy_levels');
+  const hierarchyLevelsSetting = settingsData.find(item => item?.data_key === 'hierarchy_levels');
   const hierarchyLevels = hierarchyLevelsSetting ? Number(hierarchyLevelsSetting.data_value) : 2;
   
   useEffect(() => {
@@ -183,7 +183,7 @@ export default function OrganizationTree({
   let adminPositions: Position[] = [];
   
   if (rootDepartment) {
-    // Корневые должности - это должности, которые не имеют родителя в данном отделе согласно табилцы position_position
+    // Корневые должности - это должности, которые не имеют родителя в данном отделе согласно таблицы position_position
     // или имеют привязку к отделу через position_department или employees
     adminPositions = positions.filter(position => {
       // Проверяем, есть ли привязка к отделу через departments
@@ -223,28 +223,18 @@ export default function OrganizationTree({
   
   console.log("Построено", hierarchyNodes.length, "корневых узлов");
   
-  // Вспомогательный компонент для отображения карточки должности
-  const PositionCard = ({ 
-    position, 
-    employee, 
-    isTopLevel = false, 
-    onClick 
-  }: { 
-    position: Position, 
-    employee: Employee | null, 
-    isTopLevel?: boolean,
-    onClick?: () => void 
-  }) => {
+  // Функция для рендеринга карточки должности с сотрудником
+  const renderPositionCard = (node: PositionHierarchyNode, isTopLevel = false) => {
     return (
       <div 
         className={`position-card ${isTopLevel ? 'topTopPositionClass' : 'positionClass'}`}
-        onClick={onClick}
+        onClick={() => onPositionClick && onPositionClick(node.position.position_id)}
       >
-        <div className="position-title">{position.name}</div>
+        <div className="position-title">{node.position.name}</div>
         <div className={`position-divider ${isTopLevel ? 'topTopPositionClass' : ''}`}></div>
-        {employee ? (
+        {node.employee ? (
           <div className="position-name">
-            <span className="employee-name">{employee.full_name}</span>
+            <span className="employee-name">{node.employee.full_name}</span>
           </div>
         ) : (
           <div className="position-name">
@@ -255,123 +245,80 @@ export default function OrganizationTree({
     );
   };
   
-  // Функция для получения настроек отображения
-  console.log("Настройки уровней иерархии:", `${hierarchyLevels}`);
-  
-  // Референс для горизонтального скролла
-  const scrollRef = useRef<HTMLDivElement>(null);
-  
-  // Рендерим иерархию должностей в виде дерева
-  const renderOrgChart = () => {
-    // Проверяем, есть ли что отображать
-    if (hierarchyNodes.length === 0) {
-      return (
-        <div className="text-center p-8">
-          <div className="text-lg text-gray-500">Организационная структура не настроена</div>
-        </div>
-      );
-    }
-    
-    // Берем первую должность для основной ветви
-    const firstNode = hierarchyNodes[0];
-    const otherNodes = hierarchyNodes.slice(1);
-    
-    return (
-      <div className="org-chart overflow-auto" ref={scrollRef}>
-        {/* Верхний блок с первой должностью (обычно руководитель) */}
-        {firstNode && (
-          <div className="org-tree-top">
-            <div className="top-position">
-              <div className="top-position-title">{firstNode.position.name}</div>
-              <div className="position-divider"></div>
-              {firstNode.employee ? (
-                <div className="top-position-name">{firstNode.employee.full_name}</div>
-              ) : (
-                <div className="top-position-name position-vacant">Вакантная должность</div>
-              )}
-            </div>
-            
-            {/* Вертикальная линия */}
-            <div className="org-vertical-line"></div>
-          </div>
-        )}
-        
-        {/* Второй уровень - прямые подчиненные руководителя */}
-        {firstNode && firstNode.subordinates.length > 0 && (
-          <div className="org-level-1">
-            <div className="position-cards">
-              {firstNode.subordinates.map((subNode, index) => (
-                <div key={`sub-${subNode.position.position_id}`} className="org-branch">
-                  <PositionCard 
-                    position={subNode.position}
-                    employee={subNode.employee}
-                    onClick={() => onPositionClick && onPositionClick(subNode.position.position_id)}
-                  />
-                  
-                  {/* Если есть подчиненные третьего уровня и включен показ третьего уровня */}
-                  {showThreeLevels && subNode.subordinates.length > 0 && (
-                    <div className="subordinates-container">
-                      {subNode.subordinates.map((grandChild, grandIndex) => (
-                        <div 
-                          key={`grand-${grandChild.position.position_id}`} 
-                          className="subordinate-branch"
-                        >
-                          <PositionCard 
-                            position={grandChild.position}
-                            employee={grandChild.employee}
-                            onClick={() => onPositionClick && onPositionClick(grandChild.position.position_id)}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Третий уровень - остальные должности верхнего уровня */}
-        {otherNodes.length > 0 && (
-          <div className="org-level-2">
-            <div className="branch-group">
-              {otherNodes.map((node, index) => (
-                <div key={`other-${node.position.position_id}`} className="branch">
-                  <PositionCard 
-                    position={node.position}
-                    employee={node.employee}
-                    onClick={() => onPositionClick && onPositionClick(node.position.position_id)}
-                  />
-                  
-                  {/* Если есть подчиненные и включен показ дополнительных уровней */}
-                  {showThreeLevels && node.subordinates.length > 0 && (
-                    <div className="subordinates-container">
-                      {node.subordinates.map((subNode, subIndex) => (
-                        <div 
-                          key={`other-sub-${subNode.position.position_id}`} 
-                          className="subordinate-branch"
-                        >
-                          <PositionCard 
-                            position={subNode.position}
-                            employee={subNode.employee}
-                            onClick={() => onPositionClick && onPositionClick(subNode.position.position_id)}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-  
+  // Рендерим дерево организационной структуры
   return (
     <div className="org-tree-container">
-      {renderOrgChart()}
+      <div className="org-chart">
+        {hierarchyNodes.length === 0 ? (
+          <div className="text-center p-8">
+            <div className="text-lg text-gray-500">Организационная структура не настроена</div>
+          </div>
+        ) : (
+          <>
+            {/* Верхняя должность */}
+            {hierarchyNodes[0] && (
+              <div className="org-tree-top">
+                <div className="top-position">
+                  <div className="top-position-title">{hierarchyNodes[0].position.name}</div>
+                  <div className="position-divider"></div>
+                  {hierarchyNodes[0].employee ? (
+                    <div className="top-position-name">{hierarchyNodes[0].employee.full_name}</div>
+                  ) : (
+                    <div className="top-position-name position-vacant">Вакантная должность</div>
+                  )}
+                </div>
+                <div className="org-vertical-line"></div>
+              </div>
+            )}
+            
+            {/* Подчиненные верхней должности */}
+            {hierarchyNodes[0] && hierarchyNodes[0].subordinates.length > 0 && (
+              <div className="org-level org-level-1">
+                {hierarchyNodes[0].subordinates.map((node, index) => (
+                  <div key={`l1-${node.position.position_id}`} className="branch">
+                    {renderPositionCard(node)}
+                    
+                    {/* Подчиненные 2-го уровня */}
+                    {node.subordinates.length > 0 && showThreeLevels && (
+                      <div className="subordinates-container">
+                        {node.subordinates.map((subNode, subIndex) => (
+                          <div key={`l2-${subNode.position.position_id}`} className="subordinate-branch">
+                            {renderPositionCard(subNode)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {/* Остальные должности верхнего уровня */}
+            {hierarchyNodes.length > 1 && (
+              <div className="org-level org-level-2">
+                <div className="branch-group">
+                  {hierarchyNodes.slice(1).map((node, index) => (
+                    <div key={`top-${node.position.position_id}`} className="branch">
+                      {renderPositionCard(node)}
+                      
+                      {/* Подчиненные других должностей верхнего уровня */}
+                      {node.subordinates.length > 0 && showThreeLevels && (
+                        <div className="subordinates-container">
+                          {node.subordinates.map((subNode, subIndex) => (
+                            <div key={`other-${subNode.position.position_id}`} className="subordinate-branch">
+                              {renderPositionCard(subNode)}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
