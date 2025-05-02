@@ -1685,6 +1685,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         if (childIndex !== -1) {
           const childNode = rootNodes.splice(childIndex, 1)[0];
           positionMap[parentId].subordinates.push(childNode);
+          console.log(
+            `Перемещаем должность ${childId} в подчиненные к ${parentId}`,
+          );
         }
       }
     });
