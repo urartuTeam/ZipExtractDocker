@@ -1277,13 +1277,29 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Находим корневые узлы, используя собранный set childPositions
     const rootNodes: PositionHierarchyNode[] = [];
 
+    // Получаем информацию о том, какие позиции должны быть на корневом уровне
+    // На корневом уровне должны быть позиции, у которых is_subordinate = false
+    // из данных API (это указывается в `/api/positions/with-departments`)
+    
     // Проходим по всем узлам и проверяем, не являются ли они дочерними
     Object.entries(positionNodes).forEach(([positionId, node]) => {
-      // Если позиция не в множестве дочерних и у нее есть subordinates, то это корневой узел
-      if (!childPositions.has(parseInt(positionId))) {
+      // Находим расширенную информацию о позиции из API
+      const posWithDeptInfo = positionsWithDepartments.find(
+        p => p.position_id === parseInt(positionId)
+      );
+      
+      // Проверяем, является ли позиция дочерней (подчиненной) на основе данных из API
+      const isSubordinate = posWithDeptInfo?.is_subordinate === true;
+      
+      // Если позиция не подчиненная (не имеет родителей в position_position), то это корневая позиция
+      if (!isSubordinate) {
         rootNodes.push(node);
         console.log(
           `Добавлена корневая должность: "${node.position.name}" (ID: ${positionId}) с ${node.subordinates.length} подчиненными`,
+        );
+      } else {
+        console.log(
+          `Должность "${node.position.name}" (ID: ${positionId}) НЕ добавлена как корневая, потому что является подчиненной`,
         );
       }
     });

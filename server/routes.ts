@@ -276,60 +276,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const key = `${sortItem.type_id}_${sortItem.parent_id || 'null'}`;
         sortMap.set(key, sortItem.sort);
       }
-      
-      // Находим все дочерние должности (их нужно исключить)
-      const childPositionIds = new Set<number>();
-      positionPositions.forEach(relation => {
-        // Добавляем ID дочерней должности в набор для исключения
-        childPositionIds.add(relation.position_id);
-      });
-      
-      console.log('Исключаем подчиненные должности из списка:', Array.from(childPositionIds));
-      
-      // Создаем обогащенный список должностей с отделами, исключая дочерние должности
-      const positionsWithDepts = positions
-        .filter(position => !childPositionIds.has(position.position_id)) // Исключаем подчиненные должности
-        .map(position => {
-          // Находим все связи position_department для данной должности
-          const links = positionDepartments.filter(pd => pd.position_id === position.position_id);
+
+      // Создаем обогащенный список должностей с отделами и связями
+      const positionsWithDepts = positions.map(position => {
+        // Находим все связи position_department для данной должности
+        const links = positionDepartments.filter(pd => pd.position_id === position.position_id);
+        
+        // Находим соответствующие отделы из связей в таблице position_department
+        const linkedDepartments = links.map(link => {
+          const dept = departments.find(d => d.department_id === link.department_id);
           
-          // Находим соответствующие отделы из связей в таблице position_department
-          const linkedDepartments = links.map(link => {
-            const dept = departments.find(d => d.department_id === link.department_id);
-            
-            // Находим родительскую должность для этой должности в этом отделе
-            const parentPositionRelation = positionPositions.find(pp => 
-              pp.position_id === position.position_id && 
-              pp.department_id === link.department_id
-            );
-            
-            // Информация о родительской должности, если есть
-            let parentPositionInfo = null;
-            if (parentPositionRelation) {
-              const parentPosition = positions.find(p => p.position_id === parentPositionRelation.parent_position_id);
-              if (parentPosition) {
-                parentPositionInfo = {
-                  position_id: parentPosition.position_id,
-                  name: parentPosition.name
-                };
-              }
+          // Находим родительскую должность для этой должности в этом отделе из position_position
+          const parentPositionRelation = positionPositions.find(pp => 
+            pp.position_id === position.position_id && 
+            pp.department_id === link.department_id
+          );
+          
+          // Информация о родительской должности, если есть
+          let parentPositionInfo = null;
+          if (parentPositionRelation) {
+            const parentPosition = positions.find(p => p.position_id === parentPositionRelation.parent_position_id);
+            if (parentPosition) {
+              parentPositionInfo = {
+                position_id: parentPosition.position_id,
+                name: parentPosition.name
+              };
             }
-            
-            return {
-              position_link_id: link.position_link_id,
-              department_id: link.department_id,
-              department_name: dept?.name || 'Неизвестный отдел',
-              sort: link.sort,
-              vacancies: link.vacancies || 0,
-              parent_position: parentPositionInfo
-            };
-          });
+          }
           
           return {
-            ...position,
-            departments: linkedDepartments
+            position_link_id: link.position_link_id,
+            department_id: link.department_id,
+            department_name: dept?.name || 'Неизвестный отдел',
+            sort: link.sort,
+            vacancies: link.vacancies || 0,
+            parent_position: parentPositionInfo
           };
         });
+
+        // Добавляем информацию о родительских должностях из position_position
+        // Это информация о том, кому подчиняется эта должность
+        const parentRelations = positionPositions.filter(pp => pp.position_id === position.position_id);
+        const parentPositionsInfo = parentRelations.map(relation => {
+          const parentPosition = positions.find(p => p.position_id === relation.parent_position_id);
+          if (parentPosition) {
+            return {
+              position_id: parentPosition.position_id,
+              name: parentPosition.name,
+              department_id: relation.department_id
+            };
+          }
+          return null;
+        }).filter(Boolean);
+        
+        // Получаем информацию о подчиненных должностях
+        const childrenRelations = positionPositions.filter(pp => pp.parent_position_id === position.position_id);
+        const childrenPositionsInfo = childrenRelations.map(relation => {
+          const childPosition = positions.find(p => p.position_id === relation.position_id);
+          if (childPosition) {
+            return {
+              position_id: childPosition.position_id,
+              name: childPosition.name,
+              department_id: relation.department_id
+            };
+          }
+          return null;
+        }).filter(Boolean);
+        
+        return {
+          ...position,
+          departments: linkedDepartments,
+          parent_positions: parentPositionsInfo,
+          children_positions: childrenPositionsInfo,
+          // Добавляем флаг, указывающий, является ли должность подчиненной
+          is_subordinate: parentRelations.length > 0
+        };
+      });
       
       // Сортируем должности по sort_tree
       const sortedPositions = [...positionsWithDepts].sort((a, b) => {
