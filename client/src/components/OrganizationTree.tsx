@@ -421,136 +421,71 @@ const PositionTree = ({
     return () => window.removeEventListener("resize", recalc);
   }, [nodes, showThreeLevels]); // Добавили зависимость от showThreeLevels
 
-  return (
-    <div className="tree-node">
-      {firstNode && firstNode.position && (
-        <div className="tree-branch">
-          {/* Карточка первой должности верхнего уровня */}
-          <div className="tree-node-container">
-            <UnifiedPositionCard
-              node={firstNode}
-              onPositionClick={onPositionClick}
-              isTopLevel={isRootView} // Верхний уровень, если это корневой вид
-              showVacancies={showVacancies}
-            />
-          </div>
-
-          {/* Подчиненные первой должности */}
-          {firstNode.subordinates.length > 0 && (
-            <div className="subordinates-container">
-              <div className="tree-branch-connections">
-                {/* Горизонтальная линия */}
-                <div
-                  className="tree-branch-line"
-                  style={{
-                    width: `${Math.max(firstNode.subordinates.length * 120, 100)}px`,
-                  }}
-                ></div>
-              </div>
-
-              {/* Отображаем подчиненных */}
-              {firstNode.subordinates
-                .filter((sub) => sub && sub.position)
-                .map((subNode: PositionHierarchyNode, index: number) => (
-                  <div
-                    key={`${subNode.position.position_id}-${index}`}
-                    className="subordinate-branch"
-                  >
-                    <UnifiedPositionCard
-                      node={subNode}
-                      onPositionClick={onPositionClick}
-                      isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
-                      showVacancies={showVacancies}
-                    />
-
-                    {/* Рекурсивное отображение подчиненных подчиненного, если они есть И настройка позволяет (3 уровня) */}
-                    {subNode.subordinates.length > 0 && showThreeLevels && (
-                      <div className="subordinates-container">
-                        <div className="tree-branch-connections">
-                          <div
-                            className="tree-branch-line"
-                            style={{
-                              width: `${Math.max(subNode.subordinates.length * 120, 100)}px`,
-                            }}
-                          ></div>
-                        </div>
-
-                        {subNode.subordinates
-                          .filter((sub) => sub && sub.position)
-                          .map(
-                            (
-                              grandChild: PositionHierarchyNode,
-                              grandIndex: number,
-                            ) => (
-                              <div
-                                key={`${grandChild.position.position_id}-${grandIndex}`}
-                                className="subordinate-branch"
-                              >
-                                <UnifiedPositionCard
-                                  node={grandChild}
-                                  onPositionClick={onPositionClick}
-                                  isTopLevel={false} // Третий уровень не верхний
-                                  showVacancies={showVacancies}
-                                />
-                              </div>
-                            ),
-                          )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Отображаем остальные должности верхнего уровня */}
-      {otherNodes.map((node: PositionHierarchyNode, index: number) => (
-        <div
-          key={`${node.position.position_id}-${index}`}
-          className="tree-branch"
-          style={{ marginLeft: "30px" }}
-        >
+  // Рекурсивная функция для рендеринга узлов (по аналогии с Tree.tsx)
+  const renderNode = (node: PositionHierarchyNode, depth: number, isFirstNode: boolean = false) => {
+    // Проверка на валидность узла
+    if (!node || !node.position) return null;
+    
+    const hasSubordinates = node.subordinates && node.subordinates.length > 0;
+    const isDepartment = node.position.name.includes("(отдел)");
+    
+    // Для определения глубины иерархии используем настройки:
+    // - Если depth=0, это верхний уровень
+    // - Если depth=1, это второй уровень (показываем всегда)
+    // - Если depth=2, это третий уровень (показываем только если showThreeLevels=true)
+    const showThirdLevel = showThreeLevels && depth === 1; // Показываем третий уровень только если включена настройка
+    const isValidDepth = depth < 2 || (depth === 2 && showThirdLevel);
+    
+    // Определяем, является ли это позицией верхнего уровня для стилизации
+    const isTopLevelPosition = (isRootView && (depth === 0 || depth === 1)) || 
+                              (isFirstNode && depth === 0);
+    
+    return (
+      <div className="tree-node" key={`${node.position.position_id}-${depth}`}>
+        <div className="tree-branch" style={depth > 0 ? { marginLeft: "30px" } : {}}>
           <div className="tree-node-container">
             <UnifiedPositionCard
               node={node}
               onPositionClick={onPositionClick}
-              isTopLevel={isRootView} // Верхний уровень, если это корневой вид
+              isTopLevel={isTopLevelPosition}
               showVacancies={showVacancies}
             />
           </div>
-
-          {/* Подчиненные других должностей */}
-          {node.subordinates.length > 0 && (
+          
+          {/* Отображаем подчиненных только если они есть и глубина позволяет */}
+          {hasSubordinates && isValidDepth && (
             <div className="subordinates-container">
               <div className="tree-branch-connections">
                 <div
                   className="tree-branch-line"
                   style={{
-                    width: `${Math.max(node.subordinates.length * 120, 100)}px`,
+                    width: `${Math.max(node.subordinates.length * 240, 100)}px`,
                   }}
                 ></div>
               </div>
-
-              {node.subordinates
-                .filter((sub) => sub && sub.position)
-                .map((subNode: PositionHierarchyNode, subIndex: number) => (
-                  <div
-                    key={`${subNode.position.position_id}-${subIndex}`}
-                    className="subordinate-branch"
-                  >
-                    <UnifiedPositionCard
-                      node={subNode}
-                      onPositionClick={onPositionClick}
-                      showVacancies={showVacancies}
-                      isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
-                    />
-                  </div>
-                ))}
+              
+              <div 
+                className="subordinate-branch" 
+                style={{ width: node.subordinates.length * 240 }}
+              >
+                {node.subordinates
+                  .filter(sub => sub && sub.position)
+                  .map((subNode, index) => renderNode(subNode, depth + 1))}
+              </div>
             </div>
           )}
         </div>
-      ))}
+      </div>
+    );
+  };
+
+  return (
+    <div className="tree-root">
+      {/* Рендерим первый узел отдельно, чтобы пометить его как первый */}
+      {firstNode && renderNode(firstNode, 0, true)}
+      
+      {/* Рендерим остальные узлы */}
+      {otherNodes.map((node, index) => renderNode(node, 0))}
     </div>
   );
 };
