@@ -1402,6 +1402,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // чтобы получить ВСЕ связи (это важно для правильной иерархии)
     const departmentPositionLinks = positionPositionsData
       ?.filter((link: any) => !link.deleted) || [];
+      
+    // Логируем активные связи position_position
+    console.log("Активные связи position_position:", departmentPositionLinks.map((link: any) => 
+      `Должность ID ${link.position_id} подчиняется должности ID ${link.parent_position_id}`
+    ));
     
     // Жестко добавляем необходимые связи
     if (departmentPositionLinks.length === 0) {
@@ -1426,15 +1431,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         deleted_at: null
       });
       
-      departmentPositionLinks.push({
-        position_relation_id: 5,
-        position_id: 27,  // Главный специалист
-        parent_position_id: 23,  // Заместитель руководителя департамента
-        department_id: 17,
-        sort: 0,
-        deleted: false,
-        deleted_at: null
-      });
+      // Удалили жесткую привязку должности 27 к должности 23
     }
     
     // Создаем множество для отслеживания должностей, которые являются подчиненными другим должностям
