@@ -1132,30 +1132,41 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       const parentId = relation.parent_position_id;
       const deptId = relation.department_id;
 
-      // Находим родительскую должность
-      const parentNode = positionNodes[parentId];
-      // Находим узел текущей должности
-      const currentNode = positionNodes[childId];
+      // Создаем уникальные идентификаторы для родительского и дочернего узла, учитывая отдел
+      const childNodeUniqueId = deptId ? `p${childId}_d${deptId}` : `p${childId}`;
+      const parentNodeUniqueId = deptId ? `p${parentId}_d${deptId}` : `p${parentId}`;
+      
+      // Находим родительскую должность по уникальному ID или по обычному ID
+      const parentNode = positionNodes[parentNodeUniqueId] || positionNodes[parentId];
+      
+      // Находим узел текущей должности по уникальному ID или по обычному ID
+      const currentNode = positionNodes[childNodeUniqueId] || positionNodes[childId];
 
       if (parentNode && currentNode) {
         // Добавляем текущую должность как подчиненную к родительской
-        // Проверяем, не добавлен ли уже этот узел
-        if (
-          !parentNode.subordinates.some(
-            (sub) =>
-              sub.position.position_id === currentNode.position.position_id,
-          )
-        ) {
+        // Проверяем, не добавлен ли уже этот узел по uniqueId, если есть
+        const alreadyAdded = parentNode.subordinates.some(subNode => {
+          // Если у узлов есть uniqueId, сравниваем по ним
+          if (subNode.nodeUniqueId && currentNode.nodeUniqueId) {
+            return subNode.nodeUniqueId === currentNode.nodeUniqueId;
+          }
+          // Иначе сравниваем по position_id и departmentId (если есть)
+          return subNode.position.position_id === currentNode.position.position_id && 
+                 subNode.departmentId === currentNode.departmentId;
+        });
+
+        if (!alreadyAdded) {
           parentNode.subordinates.push(currentNode);
           // Помечаем, что это дочерняя должность
           childPositions.add(childId);
           console.log(
-            `Создана связь: "${currentNode.position.name}" (ID: ${childId}) подчиняется "${parentNode.position.name}" (ID: ${parentId}) в отделе ${deptId}`,
+            `Создана связь: "${currentNode.position.name}" (ID: ${childId}, uniqueId: ${currentNode.nodeUniqueId || 'none'}) ` + 
+            `подчиняется "${parentNode.position.name}" (ID: ${parentId}, uniqueId: ${parentNode.nodeUniqueId || 'none'}) в отделе ${deptId}`,
           );
         }
       } else {
         console.log(
-          `Не найдена родительская или дочерняя должность для связи: childId=${childId}, parentId=${parentId}, deptId=${deptId}`,
+          `Не найдена родительская или дочерняя должность для связи: childId=${childId} (${childNodeUniqueId}), parentId=${parentId} (${parentNodeUniqueId}), deptId=${deptId}`,
         );
       }
     });
