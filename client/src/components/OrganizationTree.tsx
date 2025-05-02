@@ -1520,69 +1520,13 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           // Используем positionsWithDepartments для поиска должностей, связанных с отделом
           let deptPositions = [];
 
-          // Специальная проверка для отдела "Управление цифрового развития" (ID=20)
-          if (department.department_id === 20) {
-            console.log(
-              `Выполняем специальную проверку для отдела "Управление цифрового развития" (ID=20)`,
-            );
+          // Поиск должностей для отдела в positionsWithDepartments
+          console.log(
+            `Обрабатываем отдел "${department.name}" (ID=${department.department_id})`,
+          );
 
-            // Поиск должностей в positionsWithDepartments
-            const digitalDeptPositions = positionsWithDepartments.filter(
-              (pos) =>
-                pos.departments &&
-                Array.isArray(pos.departments) &&
-                pos.departments.some((d: any) => d.department_id === 20),
-            );
-
-            console.log(
-              `Найдено ${digitalDeptPositions.length} должностей для "Управление цифрового развития"`,
-            );
-            digitalDeptPositions.forEach((pos) => {
-              console.log(`- Должность "${pos.name}" (ID: ${pos.position_id})`);
-            });
-
-            deptPositions = digitalDeptPositions;
-
-            // Если в positionsWithDepartments нет должностей для этого отдела,
-            // проверяем сотрудников
-            if (deptPositions.length === 0) {
-              deptPositions = positions.filter((pos) => {
-                const hasEmployees = employees.some(
-                  (emp) =>
-                    emp.position_id === pos.position_id &&
-                    emp.department_id === department.department_id,
-                );
-
-                if (hasEmployees) {
-                  console.log(
-                    `Найдена должность ${pos.name} (ID: ${pos.position_id}) для отдела ID=20 через сотрудников`,
-                  );
-                }
-
-                return hasEmployees;
-              });
-            }
-
-            // Явно ищем должность "Начальник управления" (ID=24)
-            if (!deptPositions.some((p) => p.position_id === 24)) {
-              const position24 = positions.find((p) => p.position_id === 24);
-              if (position24) {
-                console.log(
-                  `Добавляем должность "Начальник управления" (ID=24) в список должностей отдела`,
-                );
-                deptPositions.push(position24);
-              }
-            }
-          } else {
-            // Для остальных отделов - обычная логика
-            deptPositions = positions.filter((pos) => {
-              return employees.some(
-                (emp) =>
-                  emp.position_id === pos.position_id &&
-                  emp.department_id === department.department_id,
-              );
-            });
-          }
+          // Получаем должности для конкретного отдела с учетом связей
+          deptPositions = getDeptPositionsHierarchy(department.department_id);
 
           // Создаем псевдо-должность для отдела
           const deptAsPosition: Position = {
@@ -1728,33 +1672,46 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       }
     });
     
-    // Специальная проверка для Генерального директора и Заместителя руководителя департамента
-    // Жестко задаем связь, которая должна быть всегда (по данным из БД)
-    const genDirectorPosition = positions.find(p => p.position_id === 43); // Генеральный директор
-    const zamRukPosition = positions.find(p => p.position_id === 39); // Заместитель руководителя департамента
-    
-    if (genDirectorPosition && zamRukPosition) {
-      // Проверяем, не находится ли уже Ген.директор в подчинении у Зам.рук.
-      const genDirectorNode = rootNodes.find(
-        (node) => node.position.position_id === 43
-      );
+    // Проверяем, что все связи position_positions корректно применены
+    // С помощью API запроса получаем связи между должностями
+    const { data: positionPositionsResp } = useQuery<{
+      status: string;
+      data: {
+        position_relation_id: number;
+        position_id: number;
+        parent_position_id: number;
+        department_id: number;
+        deleted: boolean;
+      }[];
+    }>({
+      queryKey: ['/api/positionpositions'],
+    });
+
+    // Если данные о связях есть и есть корневые ноды
+    if (positionPositionsResp?.data && rootNodes.length > 0) {
+      // Получаем только актуальные связи (не удаленные)
+      const positionPositions = positionPositionsResp.data.filter(pp => !pp.deleted);
       
-      const zamRukNode = rootNodes.find(
-        (node) => node.position.position_id === 39
-      );
-      
-      // Если оба узла существуют и Ген.директор все еще в корне дерева
-      if (genDirectorNode && zamRukNode) {
-        const genDirectorIndex = rootNodes.findIndex(
-          (node) => node.position.position_id === 43
-        );
+      // Обрабатываем каждую связь между должностями
+      positionPositions.forEach(pp => {
+        const childId = pp.position_id;
+        const parentId = pp.parent_position_id;
         
-        if (genDirectorIndex !== -1) {
-          console.log("Устанавливаем жесткую связь: Ген.директор -> Зам.рук.департамента");
-          const childNode = rootNodes.splice(genDirectorIndex, 1)[0];
-          zamRukNode.subordinates.push(childNode);
+        // Находим узлы, соответствующие связи
+        const childNode = rootNodes.find(node => node.position.position_id === childId);
+        const parentNode = rootNodes.find(node => node.position.position_id === parentId);
+        
+        // Если оба узла найдены в корневых, то перемещаем дочерний под родительский
+        if (childNode && parentNode) {
+          const childIndex = rootNodes.findIndex(node => node.position.position_id === childId);
+          
+          if (childIndex !== -1) {
+            console.log(`Применяем связь из API: "${childNode.position.name}" -> "${parentNode.position.name}"`);
+            const childNodeObj = rootNodes.splice(childIndex, 1)[0];
+            parentNode.subordinates.push(childNodeObj);
+          }
         }
-      }
+      });
     }
 
     console.log("Построено", rootNodes.length, "корневых узлов");
