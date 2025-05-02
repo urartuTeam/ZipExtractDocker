@@ -1844,9 +1844,13 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
             </div>
           )}
 
-          {/* Временно скрываем настройки отображения, пока не исправим компонент */}
           <div className="display-settings-wrapper">
-            {/* Настройки будут добавлены позже */}
+            <DisplaySettings
+              showThreeLevels={showThreeLevels}
+              showVacancies={showVacancies}
+              onShowThreeLevelsChange={handleThreeLevelsChange}
+              onShowVacanciesChange={handleShowVacanciesChange}
+            />
           </div>
         </div>
 
