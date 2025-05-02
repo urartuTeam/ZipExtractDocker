@@ -1408,31 +1408,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       `Должность ID ${link.position_id} подчиняется должности ID ${link.parent_position_id}`
     ));
     
-    // Жестко добавляем необходимые связи
-    if (departmentPositionLinks.length === 0) {
-      // Если связи не пришли из API, задаем их жестко по требуемой логике
-      departmentPositionLinks.push({
-        position_relation_id: 1,
-        position_id: 36,  // Генеральный директор
-        parent_position_id: 23,  // Заместитель руководителя департамента
-        department_id: 17,
-        sort: 0,
-        deleted: false,
-        deleted_at: null
-      });
-      
-      departmentPositionLinks.push({
-        position_relation_id: 4,
-        position_id: 26,  // Главный эксперт
-        parent_position_id: 23,  // Заместитель руководителя департамента
-        department_id: 17,
-        sort: 0,
-        deleted: false,
-        deleted_at: null
-      });
-      
-      // Удалили жесткую привязку должности 27 к должности 23
-    }
+    // Удалили весь блок жестких связей
+    // Теперь компонент будет использовать только связи из базы данных
     
     // Создаем множество для отслеживания должностей, которые являются подчиненными другим должностям
     // (чтобы потом исключить их из корневых узлов)
