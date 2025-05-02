@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronDown, ChevronRight, User } from "lucide-react";
+import DisplaySettings from "@/components/DisplaySettings";
 
 // Типы данных для организационной структуры
 type Department = {
@@ -1354,65 +1355,70 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         : "отсутствуют",
     );
 
-    const hierarchyLinks =
-      positionPositionsData?.filter((link: any) => {
-        const hasParentPosition = link.parent_position_id !== null;
-        const hasDepartment = link.department_id !== null;
-
-        if (hasParentPosition && hasDepartment) return true;
-        if (hasParentPosition && !hasDepartment) return true;
-        if (!hasParentPosition && hasDepartment) return false;
-
-        return false;
-      }) || [];
-
     // Создаем мапу с должностями по ID для быстрого доступа
     const positionMap: Record<number, PositionHierarchyNode> = {};
 
-    // Создание множества подчинённых должностей
-    const childPositionIds = new Set<number>();
-    hierarchyLinks.forEach((link: any) => {
-      childPositionIds.add(link.position_id);
-    });
-
-    hierarchyLinks.forEach((link: any) => {
-      const parentId = link.parent_position_id;
-      const childId = link.position_id;
-
-      if (positionMap[parentId] && positionMap[childId]) {
-        positionMap[parentId].subordinates.push(positionMap[childId]);
-      }
-    });
-
+    // Используем логику из OrganizationStructure.tsx для получения должностей отдела
+    // Получаем все должности, связанные с этим отделом
+    // Ищем все должности, которые имеют deptId в своем массиве departments    
+    const linked = positionsWithDepartments.filter((p) =>
+      p.departments && Array.isArray(p.departments) && 
+      p.departments.some((d: any) => d.department_id === rootDepartment.department_id),
+    );
+    
+    // Получаем связи position_position для этого отдела
+    const positionRelations = positionPositionsData?.filter((pp: any) => 
+      !pp.deleted && pp.department_id === rootDepartment.department_id
+    ) || [];
+    
     // Логируем активные связи position_position
     console.log(
       "Активные связи position_position:",
-      hierarchyLinks.map(
+      positionRelations.map(
         (link: any) =>
           `Должность ID ${link.position_id} подчиняется должности ID ${link.parent_position_id}`,
       ),
     );
-
+    
     console.log("Найден корневой отдел:", rootDepartment);
+    
+    // Создаем карту всех должностей этого отдела для построения иерархии
+    const map: { [k: number]: any } = {};
+    linked.forEach((p) => {
+      map[p.position_id] = { ...p, children: [] };
+    });
+    
+    // Строим иерархию на основе данных position_position
+    positionRelations.forEach((relation) => {
+      const childId = relation.position_id;
+      const parentId = relation.parent_position_id;
+      
+      // Проверяем, что обе должности существуют в этом отделе
+      if (map[childId] && map[parentId]) {
+        // Добавляем дочернюю должность к родительской
+        map[parentId].children.push(map[childId]);
+        console.log(`Добавлена дочерняя должность ${map[childId].name} (ID: ${childId}) к ${map[parentId].name} (по данным position_position)`);
+      }
+    });
+    
+    // Находим корневые должности (те, которые не являются дочерними ни для одной другой должности в этом отделе)
+    const isChildInDept = new Set<number>();
+    positionRelations.forEach(rel => {
+      isChildInDept.add(rel.position_id);
+    });
+    
+    // Корневые должности - это те, которые есть в отделе, но не являются дочерними
+    const rootPositions = linked.filter(p => !isChildInDept.has(p.position_id));
+    
+    console.log(`Найдено ${rootPositions.length} корневых должностей для отдела ${rootDepartment.department_id}:`);
+    rootPositions.forEach(p => {
+      console.log(`- Корневая должность: "${p.name}" (ID: ${p.position_id}) с ${map[p.position_id]?.children?.length || 0} подчиненными`);
+    });
 
-    // Шаг 1: Находим все должности корневого отдела
-    let adminPositions = [];
+    // Шаг 1: Используем найденные должности корневого отдела
+    let adminPositions = rootPositions;
 
-    // Сначала проверим positions с отделами (из /api/positions/with-departments)
-    if (positionsWithDepartments && positionsWithDepartments.length > 0) {
-      adminPositions = positionsWithDepartments.filter((pos) => {
-        // Проверяем, есть ли у должности привязка к корневому отделу
-        return (
-          pos.departments &&
-          Array.isArray(pos.departments) &&
-          pos.departments.some(
-            (d: any) => d.department_id === rootDepartment.department_id,
-          )
-        );
-      });
-    }
-
-    // Если мы не нашли должности через positionsWithDepartments, используем резервную логику
+    // Если мы не нашли должности через новую логику, используем резервную логику
     if (adminPositions.length === 0) {
       adminPositions = positions.filter((pos) => {
         // Проверяем, есть ли у должности привязка к корневому отделу
@@ -1634,7 +1640,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       rootNodes.push(currentNode);
     });
 
-    hierarchyLinks.forEach((link: any) => {
+    // Используем positionRelations вместо hierarchyLinks
+    positionRelations.forEach((link: any) => {
       const childId = link.position_id;
       const parentId = link.parent_position_id;
 
@@ -1655,6 +1662,12 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
     // Если все еще остались позиции с parent_position_id, которые не были обработаны через position_position,
     // обрабатываем их
+    // Создаем множество дочерних должностей из positionRelations
+    const childPositionIds = new Set<number>();
+    positionRelations.forEach(rel => {
+      childPositionIds.add(rel.position_id);
+    });
+    
     adminPositions.forEach((position) => {
       // Пропускаем позиции, которые уже были перемещены на основе position_position
       if (childPositionIds.has(position.position_id)) {
