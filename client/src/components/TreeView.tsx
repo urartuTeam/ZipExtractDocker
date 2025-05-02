@@ -72,7 +72,7 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({ node, depth, onNo
       <div 
         className={cn(
           "flex items-center py-2 px-3 hover:bg-gray-100 cursor-pointer",
-          depth > 0 && "ml-6"
+          depth > 0 && `ml-${Math.min(depth * 6, 36)}`
         )}
         onClick={handleClick}
       >
@@ -101,7 +101,7 @@ const TreeNodeComponent: React.FC<TreeNodeComponentProps> = ({ node, depth, onNo
       </div>
       
       {expanded && hasChildren && (
-        <div>
+        <div className="border-l ml-4 pl-2 border-gray-200">
           {node.children.map((childNode) => (
             <TreeNodeComponent 
               key={childNode.id}

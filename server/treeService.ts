@@ -33,19 +33,36 @@ export async function fetchTree(): Promise<TreeNode[]> {
       type: "department",
       children: deptMap.get(d.department_id)!.children,
     };
+    
+    // Проверка родительской должности
     if (d.parent_position_id) {
+      console.log(`Отдел "${d.name}" (ID=${d.department_id}) имеет родительскую должность ID=${d.parent_position_id}`);
+      
       const ppNode = posMap.get(d.parent_position_id);
       if (ppNode) {
+        console.log(`Найдена родительская должность "${ppNode.name}" для отдела "${d.name}"`);
         if (!ppNode.children) ppNode.children = [];
         ppNode.children.push(node);
+      } else {
+        console.log(`ОШИБКА: Не найдена родительская должность ID=${d.parent_position_id} для отдела "${d.name}"`);
       }
-    } else if (d.parent_department_id) {
+    } 
+    // Проверка родительского отдела
+    else if (d.parent_department_id) {
+      console.log(`Отдел "${d.name}" (ID=${d.department_id}) имеет родительский отдел ID=${d.parent_department_id}`);
+      
       const parentDept = deptMap.get(d.parent_department_id);
       if (parentDept) {
+        console.log(`Найден родительский отдел "${parentDept.name}" для отдела "${d.name}"`);
         if (!parentDept.children) parentDept.children = [];
         parentDept.children.push(node);
+      } else {
+        console.log(`ОШИБКА: Не найден родительский отдел ID=${d.parent_department_id} для отдела "${d.name}"`);
       }
-    } else {
+    } 
+    // Корневые отделы
+    else {
+      console.log(`Отдел "${d.name}" (ID=${d.department_id}) является корневым`);
       tree.push(node);
     }
   });
