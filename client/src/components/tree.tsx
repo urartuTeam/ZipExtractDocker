@@ -72,11 +72,7 @@ const TreeComponent: React.FC = () => {
               <div
                 className="subordinate-branch"
                 style={{ 
-                  minWidth: node.children.length * 240, 
-                  display: 'flex',
-                  flexDirection: 'row',
-                  justifyContent: 'space-around',
-                  flexWrap: 'wrap'
+                  width: node.children.length * 240
                 }}
               >
                 {node.children.map((child) => renderNode(child, depth + 1))}
