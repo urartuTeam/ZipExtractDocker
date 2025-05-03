@@ -138,6 +138,17 @@ export function registerPositionEndpoints(app: Express) {
         };
       });
       
+      // Выведем первую должность в консоль для отладки
+      if (positionsWithDepts.length > 0) {
+        console.log("Пример обработанной должности:", 
+          JSON.stringify({
+            position_id: positionsWithDepts[0].position_id,
+            name: positionsWithDepts[0].name,
+            departments: positionsWithDepts[0].departments
+          }, null, 2)
+        );
+      }
+      
       res.json({ status: 'success', data: positionsWithDepts });
     } catch (error) {
       console.error('Ошибка при получении должностей с отделами:', error);

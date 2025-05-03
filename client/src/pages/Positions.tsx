@@ -65,6 +65,9 @@ interface DepartmentLink {
     position_id: number;
     name: string;
   }>;
+  // Добавляем новые поля для поддержки группировки и связи position_position
+  position_position_id?: number | null; // ID связи position_position для удаления
+  group_key?: string; // Ключ для группировки (родительская должность + отдел)
 }
 
 interface Position {
@@ -668,9 +671,9 @@ export default function Positions() {
                           <TableCell>
                             {position.departments && position.departments.length > 0 ? (
                               <div className="border rounded-md divide-y">
-                                {/* Выводим связи с группировкой по group_key (родительская должность + отдел) */}
+                                {/* Выводим связи для каждой должности (в виде родительская должность + отдел) */}
                                 {position.departments.map(dept => {
-                                  console.log("Связь с group_key:", dept.group_key);
+                                  // Выводим информацию о связи
                                   return (
                                     <div key={`${dept.position_link_id}_${dept.position_position_id || 'null'}`} className="p-2">
                                       <div className="grid grid-cols-[1fr,1fr,auto] gap-2 items-center">
