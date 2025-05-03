@@ -89,7 +89,9 @@ const TreeComponent: React.FC = () => {
   };
 
   return (
-    <div className="tree-root">{tree.map((node) => renderNode(node, 0))}</div>
+    <div className="tree-root" style={{ minWidth: 'max-content', overflow: 'visible' }}>
+      {tree.map((node) => renderNode(node, 0))}
+    </div>
   );
 };
 

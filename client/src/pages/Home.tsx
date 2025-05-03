@@ -94,12 +94,14 @@ export default function Home() {
               <Skeleton className="h-8 w-1/2 ml-8" />
             </div>
           ) : (
-            <div className="flex justify-center">
-              <OrganizationTree
-                departmentsData={departments}
-                positionsData={positionsWithDepartments}
-                employeesData={employees}
-              />
+            <div className="w-full overflow-x-auto" style={{ minHeight: '700px' }}>
+              <div style={{ minWidth: 'max-content' }}>
+                <OrganizationTree
+                  departmentsData={departments}
+                  positionsData={positionsWithDepartments}
+                  employeesData={employees}
+                />
+              </div>
             </div>
           )}
         </div>
