@@ -717,17 +717,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         p.departments.some((d: any) => d.department_id === deptId),
     );
 
-    console.log(
-      `getDeptPositionsHierarchy для отдела ${deptId}: найдено ${linkedPositions.length} должностей`,
-    );
-
-    // Отладочный вывод - список найденных должностей
-    linkedPositions.forEach((p) => {
-      console.log(
-        `- Должность в отделе ${deptId}: "${p.name}" (ID: ${p.position_id})`,
-      );
-    });
-
     // Получаем ID должностей, привязанных к текущему отделу
     const deptPositionIds = linkedPositions.map(p => p.position_id);
     
@@ -749,10 +738,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         ) === index
       );
 
-    console.log(
-      `Найдено ${deptPositionRelations.length} связей должностей для отдела ${deptId} (из ${positionRelations.length} общих)`,
-    );
-
     // Создаем словарь для быстрого доступа к должностям и их дочерним элементам
     const positionsMap: { [k: number]: any } = {};
 
@@ -769,9 +754,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       // Проверяем, что обе должности существуют в нашем словаре
       if (positionsMap[childId] && positionsMap[parentId]) {
         positionsMap[parentId].children.push(positionsMap[childId]);
-        console.log(
-          `Создана связь: "${positionsMap[childId].name}" (ID: ${childId}) подчиняется "${positionsMap[parentId].name}" (ID: ${parentId}) в отделе ${deptId}`,
-        );
       }
     });
 
@@ -783,23 +765,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     const rootPositions = Object.values(positionsMap).filter(
       (p: any) => !childPositionIds.has(p.position_id),
     );
-
-    console.log(
-      `Найдено ${rootPositions.length} корневых должностей для отдела 2 ${deptId}:`,
-    );
-    rootPositions.forEach((p: any) => {
-      console.log(
-        `- Корневая должность: "${p.name}" (ID: ${p.position_id}) с ${p.children.length} подчиненными`,
-      );
-      // Выводим подчиненных, если есть
-      if (p.children.length > 0) {
-        p.children.forEach((child: any) => {
-          console.log(
-            `  - Подчиненный: "${child.name}" (ID: ${child.position_id})`,
-          );
-        });
-      }
-    });
 
     return rootPositions;
   };
@@ -1753,17 +1718,14 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // Строим дерево, когда данные загружены
   useEffect(() => {
-    console.log("Проверка готовности данных для построения дерева:");
-    console.log(`- Отделы: ${departments.length}`);
-    console.log(`- Должности: ${positions.length || positionsWithDepartments.length}`);
-    console.log(`- Связи должностей: ${positionRelations.length}`);
-    
-    if (
+    // Проверка всех необходимых данных
+    const hasAllData = 
       departments.length > 0 &&
       (positions.length > 0 || positionsWithDepartments.length > 0) &&
-      positionRelations.length > 0 // Добавляем проверку наличия данных о связях должностей
-    ) {
-      console.log("Все данные загружены, строим дерево...");
+      positionRelations.length > 0;
+    
+    if (hasAllData) {
+      // Вычисляем данные для построения дерева только 1 раз, когда все загружено
       
       // Находим корневые отделы (без родительской должности)
       const rootDepartments = departments.filter(
@@ -1790,18 +1752,21 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       // Строим иерархию должностей для корневого отдела
       const rootDepartmentHierarchy = buildRootDepartmentHierarchy();
       if (rootDepartmentHierarchy && rootDepartmentHierarchy.length > 0) {
-        console.log("Использована основная иерархия через buildRootDepartmentHierarchy");
         setPositionHierarchy(rootDepartmentHierarchy);
       } else {
         // Резервный вариант - строим на основе manager_id
-        console.log("Использован резервный метод buildPositionHierarchy");
         const hierarchy = buildPositionHierarchy();
         setPositionHierarchy(hierarchy);
       }
-    } else {
-      console.log("Недостаточно данных для построения дерева, ожидаем загрузки...");
     }
-  }, [departments, positions, employees, positionsWithDepartments, positionRelations]);
+    // зависимость от стабильных "снимков" данных, чтобы избежать повторных рендеров
+  }, [
+    departments.length, 
+    positions.length, 
+    positionsWithDepartments.length, 
+    positionRelations.length,
+    employees.length
+  ]);
 
   // Фильтруем иерархию при изменении выбранной должности
   useEffect(() => {
