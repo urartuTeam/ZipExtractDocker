@@ -673,14 +673,8 @@ export default function Positions() {
                                     <div key={dept.position_link_id} className="p-2">
                                       <div className="grid grid-cols-[1fr,1fr,auto] gap-2 items-center">
                                         <div className="text-sm font-medium">
-                                          {dept.parent_positions && dept.parent_positions.length > 0 ? (
-                                            <div>
-                                              {dept.parent_positions.map((parent: any) => (
-                                                <div key={parent.position_id}>
-                                                  {parent.name}
-                                                </div>
-                                              ))}
-                                            </div>
+                                          {dept.parent_position ? (
+                                            <div>{dept.parent_position.name}</div>
                                           ) : (
                                             <span className="text-gray-500">Нет родительской должности</span>
                                           )}

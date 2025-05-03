@@ -26,6 +26,7 @@ export function registerPositionEndpoints(app: Express) {
         
         // Для каждой связи из position_department обрабатываем департамент отдельно
         for (const link of links) {
+          // Находим информацию об отделе
           const dept = departments.find(
             (d) => d.department_id === link.department_id,
           );
@@ -39,50 +40,59 @@ export function registerPositionEndpoints(app: Express) {
               pp.department_id === link.department_id
           );
           
-          // Если нет родительских позиций, добавляем связь с отделом без родителей
+          // Базовая информация о связи с отделом (без родительских должностей)
+          const baseDeptInfo = {
+            position_link_id: link.position_link_id,
+            department_id: link.department_id,
+            department_name: dept?.name || "Неизвестный отдел",
+            sort: link.sort,
+            vacancies: link.vacancies || 0,
+          };
+          
+          // Если нет родительских позиций, добавляем только базовую связь с отделом
           if (parentsForDept.length === 0) {
-            // Создаем базовую информацию о связи
-            const deptInfo: any = {
-              position_link_id: link.position_link_id,
-              department_id: link.department_id,
-              department_name: dept?.name || "Неизвестный отдел",
-              sort: link.sort,
-              vacancies: link.vacancies || 0,
+            linkedDepartments.push({
+              ...baseDeptInfo,
               parent_positions: [],
               parent_position: null,
-              position_position_id: null // ID связи position_position для удаления
-            };
-            
-            linkedDepartments.push(deptInfo);
+              position_position_id: null
+            });
           } else {
-            // Для каждой родительской позиции создаем отдельную связь
+            // Сгруппируем родительские должности
+            const parentPositionsData: Record<number, {
+              position: any, 
+              relationId: number
+            }> = {};
+            
+            // Создаем объект с уникальными родительскими должностями
             for (const parentRelation of parentsForDept) {
               const parentPosition = positions.find(
                 (p) => p.position_id === parentRelation.parent_position_id,
               );
               
               if (parentPosition) {
-                // Создаем информацию о связи с конкретной родительской должностью
-                const deptInfo: any = {
-                  position_link_id: link.position_link_id,
-                  department_id: link.department_id,
-                  department_name: dept?.name || "Неизвестный отдел",
-                  sort: link.sort,
-                  vacancies: link.vacancies || 0,
-                  parent_positions: [{  // Содержит только одну родительскую должность
-                    position_id: parentPosition.position_id,
-                    name: parentPosition.name,
-                  }],
-                  parent_position: {  // Для обратной совместимости
-                    position_id: parentPosition.position_id,
-                    name: parentPosition.name,
-                  },
-                  position_position_id: parentRelation.position_relation_id // ID связи для удаления
+                parentPositionsData[parentPosition.position_id] = {
+                  position: parentPosition,
+                  relationId: parentRelation.position_relation_id
                 };
-                
-                linkedDepartments.push(deptInfo);
               }
             }
+            
+            // Теперь для каждой родительской должности создаем отдельную строку
+            Object.values(parentPositionsData).forEach(({position, relationId}) => {
+              linkedDepartments.push({
+                ...baseDeptInfo,
+                parent_position: {
+                  position_id: position.position_id,
+                  name: position.name,
+                },
+                parent_positions: [{  
+                  position_id: position.position_id,
+                  name: position.name,
+                }],
+                position_position_id: relationId // ID связи для удаления
+              });
+            });
           }
         }
         
