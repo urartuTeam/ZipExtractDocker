@@ -605,10 +605,9 @@ export default function Positions() {
                                         <div className="text-sm font-medium">
                                           {dept.parent_positions && dept.parent_positions.length > 0 ? (
                                             <div>
-                                              {dept.parent_positions.map((parent: any, idx: number) => (
+                                              {dept.parent_positions.map((parent: any) => (
                                                 <div key={parent.position_id}>
                                                   {parent.name}
-                                                  {idx < (dept.parent_positions?.length || 0) - 1 && ', '}
                                                 </div>
                                               ))}
                                             </div>

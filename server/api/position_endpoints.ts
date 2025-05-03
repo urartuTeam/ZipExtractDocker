@@ -21,76 +21,70 @@ export function registerPositionEndpoints(app: Express) {
           (pd) => pd.position_id === position.position_id,
         );
         
-        // Сгруппируем связи по department_id, чтобы избежать дублирования
-        const departmentGroups = new Map<number, Array<any>>();
-        
-        // Для каждой связи из position_department группируем по департаменту
-        for (const link of links) {
-          // Проверяем, что department_id не null
-          const deptId = link.department_id;
-          if (deptId === null) continue;
-          
-          if (!departmentGroups.has(deptId)) {
-            departmentGroups.set(deptId, []);
-          }
-          departmentGroups.get(deptId)?.push(link);
-        }
-        
         // Находим соответствующие отделы из связей в таблице position_department
-        const linkedDepartments = [];
+        const linkedDepartments: any[] = [];
         
-        // Обработка каждой группы связей (по одной на отдел)
-        // Конвертируем entries() в массив для поддержки в более старых версиях JS
-        Array.from(departmentGroups.entries()).forEach(([deptId, deptLinks]) => {
-          // Берем первую связь из группы для основной информации
-          const primaryLink = deptLinks[0];
-          
+        // Для каждой связи из position_department обрабатываем департамент отдельно
+        for (const link of links) {
           const dept = departments.find(
-            (d) => d.department_id === deptId,
+            (d) => d.department_id === link.department_id,
           );
+          
+          if (!dept) continue;
           
           // Находим все родительские позиции для этой должности в этом отделе
           const parentsForDept = positionPositions.filter(
             (pp) => 
               pp.position_id === position.position_id && 
-              pp.department_id === deptId
+              pp.department_id === link.department_id
           );
           
-          // Создаем объект департамента и добавляем список родительских должностей
-          const deptInfo: any = {
-            position_link_id: primaryLink.position_link_id,
-            department_id: deptId,
-            department_name: dept?.name || "Неизвестный отдел",
-            sort: primaryLink.sort,
-            vacancies: primaryLink.vacancies || 0,
-            parent_positions: [] as Array<{position_id: number, name: string}>,
-          };
-          
-          // Добавляем все родительские должности в массив
-          if (parentsForDept.length > 0) {
+          // Если нет родительских позиций, добавляем связь с отделом без родителей
+          if (parentsForDept.length === 0) {
+            // Создаем базовую информацию о связи
+            const deptInfo: any = {
+              position_link_id: link.position_link_id,
+              department_id: link.department_id,
+              department_name: dept?.name || "Неизвестный отдел",
+              sort: link.sort,
+              vacancies: link.vacancies || 0,
+              parent_positions: [],
+              parent_position: null,
+              position_position_id: null // ID связи position_position для удаления
+            };
+            
+            linkedDepartments.push(deptInfo);
+          } else {
+            // Для каждой родительской позиции создаем отдельную связь
             for (const parentRelation of parentsForDept) {
               const parentPosition = positions.find(
                 (p) => p.position_id === parentRelation.parent_position_id,
               );
               
               if (parentPosition) {
-                deptInfo.parent_positions.push({
-                  position_id: parentPosition.position_id,
-                  name: parentPosition.name,
-                });
+                // Создаем информацию о связи с конкретной родительской должностью
+                const deptInfo: any = {
+                  position_link_id: link.position_link_id,
+                  department_id: link.department_id,
+                  department_name: dept?.name || "Неизвестный отдел",
+                  sort: link.sort,
+                  vacancies: link.vacancies || 0,
+                  parent_positions: [{  // Содержит только одну родительскую должность
+                    position_id: parentPosition.position_id,
+                    name: parentPosition.name,
+                  }],
+                  parent_position: {  // Для обратной совместимости
+                    position_id: parentPosition.position_id,
+                    name: parentPosition.name,
+                  },
+                  position_position_id: parentRelation.position_relation_id // ID связи для удаления
+                };
+                
+                linkedDepartments.push(deptInfo);
               }
             }
           }
-          
-          // Для обратной совместимости добавляем первую родительскую должность как parent_position
-          if (deptInfo.parent_positions.length > 0) {
-            deptInfo.parent_position = deptInfo.parent_positions[0];
-          } else {
-            deptInfo.parent_position = null;
-          }
-          
-          linkedDepartments.push(deptInfo);
-        });
+        }
         
         // Добавляем информацию о родительских должностях из position_position
         // Это информация о том, кому подчиняется эта должность
