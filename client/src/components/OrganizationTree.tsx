@@ -743,85 +743,156 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     setShowVacancies(value);
   };
 
-  // Получение иерархии должностей для отдела с использованием новой таблицы position_position
+  // Получение иерархии должностей для отдела (полная имплементация из OrganizationStructure.tsx)
   const getDeptPositionsHierarchy = (deptId: number) => {
-    console.log(`Получаем расширенную иерархию должностей для отдела ${deptId}`);
+    console.log(`Получаем должности для отдела ${deptId}`);
     
-    // Используем positionsWithDepartments, т.к. там уже есть связи с отделами
-    const linkedPositions = positionsWithDepartments.filter(
-      (p) =>
-        p.departments &&
-        Array.isArray(p.departments) &&
-        p.departments.some((d: any) => d.department_id === deptId),
+    // Получаем все должности, связанные с этим отделом
+    // Ищем все должности, которые имеют deptId в своем массиве departments
+    const linked = positionsWithDepartments.filter((p) =>
+      p.departments && Array.isArray(p.departments) && 
+      p.departments.some((dd: any) => dd.department_id === deptId),
     );
-
-    // Получаем ID должностей, привязанных к текущему отделу
-    const deptPositionIds = linkedPositions.map(p => p.position_id);
     
-    console.log(`Найдено ${linkedPositions.length} должностей, связанных с отделом ${deptId}`);
+    // ВАЖНО: Получаем ВСЕ связи position_position, а не только для этого отдела
+    // Это критически важно для случаев, когда должности из разных отделов связаны между собой
+    const allPositionRelations = positionRelations.filter(pp => !pp.deleted);
     
-    // Расширенная фильтрация - берем все связи, где хотя бы одна должность принадлежит этому отделу
-    const deptPositionRelations = positionRelations.filter(relation => {
+    // Отфильтруем связи, где хотя бы одна из должностей (дочерняя или родительская) находится в нашем отделе
+    const deptPositionRelations = allPositionRelations.filter(rel => {
       // Проверяем, есть ли дочерняя должность в нашем отделе
-      const childInThisDept = deptPositionIds.includes(relation.position_id);
+      const childInThisDept = linked.some(p => p.position_id === rel.position_id);
       
       // Проверяем, есть ли родительская должность в нашем отделе
-      const parentInThisDept = deptPositionIds.includes(relation.parent_position_id);
+      const parentInThisDept = linked.some(p => p.position_id === rel.parent_position_id);
       
       // Включаем связь, если хотя бы одна из должностей находится в нашем отделе
       return childInThisDept || parentInThisDept;
     });
     
-    console.log(`Найдено ${deptPositionRelations.length} связей должностей для отдела ${deptId} (из ${positionRelations.length} всего)`);
+    console.log(`Найдено ${deptPositionRelations.length} связей должностей для отдела ${deptId} (из ${allPositionRelations.length} всего)`);
     
-    // Создаем словарь для быстрого доступа к должностям и их дочерним элементам
-    const positionsMap: { [k: number]: any } = {};
-    
-    // Собираем все ID должностей, которые участвуют в связях
-    const allPositionIds = new Set<number>();
-    deptPositionRelations.forEach(relation => {
-      allPositionIds.add(relation.position_id);
-      allPositionIds.add(relation.parent_position_id);
-    });
-    
-    // Заполняем словарь всеми должностями из связей, даже если они не из этого отдела
-    Array.from(allPositionIds).forEach(posId => {
-      const position = positionsWithDepartments.find(p => p.position_id === posId);
-      if (position) {
-        // Отмечаем, принадлежит ли должность текущему отделу
-        const inThisDept = deptPositionIds.includes(posId);
-        positionsMap[posId] = { ...position, children: [], inThisDept };
+    // Более подробное логирование связей
+    deptPositionRelations.forEach(rel => {
+      const childPosition = positionsWithDepartments.find(p => p.position_id === rel.position_id);
+      const parentPosition = positionsWithDepartments.find(p => p.position_id === rel.parent_position_id);
+      
+      console.log(`- Связь: должность "${childPosition?.name}" (ID=${rel.position_id}) подчиняется "${parentPosition?.name}" (ID=${rel.parent_position_id})`);
+      
+      // Проверяем, находятся ли обе должности в текущем отделе
+      const childInThisDept = linked.some(p => p.position_id === rel.position_id);
+      const parentInThisDept = linked.some(p => p.position_id === rel.parent_position_id);
+      
+      if (!childInThisDept) {
+        console.log(`  ВНИМАНИЕ: Дочерняя должность "${childPosition?.name}" (ID=${rel.position_id}) НЕ НАЙДЕНА в отделе ${deptId}`);
+      }
+      
+      if (!parentInThisDept) {
+        console.log(`  ВНИМАНИЕ: Родительская должность "${parentPosition?.name}" (ID=${rel.parent_position_id}) НЕ НАЙДЕНА в отделе ${deptId}`);
       }
     });
     
-    // Строим иерархию на основе отфильтрованных связей
+    // Логгируем для отладки
+    console.log(`Все должности отдела ${deptId} до построения иерархии:`, 
+      linked.map(p => `${p.name} (ID: ${p.position_id})`));
+    
+    // Логируем данные о связях должностей (position_position)
+    console.log(`Данные о связях должностей для отдела ${deptId}:`, 
+      deptPositionRelations.map(rel => `Должность ID ${rel.position_id} подчиняется должности ID ${rel.parent_position_id}`));
+    
+    // Создаем карту всех должностей в системе для построения иерархии
+    // ВАЖНО: включаем в карту даже должности не из текущего отдела
+    const map: { [k: number]: any } = {};
+    
+    // Сначала добавляем только должности из текущего отдела
+    linked.forEach((p) => {
+      map[p.position_id] = { ...p, children: [], inCurrentDept: true };
+    });
+    
+    // Теперь добавляем в карту должности, которые могут быть родителями или детьми для должностей текущего отдела
+    // Это критично для корректной работы иерархии
     deptPositionRelations.forEach((relation) => {
       const childId = relation.position_id;
       const parentId = relation.parent_position_id;
       
-      // Проверяем, что обе должности существуют в нашем словаре
-      if (positionsMap[childId] && positionsMap[parentId]) {
-        // Проверяем, не добавлен ли уже этот дочерний элемент
-        const alreadyAdded = positionsMap[parentId].children.some(
-          (child: any) => child.position_id === childId
-        );
-        
-        if (!alreadyAdded) {
-          positionsMap[parentId].children.push(positionsMap[childId]);
-          console.log(`Добавлена связь: ${positionsMap[childId].name} (ID: ${childId}) подчиняется ${positionsMap[parentId].name} (ID: ${parentId})`);
+      // Проверяем, нужно ли добавить дочернюю должность из другого отдела
+      if (!map[childId] && (linked.some(p => p.position_id === parentId))) {
+        // Найдем позицию в общем списке должностей
+        const childPosition = positionsWithDepartments.find(p => p.position_id === childId);
+        if (childPosition) {
+          map[childId] = { ...childPosition, children: [], inCurrentDept: false };
+          console.log(`Добавлена в карту внешняя дочерняя должность ${childPosition.name} (ID: ${childId})`);
+        }
+      }
+      
+      // Проверяем, нужно ли добавить родительскую должность из другого отдела
+      if (!map[parentId] && (linked.some(p => p.position_id === childId))) {
+        // Найдем позицию в общем списке должностей
+        const parentPosition = positionsWithDepartments.find(p => p.position_id === parentId);
+        if (parentPosition) {
+          map[parentId] = { ...parentPosition, children: [], inCurrentDept: false };
+          console.log(`Добавлена в карту внешняя родительская должность ${parentPosition.name} (ID: ${parentId})`);
         }
       }
     });
     
-    // Фильтруем корневые должности - те, которые не являются ничьими дочерними,
-    // но при этом принадлежат текущему отделу (inThisDept = true)
-    const childPositionIds = new Set(
-      deptPositionRelations.map((r) => r.position_id),
-    );
+    // Строим иерархию на основе данных position_position для всех должностей в карте
+    deptPositionRelations.forEach((relation) => {
+      const childId = relation.position_id;
+      const parentId = relation.parent_position_id;
+      
+      // Проверяем, что обе должности существуют в нашей карте
+      if (map[childId] && map[parentId]) {
+        // Добавляем дочернюю должность к родительской
+        // Проверяем, что эта должность еще не добавлена как дочерняя
+        if (!map[parentId].children.some((child: any) => child.position_id === childId)) {
+          map[parentId].children.push(map[childId]);
+          console.log(`Добавлена дочерняя должность ${map[childId].name} (ID: ${childId}) к ${map[parentId].name} (по данным position_position)`);
+        }
+      } else {
+        // Отладка: одна из должностей не найдена
+        if (!map[childId]) {
+          console.log(`ОШИБКА: Дочерняя должность ID=${childId} не найдена в карте`);
+        }
+        if (!map[parentId]) {
+          console.log(`ОШИБКА: Родительская должность ID=${parentId} не найдена в карте`);
+        }
+      }
+    });
     
-    const rootPositions = Object.values(positionsMap).filter(
-      (p: any) => !childPositionIds.has(p.position_id) && p.inThisDept === true
-    );
+    // Находим корневые должности из нашей расширенной карты должностей
+    const isChildPosition = new Set<number>();
+    
+    // Добавляем в набор все ID должностей, которые являются дочерними
+    Object.values(map).forEach(position => {
+      position.children.forEach((child: any) => {
+        isChildPosition.add(child.position_id);
+      });
+    });
+    
+    // Корневые должности - это должности, которые:
+    // 1. Есть в карте
+    // 2. Не являются дочерними ни для какой другой должности
+    // 3. Принадлежат текущему отделу (inCurrentDept = true)
+    const rootPositions = Object.values(map)
+      .filter((p: any) => 
+        // Должность не является дочерней
+        !isChildPosition.has(p.position_id) &&
+        // Должность принадлежит текущему отделу
+        p.inCurrentDept === true
+      );
+    
+    console.log(`Найдено ${rootPositions.length} корневых должностей для отдела ${deptId}:`);
+    rootPositions.forEach((p: any) => {
+      console.log(`- Корневая должность: "${p.name}" (ID: ${p.position_id}) с ${p.children?.length || 0} подчиненными`);
+      
+      // Для каждой корневой должности выводим ее дочерние должности
+      if (p.children && p.children.length > 0) {
+        p.children.forEach((child: any) => {
+          console.log(`  - Подчиненная должность: "${child.name}" (ID: ${child.position_id}), в текущем отделе: ${child.inCurrentDept ? 'да' : 'нет'}`);
+        });
+      }
+    });
 
     return rootPositions;
   };
