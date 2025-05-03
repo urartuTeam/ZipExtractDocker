@@ -305,6 +305,63 @@ export default function Positions() {
     },
   });
   
+  // Mutation для удаления связи между должностями (position_position)
+  const deletePositionPositionRelation = useMutation({
+    mutationFn: async (id: number) => {
+      // Используем fetch напрямую, чтобы обойти проблему с обработкой non-JSON ответов
+      try {
+        const response = await fetch(`/api/positionpositions/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+        
+        // Проверяем, успешен ли ответ
+        if (!response.ok) {
+          const contentType = response.headers.get('content-type');
+          
+          // Если ответ не JSON, обрабатываем как текст
+          if (contentType && contentType.indexOf('application/json') === -1) {
+            const errorText = await response.text();
+            throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}. ${errorText.substring(0, 100)}`);
+          }
+          
+          // Если JSON, обрабатываем как обычно
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Ошибка при удалении связи между должностями");
+        }
+        
+        // Пытаемся обработать ответ как JSON
+        try {
+          return await response.json();
+        } catch (e) {
+          // Если не получилось, значит ответ не JSON - просто возвращаем статус
+          return { status: 'success' };
+        }
+      } catch (error) {
+        console.error("Ошибка при удалении связи между должностями:", error);
+        throw error;
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Связь удалена",
+        description: "Связь между должностями удалена",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/positionpositions'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при удалении связи",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
   // Mutation для обновления связи должности с отделом (изменение количества вакансий)
   const updatePositionDepartment = useMutation({
     mutationFn: async ({ id, vacancies }: { id: number, vacancies: number }) => {
@@ -407,25 +464,38 @@ export default function Positions() {
     }
   };
   
-  // Обработчик удаления связи должности с отделом
-  const handleDeleteLink = (linkId: number) => {
+  // Обработчик удаления связи должности с отделом или parent position
+  const handleDeleteLink = (dept: any) => {
     // Проверка на некорректный ID связи
+    const linkId = dept.position_link_id;
     if (!linkId) {
       console.error("Ошибка: Попытка удалить связь с position_link_id = 0");
       toast({
         title: "Ошибка",
-        description: "Невозможно удалить связь. Некорректный ID связи (position_link_id = 0).",
+        description: "Невозможно удалить связь. Некорректный ID связи.",
         variant: "destructive",
       });
       return;
     }
     
-    if (!confirm("Вы действительно хотите удалить связь с отделом?")) {
-      return;
+    // Проверяем, есть ли у связи position_position_id (ID связи между должностями)
+    if (dept.position_position_id) {
+      // Если это связь между должностями, удаляем её
+      if (!confirm("Вы действительно хотите удалить иерархическую связь с родительской должностью?")) {
+        return;
+      }
+      
+      console.log(`Удаляем связь position_position_id=${dept.position_position_id}`);
+      deletePositionPositionRelation.mutate(dept.position_position_id);
+    } else {
+      // Иначе удаляем обычную связь с отделом
+      if (!confirm("Вы действительно хотите удалить связь с отделом?")) {
+        return;
+      }
+      
+      console.log(`Удаляем связь position_link_id=${linkId}`);
+      deletePositionDepartment.mutate(linkId);
     }
-    
-    console.log(`Удаляем связь position_link_id=${linkId}`);
-    deletePositionDepartment.mutate(linkId);
   };
   
 
@@ -627,7 +697,7 @@ export default function Positions() {
                                           variant="ghost" 
                                           size="icon" 
                                           className="h-6 w-6" 
-                                          onClick={() => handleDeleteLink(dept.position_link_id)}
+                                          onClick={() => handleDeleteLink(dept)}
                                           title="Удалить связь"
                                         >
                                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
@@ -1229,7 +1299,7 @@ export default function Positions() {
                                   variant="ghost" 
                                   size="icon" 
                                   className="h-8 w-8" 
-                                  onClick={() => handleDeleteLink(dept.position_link_id)}
+                                  onClick={() => handleDeleteLink(dept)}
                                   title="Удалить связь"
                                 >
                                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
