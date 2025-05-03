@@ -28,15 +28,16 @@ type TreeNode = {
 
 type VerticalTreeViewProps = {
   onNodeSelect?: (id: string, type: string) => void;
+  showVacancies?: boolean; // Добавляем параметр для отображения вакансий
 };
 
-const VerticalTreeView: React.FC<VerticalTreeViewProps> = ({ onNodeSelect }) => {
+const VerticalTreeView: React.FC<VerticalTreeViewProps> = ({ onNodeSelect, showVacancies: initialShowVacancies = false }) => {
   // Состояние для хранения текущего корневого узла (ID)
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   
   // Настройки отображения
   const [showThreeLevels, setShowThreeLevels] = useState<boolean>(false);
-  const [showVacancies, setShowVacancies] = useState<boolean>(false);
+  const [showVacancies, setShowVacancies] = useState<boolean>(initialShowVacancies);
   
   // История навигации для возврата назад
   const [navigationHistory, setNavigationHistory] = useState<string[]>([]);
