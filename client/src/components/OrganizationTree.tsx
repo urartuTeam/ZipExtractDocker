@@ -596,7 +596,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     queryKey: ["/api/positionpositions"],
   });
   // Отфильтровываем только неудаленные связи
-  const positionRelations = positionHierarchyResponse?.data?.filter(pr => !pr.deleted) || [];
+  const positionRelations =
+    positionHierarchyResponse?.data?.filter((pr) => !pr.deleted) || [];
   const positionPositionsData = positionHierarchyResponse?.data || [];
 
   const { data: positionsResponse } = useQuery<{
@@ -717,25 +718,29 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         p.departments.some((d: any) => d.department_id === deptId),
     );
 
-    console.log(
-      `getDeptPositionsHierarchy для отдела ${deptId}: найдено ${linkedPositions.length} должностей`,
-    );
+    // Получаем ID должностей, привязанных к текущему отделу
+    const deptPositionIds = linkedPositions.map((p) => p.position_id);
 
-    // Отладочный вывод - список найденных должностей
-    linkedPositions.forEach((p) => {
-      console.log(
-        `- Должность в отделе ${deptId}: "${p.name}" (ID: ${p.position_id})`,
+    // Фильтруем связи должностей только для текущего отдела, используя department_id из relation
+    const deptPositionRelations = positionRelations
+      // Только связи этого отдела (проверяем department_id)
+      .filter((relation) => relation.department_id === deptId)
+      // Дополнительно проверяем, что должности действительно связаны с этим отделом
+      .filter(
+        (relation) =>
+          deptPositionIds.includes(relation.parent_position_id) &&
+          deptPositionIds.includes(relation.position_id),
+      )
+      // Убираем дубликаты (одну и ту же пару parent-child в одном отделе)
+      .filter(
+        (relation, index, arr) =>
+          arr.findIndex(
+            (r) =>
+              r.parent_position_id === relation.parent_position_id &&
+              r.position_id === relation.position_id &&
+              r.department_id === relation.department_id,
+          ) === index,
       );
-    });
-
-    // Получаем связи должностей из position_position для этого отдела
-    const positionRelations =
-      positionPositionsData?.filter((relation) => !relation.deleted) ||
-      [];
-
-    console.log(
-      `Найдено ${positionRelations.length} связей должностей для отдела ${deptId}`,
-    );
 
     // Создаем словарь для быстрого доступа к должностям и их дочерним элементам
     const positionsMap: { [k: number]: any } = {};
@@ -745,45 +750,25 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       positionsMap[p.position_id] = { ...p, children: [] };
     });
 
-    // Строим иерархию на основе position_position
-    positionRelations.forEach((relation) => {
+    // Строим иерархию на основе отфильтрованных связей для этого отдела
+    deptPositionRelations.forEach((relation) => {
       const childId = relation.position_id;
       const parentId = relation.parent_position_id;
 
       // Проверяем, что обе должности существуют в нашем словаре
       if (positionsMap[childId] && positionsMap[parentId]) {
         positionsMap[parentId].children.push(positionsMap[childId]);
-        console.log(
-          `Создана связь: "${positionsMap[childId].name}" (ID: ${childId}) подчиняется "${positionsMap[parentId].name}" (ID: ${parentId}) в отделе ${deptId}`,
-        );
       }
     });
 
     // Фильтруем только корневые должности (те, которые не являются ни чьими дочерними)
-    // Для этого находим все должности, которые не упоминаются как position_id в positionRelations
+    // Для этого находим все должности, которые не упоминаются как position_id в deptPositionRelations
     const childPositionIds = new Set(
-      positionRelations.map((r) => r.position_id),
+      deptPositionRelations.map((r) => r.position_id),
     );
     const rootPositions = Object.values(positionsMap).filter(
       (p: any) => !childPositionIds.has(p.position_id),
     );
-
-    console.log(
-      `Найдено ${rootPositions.length} корневых должностей для отдела 2 ${deptId}:`,
-    );
-    rootPositions.forEach((p: any) => {
-      console.log(
-        `- Корневая должность: "${p.name}" (ID: ${p.position_id}) с ${p.children.length} подчиненными`,
-      );
-      // Выводим подчиненных, если есть
-      if (p.children.length > 0) {
-        p.children.forEach((child: any) => {
-          console.log(
-            `  - Подчиненный: "${child.name}" (ID: ${child.position_id})`,
-          );
-        });
-      }
-    });
 
     return rootPositions;
   };
@@ -1029,6 +1014,12 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     );
     console.log("Должности с отделами:", positionsWithDepartments.length);
 
+    // Загружаем данные о связях должностей из positionHierarchyResponse,
+    // который загружается на уровне компонента через хук useQuery
+    // Важно: этот запрос уже выполнен на уровне компонента
+    const hierarchyRelations =
+      positionHierarchyResponse?.data?.filter((pr) => !pr.deleted) || [];
+
     // Выводим отладочную информацию для проверки связей
     positions.forEach((position) => {
       if (position.parent_position_id) {
@@ -1071,18 +1062,18 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       };
     });
 
-    // Используем уже полученные данные о связях должностей, которые были запрошены на уровне компонента
+    // Используем данные о связях должностей, полученные выше
     // Это исправляет проблему с вызовом useQuery внутри функции
 
     console.log(
-      `Загружено ${positionRelations.length} связей позиций из position_positions`,
+      `Загружено ${hierarchyRelations.length} связей позиций из position_positions`,
     );
 
     // Создаем множество для отслеживания дочерних должностей
     const childPositions = new Set<number>();
 
     // Строим иерархию на основе position_position
-    positionRelations.forEach((relation) => {
+    hierarchyRelations.forEach((relation) => {
       const childId = relation.position_id;
       const parentId = relation.parent_position_id;
       const deptId = relation.department_id;
@@ -1292,54 +1283,56 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
 
     // Обрабатываем позиции, для которых связи не образовались по стандартным алгоритмам
-    console.log("Проверяем корректность построенных связей на основе связей position_positions...");
-    
+    console.log(
+      "Проверяем корректность построенных связей на основе связей position_positions...",
+    );
+
     // Проходим по всем позициям и убеждаемся, что их parent_position_id правильно отображен в иерархии
-    positionRelations.forEach((relation) => {
+    hierarchyRelations.forEach((relation) => {
       const childId = relation.position_id;
       const parentId = relation.parent_position_id;
-      
+
       // Пропускаем уже обработанные связи
       if (childPositions.has(childId)) {
         return;
       }
-      
+
       // Получаем узлы для проверки
       const childNode = positionNodes[childId];
       const parentNode = positionNodes[parentId];
-      
+
       if (childNode && parentNode) {
         // Проверяем, что дочерняя позиция не является уже подчинённой родительской
         const isAlreadySubordinate = parentNode.subordinates.some(
-          sub => sub.position.position_id === childId
+          (sub) => sub.position.position_id === childId,
         );
-        
+
         if (!isAlreadySubordinate) {
           console.log(
-            `Добавляем связь из positionRelations: "${childNode.position.name}" (ID: ${childId}) подчиняется "${parentNode.position.name}" (ID: ${parentId}) в отделе ${relation.department_id}`
+            `Добавляем связь из иерархии: "${childNode.position.name}" (ID: ${childId}) подчиняется "${parentNode.position.name}" (ID: ${parentId}) в отделе ${relation.department_id}`,
           );
-          
+
           // Добавляем связь
           parentNode.subordinates.push(childNode);
           childPositions.add(childId);
-          
+
           // Удаляем из корневых узлов, если там есть
           const childNodeIndex = rootNodes.findIndex(
-            node => node.position.position_id === childId
+            (node) => node.position.position_id === childId,
           );
           if (childNodeIndex !== -1) {
             rootNodes.splice(childNodeIndex, 1);
           }
-          
+
           // И удаляем из подчинённых других узлов (если есть)
-          Object.values(positionNodes).forEach(node => {
+          Object.values(positionNodes).forEach((node) => {
             if (node.position.position_id !== parentId) {
               const subIndex = node.subordinates.findIndex(
-                sub => sub.position.position_id === childId
+                (sub) => sub.position.position_id === childId,
               );
               if (subIndex !== -1) {
                 console.log(
-                  `Удаляем позицию "${childNode.position.name}" из подчинённых позиции "${node.position.name}", так как она должна быть подчинена "${parentNode.position.name}"`
+                  `Удаляем позицию "${childNode.position.name}" из подчинённых позиции "${node.position.name}", так как она должна быть подчинена "${parentNode.position.name}"`,
                 );
                 node.subordinates.splice(subIndex, 1);
               }
@@ -1530,6 +1523,14 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
             childDepartments: [], // Нет дочерних отделов у этого узла
           };
 
+          deptPositions.forEach((posNode) => {
+            const child = createPositionHierarchyNode(
+              posNode,
+              department.department_id,
+            );
+            if (child) departmentNode.subordinates.push(child);
+          });
+
           // Находим дочерние отделы для текущего отдела (рекурсивно)
           const childDeptDepartments = departments.filter(
             (d) => d.parent_department_id === department.department_id,
@@ -1600,7 +1601,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           }
 
           // Добавляем отдел как подчиненный элемент к должности-родителю
-          positionMapRoot[position.position_id].subordinates.push(departmentNode);
+          positionMapRoot[position.position_id].subordinates.push(
+            departmentNode,
+          );
         });
       }
     });
@@ -1650,36 +1653,48 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
         if (childIndex !== -1) {
           const childNode = rootNodes.splice(childIndex, 1)[0];
-          positionMapRoot[position.parent_position_id].subordinates.push(childNode);
+          positionMapRoot[position.parent_position_id].subordinates.push(
+            childNode,
+          );
           console.log(
             `СТАНДАРТНАЯ СВЯЗЬ: ${position.position_id} -> ${position.parent_position_id}`,
           );
         }
       }
     });
-    
+
     // Проверяем, что все связи position_positions корректно применены
     // Используем данные от уже существующего запроса
     // Если данные о связях есть и есть корневые ноды
     if (positionPositionsData && rootNodes.length > 0) {
       // Получаем только актуальные связи (не удаленные)
-      const positionPositions = positionPositionsData.filter(pp => !pp.deleted);
-      
+      const positionPositions = positionPositionsData.filter(
+        (pp) => !pp.deleted,
+      );
+
       // Обрабатываем каждую связь между должностями
-      positionPositions.forEach(pp => {
+      positionPositions.forEach((pp) => {
         const childId = pp.position_id;
         const parentId = pp.parent_position_id;
-        
+
         // Находим узлы, соответствующие связи
-        const childNode = rootNodes.find(node => node.position.position_id === childId);
-        const parentNode = rootNodes.find(node => node.position.position_id === parentId);
-        
+        const childNode = rootNodes.find(
+          (node) => node.position.position_id === childId,
+        );
+        const parentNode = rootNodes.find(
+          (node) => node.position.position_id === parentId,
+        );
+
         // Если оба узла найдены в корневых, то перемещаем дочерний под родительский
         if (childNode && parentNode) {
-          const childIndex = rootNodes.findIndex(node => node.position.position_id === childId);
-          
+          const childIndex = rootNodes.findIndex(
+            (node) => node.position.position_id === childId,
+          );
+
           if (childIndex !== -1) {
-            console.log(`Применяем связь из API: "${childNode.position.name}" -> "${parentNode.position.name}"`);
+            console.log(
+              `Применяем связь из API: "${childNode.position.name}" -> "${parentNode.position.name}"`,
+            );
             const childNodeObj = rootNodes.splice(childIndex, 1)[0];
             parentNode.subordinates.push(childNodeObj);
           }
@@ -1732,10 +1747,15 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // Строим дерево, когда данные загружены
   useEffect(() => {
-    if (
+    // Проверка всех необходимых данных
+    const hasAllData =
       departments.length > 0 &&
-      (positions.length > 0 || positionsWithDepartments.length > 0)
-    ) {
+      (positions.length > 0 || positionsWithDepartments.length > 0) &&
+      positionRelations.length > 0;
+
+    if (hasAllData) {
+      // Вычисляем данные для построения дерева только 1 раз, когда все загружено
+
       // Находим корневые отделы (без родительской должности)
       const rootDepartments = departments.filter(
         (d) => d.parent_department_id === null,
@@ -1760,7 +1780,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
       // Строим иерархию должностей для корневого отдела
       const rootDepartmentHierarchy = buildRootDepartmentHierarchy();
-      if (rootDepartmentHierarchy) {
+      if (rootDepartmentHierarchy && rootDepartmentHierarchy.length > 0) {
         setPositionHierarchy(rootDepartmentHierarchy);
       } else {
         // Резервный вариант - строим на основе manager_id
@@ -1768,7 +1788,14 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         setPositionHierarchy(hierarchy);
       }
     }
-  }, [departments, positions, employees, positionsWithDepartments]);
+    // зависимость от стабильных "снимков" данных, чтобы избежать повторных рендеров
+  }, [
+    departments.length,
+    positions.length,
+    positionsWithDepartments.length,
+    positionRelations.length,
+    employees.length,
+  ]);
 
   // Фильтруем иерархию при изменении выбранной должности
   useEffect(() => {
@@ -1812,11 +1839,17 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Если данные еще не загружены, показываем загрузку
   if (
     departments.length === 0 ||
-    (positions.length === 0 && positionsWithDepartments.length === 0)
+    (positions.length === 0 && positionsWithDepartments.length === 0) ||
+    positionRelations.length === 0 // Добавлена проверка на загрузку данных о связях должностей
   ) {
     return (
       <div className="loading-message">
         Загрузка организационной структуры...
+        {departments.length > 0 &&
+          (positions.length > 0 || positionsWithDepartments.length > 0) &&
+          positionRelations.length === 0 && (
+            <div>Ожидание загрузки связей между должностями...</div>
+          )}
       </div>
     );
   }
