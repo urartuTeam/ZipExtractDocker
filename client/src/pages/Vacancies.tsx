@@ -16,7 +16,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { ChevronRight, ChevronDown, Building, Users, User } from "lucide-react";
+import { ChevronRight, ChevronDown, Building, Users } from "lucide-react";
 import { Link } from "wouter";
 
 type Department = {
@@ -85,7 +85,7 @@ export default function Vacancies() {
     queryKey: ["/api/employees"],
   });
 
-  // Получаем данные о связях должностей с отделами (включая информацию о вакансиях)
+  // Получаем данные о связях должностей с отделами (информация о вакансиях)
   const { data: posDeptR } = useQuery<{
     data: PositionDepartment[];
   }>({
@@ -98,8 +98,6 @@ export default function Vacancies() {
   }>({
     queryKey: ["/api/positionpositions"],
   });
-
-  console.log("Данные о вакансиях:", posDeptR?.data);
 
   // Автоматически раскрываем все дерево при загрузке данных
   useEffect(() => {
@@ -141,6 +139,7 @@ export default function Vacancies() {
   const positions = posR?.data || [];
   const employees = empR?.data || [];
   const positionDepartments = posDeptR?.data || [];
+  const positionRelations = posPositionsR?.data || [];
 
   const toggleDept = (id: number) => {
     setExpDept((s) => ({ ...s, [id]: !s[id] }));
@@ -158,9 +157,6 @@ export default function Vacancies() {
       setExpPos({});
     } else {
       // Разворачиваем все
-      const departments = deptR?.data || [];
-      const positions = posR?.data || [];
-
       const allDepts = departments.reduce(
         (acc, dept) => {
           if (!dept.deleted) {
@@ -208,13 +204,12 @@ export default function Vacancies() {
       p.departments.some((dd) => dd.department_id === deptId),
     );
     
-    // Проверяем, что данные о связях между должностями загружены
-    if (!posPositionsR?.data) {
+    if (positionRelations.length === 0) {
       return linked.filter(p => p.parent_position_id === null);
     }
     
     // Получить все связи parent-child для должностей в заданном отделе
-    const rels = posPositionsR.data
+    const rels = positionRelations
       .filter(r => !r.deleted)
       .filter(r => {
         // Находим связи, где либо родительская, либо дочерняя позиция связана с этим отделом
@@ -277,13 +272,6 @@ export default function Vacancies() {
     // Общее количество мест - это сумма вакансий и занятых мест
     const staffUnits = vacancies + currentCount;
 
-    console.log(`Позиция ${posId} в отделе ${deptId}:`, {
-      staffUnits,
-      currentCount,
-      vacancies,
-      emps: emps.length,
-    });
-
     return {
       staffUnits, // Общее количество мест
       vacancies, // Количество свободных мест
@@ -317,12 +305,6 @@ export default function Vacancies() {
 
     // Определяем цвет фона в зависимости от наличия вакансий
     let bgClass = "";
-
-    // Отладочная информация
-    console.log(
-      `Позиция ${p.name} (ID: ${p.position_id}) в отделе ${deptId}:`,
-      { staffUnits, currentCount, emps: emps.length },
-    );
 
     if (staffUnits > 0) {
       if (emps.length < staffUnits) {
