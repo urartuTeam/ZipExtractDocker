@@ -1863,8 +1863,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     <div className="org-tree-container">
       {/* Убрали отображение отдела Администрация */}
 
-      {/* Отображаем иерархию должностей как горизонтальное дерево */}
-      <div className="position-hierarchy">
+      {/* Отображаем иерархию должностей как горизонтальное дерево с горизонтальным скроллингом */}
+      <div className="position-hierarchy" style={{ overflowX: 'auto', width: '100%' }}>
         <div className="organization-controls">
           {selectedPositionId && (
             <div className="position-navigation">
