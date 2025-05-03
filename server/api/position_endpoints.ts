@@ -33,13 +33,6 @@ export function registerPositionEndpoints(app: Express) {
           
           if (!dept) continue;
           
-          // Находим все родительские позиции для этой должности в этом отделе
-          const parentsForDept = positionPositions.filter(
-            (pp) => 
-              pp.position_id === position.position_id && 
-              pp.department_id === link.department_id
-          );
-          
           // Базовая информация о связи с отделом (без родительских должностей)
           const baseDeptInfo = {
             position_link_id: link.position_link_id,
@@ -49,50 +42,48 @@ export function registerPositionEndpoints(app: Express) {
             vacancies: link.vacancies || 0,
           };
           
+          // Теперь ищем все родительские позиции для этой должности в этом отделе
+          const parentsForDept = positionPositions.filter(
+            (pp) => 
+              pp.position_id === position.position_id && 
+              pp.department_id === link.department_id
+          );
+          
           // Если нет родительских позиций, добавляем только базовую связь с отделом
           if (parentsForDept.length === 0) {
             linkedDepartments.push({
               ...baseDeptInfo,
               parent_positions: [],
               parent_position: null,
-              position_position_id: null
+              position_position_id: null,
+              group_key: `null_${link.department_id}` // Ключ для группировки по отделу без родителя
             });
           } else {
-            // Сгруппируем родительские должности
-            const parentPositionsData: Record<number, {
-              position: any, 
-              relationId: number
-            }> = {};
-            
-            // Создаем объект с уникальными родительскими должностями
+            // Для каждой родительской должности создаем отдельную связь
             for (const parentRelation of parentsForDept) {
               const parentPosition = positions.find(
                 (p) => p.position_id === parentRelation.parent_position_id,
               );
               
               if (parentPosition) {
-                parentPositionsData[parentPosition.position_id] = {
-                  position: parentPosition,
-                  relationId: parentRelation.position_relation_id
-                };
+                // Создаем уникальный ключ группировки для пары (родительская должность + отдел)
+                const groupKey = `${parentPosition.position_id}_${link.department_id}`;
+                
+                linkedDepartments.push({
+                  ...baseDeptInfo,
+                  parent_position: {
+                    position_id: parentPosition.position_id,
+                    name: parentPosition.name,
+                  },
+                  parent_positions: [{ // Для обратной совместимости
+                    position_id: parentPosition.position_id,
+                    name: parentPosition.name,
+                  }],
+                  position_position_id: parentRelation.position_relation_id, // ID связи для удаления
+                  group_key: groupKey // Ключ для группировки 
+                });
               }
             }
-            
-            // Теперь для каждой родительской должности создаем отдельную строку
-            Object.values(parentPositionsData).forEach(({position, relationId}) => {
-              linkedDepartments.push({
-                ...baseDeptInfo,
-                parent_position: {
-                  position_id: position.position_id,
-                  name: position.name,
-                },
-                parent_positions: [{  
-                  position_id: position.position_id,
-                  name: position.name,
-                }],
-                position_position_id: relationId // ID связи для удаления
-              });
-            });
           }
         }
         

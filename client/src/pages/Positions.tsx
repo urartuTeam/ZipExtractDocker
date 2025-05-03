@@ -668,9 +668,11 @@ export default function Positions() {
                           <TableCell>
                             {position.departments && position.departments.length > 0 ? (
                               <div className="border rounded-md divide-y">
+                                {/* Выводим связи с группировкой по group_key (родительская должность + отдел) */}
                                 {position.departments.map(dept => {
+                                  console.log("Связь с group_key:", dept.group_key);
                                   return (
-                                    <div key={dept.position_link_id} className="p-2">
+                                    <div key={`${dept.position_link_id}_${dept.position_position_id || 'null'}`} className="p-2">
                                       <div className="grid grid-cols-[1fr,1fr,auto] gap-2 items-center">
                                         <div className="text-sm font-medium">
                                           {dept.parent_position ? (
