@@ -373,6 +373,7 @@ const PositionTree = ({
   allPositions,
   allEmployees,
   onPositionClick,
+  onNodeClick,
   selectedPositionId,
   hierarchyInitialLevels = 3, // По умолчанию 3 уровня
   showThreeLevels = false, // Показывать третий уровень
@@ -382,6 +383,7 @@ const PositionTree = ({
   allPositions: Position[];
   allEmployees: Employee[];
   onPositionClick?: (positionId: number) => void;
+  onNodeClick?: (nodeId: string) => void; // Новый обработчик для идентификаторов с префиксами
   selectedPositionId?: number;
   hierarchyInitialLevels?: number;
   showThreeLevels?: boolean;
@@ -466,6 +468,7 @@ const PositionTree = ({
             <UnifiedPositionCard
               node={firstNode}
               onPositionClick={onPositionClick}
+              onNodeClick={onNodeClick}
               isTopLevel={isRootView} // Верхний уровень, если это корневой вид
               showVacancies={showVacancies}
             />
@@ -495,6 +498,7 @@ const PositionTree = ({
                     <UnifiedPositionCard
                       node={subNode}
                       onPositionClick={onPositionClick}
+                      onNodeClick={onNodeClick}
                       isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
                       showVacancies={showVacancies}
                     />
@@ -525,6 +529,7 @@ const PositionTree = ({
                                 <UnifiedPositionCard
                                   node={grandChild}
                                   onPositionClick={onPositionClick}
+                                  onNodeClick={onNodeClick}
                                   isTopLevel={false} // Третий уровень не верхний
                                   showVacancies={showVacancies}
                                 />
@@ -551,6 +556,7 @@ const PositionTree = ({
             <UnifiedPositionCard
               node={node}
               onPositionClick={onPositionClick}
+              onNodeClick={onNodeClick}
               isTopLevel={isRootView} // Верхний уровень, если это корневой вид
               showVacancies={showVacancies}
             />
@@ -578,6 +584,7 @@ const PositionTree = ({
                     <UnifiedPositionCard
                       node={subNode}
                       onPositionClick={onPositionClick}
+                      onNodeClick={onNodeClick}
                       showVacancies={showVacancies}
                       isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
                     />
