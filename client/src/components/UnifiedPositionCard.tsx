@@ -35,13 +35,11 @@ type PositionHierarchyNode = {
 const UnifiedPositionCard = ({
   node,
   onPositionClick,
-  onNodeClick,
   isTopLevel = false,
   showVacancies = false,
 }: {
   node: PositionHierarchyNode;
   onPositionClick?: (positionId: number) => void;
-  onNodeClick?: (nodeId: string) => void; // Новый обработчик для строковых идентификаторов с префиксами
   isTopLevel?: boolean;
   showVacancies?: boolean;
 }) => {
@@ -59,28 +57,14 @@ const UnifiedPositionCard = ({
   const topIndicator = node.position.position_id % 10; // Берем последнюю цифру ID
   const bottomIndicator = node.subordinates.length; // Количество подчиненных
 
-  // Создаем строковый идентификатор с префиксом на основе типа
-  const nodeId = isDepartment 
-    ? `dept-${node.position.department_id || node.position.position_id}`
-    : `pos-${node.position.position_id}`;
-
-  // Обработчик клика с учетом типа вызова
-  const handleClick = () => {
-    if (onNodeClick) {
-      // Новый способ - передаем строковый ID с префиксом
-      onNodeClick(nodeId);
-    } else if (onPositionClick) {
-      // Старый способ для обратной совместимости - передаем числовой ID
-      onPositionClick(node.position.position_id);
-    }
-  };
-
   return (
     <div
       className={`position-card ${cardClass} ${isDepartment ? "department-card" : ""}`}
-      onClick={handleClick}
+      onClick={() =>
+        onPositionClick && onPositionClick(node.position.position_id)
+      }
       style={{
-        cursor: (onPositionClick || onNodeClick) ? "pointer" : "default",
+        cursor: onPositionClick ? "pointer" : "default",
         position: "relative", // Добавляем позиционирование для абсолютных элементов
       }}
     >

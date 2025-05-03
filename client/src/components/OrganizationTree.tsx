@@ -373,7 +373,6 @@ const PositionTree = ({
   allPositions,
   allEmployees,
   onPositionClick,
-  onNodeClick,
   selectedPositionId,
   hierarchyInitialLevels = 3, // По умолчанию 3 уровня
   showThreeLevels = false, // Показывать третий уровень
@@ -383,7 +382,6 @@ const PositionTree = ({
   allPositions: Position[];
   allEmployees: Employee[];
   onPositionClick?: (positionId: number) => void;
-  onNodeClick?: (nodeId: string) => void; // Новый обработчик для идентификаторов с префиксами
   selectedPositionId?: number;
   hierarchyInitialLevels?: number;
   showThreeLevels?: boolean;
@@ -468,7 +466,6 @@ const PositionTree = ({
             <UnifiedPositionCard
               node={firstNode}
               onPositionClick={onPositionClick}
-              onNodeClick={onNodeClick}
               isTopLevel={isRootView} // Верхний уровень, если это корневой вид
               showVacancies={showVacancies}
             />
@@ -498,7 +495,6 @@ const PositionTree = ({
                     <UnifiedPositionCard
                       node={subNode}
                       onPositionClick={onPositionClick}
-                      onNodeClick={onNodeClick}
                       isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
                       showVacancies={showVacancies}
                     />
@@ -529,7 +525,6 @@ const PositionTree = ({
                                 <UnifiedPositionCard
                                   node={grandChild}
                                   onPositionClick={onPositionClick}
-                                  onNodeClick={onNodeClick}
                                   isTopLevel={false} // Третий уровень не верхний
                                   showVacancies={showVacancies}
                                 />
@@ -556,7 +551,6 @@ const PositionTree = ({
             <UnifiedPositionCard
               node={node}
               onPositionClick={onPositionClick}
-              onNodeClick={onNodeClick}
               isTopLevel={isRootView} // Верхний уровень, если это корневой вид
               showVacancies={showVacancies}
             />
@@ -584,7 +578,6 @@ const PositionTree = ({
                     <UnifiedPositionCard
                       node={subNode}
                       onPositionClick={onPositionClick}
-                      onNodeClick={onNodeClick}
                       showVacancies={showVacancies}
                       isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
                     />
@@ -1742,41 +1735,18 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     return rootNodes;
   };
 
-  // Обработчик клика по узлу (должности или отделу)
-  const handleNodeClick = (nodeId: string) => {
-    console.log(`Клик по узлу с ID: ${nodeId}`);
-
-    // Проверяем тип узла по префиксу
-    if (nodeId.startsWith('pos-')) {
-      // Это должность
-      const positionId = Number(nodeId.split('-')[1]);
-      console.log(`Это должность с ID: ${positionId}`);
-      
-      // Если текущая позиция выбрана, добавляем её в историю перед переходом на новую
-      if (selectedPositionId) {
-        console.log(`Сохраняем в историю позицию: ${selectedPositionId}`);
-        setNavigationHistory((prev) => [...prev, selectedPositionId]);
-      }
-
-      // Обновляем ID выбранной должности
-      setSelectedPositionId(positionId);
-      
-    } else if (nodeId.startsWith('dept-')) {
-      // Это отдел
-      const deptId = Number(nodeId.split('-')[1]);
-      console.log(`Это отдел с ID: ${deptId}`);
-      
-      // Здесь можно реализовать дополнительную логику для отделов
-      // Например, отобразить должности в этом отделе
-      const departmentPositions = getDeptPositionsHierarchy(deptId);
-      console.log(`Найдено ${departmentPositions.length} должностей в отделе ${deptId}`);
-    }
-  };
-  
-  // Обработчик клика по должности (для совместимости со старым кодом)
+  // Обработчик клика по должности
   const handlePositionClick = (positionId: number) => {
     console.log(`Клик по должности с ID: ${positionId}`);
-    handleNodeClick(`pos-${positionId}`);
+
+    // Если текущая позиция выбрана, добавляем её в историю перед переходом на новую
+    if (selectedPositionId) {
+      console.log(`Сохраняем в историю позицию: ${selectedPositionId}`);
+      setNavigationHistory((prev) => [...prev, selectedPositionId]);
+    }
+
+    // Обновляем ID выбранной должности
+    setSelectedPositionId(positionId);
 
     // Если передан внешний обработчик, вызываем его
     if (onPositionClick) {
@@ -1946,7 +1916,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           allPositions={positions}
           allEmployees={employees}
           onPositionClick={handlePositionClick}
-          onNodeClick={handleNodeClick} // Добавляем новый обработчик для узлов с префиксами
           selectedPositionId={selectedPositionId}
           hierarchyInitialLevels={Number(hierarchyInitialLevels)}
           showThreeLevels={showThreeLevels}
