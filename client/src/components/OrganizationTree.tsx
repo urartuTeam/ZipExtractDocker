@@ -352,7 +352,6 @@ const PositionTree = ({
   showVacancies?: boolean;
 }) => {
   // Проверяем, есть ли хотя бы одна действительная должность
-  // Фильтрация необходима, т.к. иногда могут приходить неверные данные
   const validNodes = nodes.filter((node) => node && node.position);
 
   // Берем первую должность для основной ветви (если есть)
@@ -363,7 +362,28 @@ const PositionTree = ({
 
   // Определяем, является ли это первичным показом организационного дерева с самой вершины
   const isRootView = !selectedPositionId;
+  
+  // Рефы для измерения ширины контейнеров
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  // Функция для расчета оптимального количества столбцов в сетке
+  const calculateColumns = (containerWidth: number, itemCount: number) => {
+    // Учитываем ширину блока должности (220px) плюс небольшой отступ
+    const itemWidth = 220 + 20; // в пикселях
+    
+    // Найти, сколько блоков уместится по ширине
+    let cols = Math.floor(containerWidth / itemWidth);
+    
+    // Если слишком мало, установим минимум 2 столбца
+    if (cols < 2) cols = 2;
+    
+    // Если слишком много, ограничим 6 столбцами
+    if (cols > 6) cols = 6;
+    
+    return cols;
+  };
 
+  // Функция для пересчета ширины контейнеров
   useEffect(() => {
     const calculateWidthsRecursively = (container: HTMLElement): number => {
       const branches = container.querySelectorAll<HTMLElement>(
@@ -419,7 +439,259 @@ const PositionTree = ({
     recalc();
     window.addEventListener("resize", recalc);
     return () => window.removeEventListener("resize", recalc);
-  }, [nodes, showThreeLevels]); // Добавили зависимость от showThreeLevels
+  }, [nodes, showThreeLevels]);
+
+  // Рендер компонента третьего уровня (внуки)
+  const renderGrandchildren = (subNode: PositionHierarchyNode) => {
+    if (!subNode.subordinates?.length) return null;
+    
+    const hasNestedChildren = subNode.subordinates.some(sub => sub?.subordinates?.length > 0);
+    
+    if (hasNestedChildren) {
+      // Обычное отображение для неконечных уровней
+      return (
+        <div className="subordinates-container">
+          <div className="tree-branch-connections">
+            <div
+              className="tree-branch-line"
+              style={{
+                width: `${Math.max(subNode.subordinates.length * 120, 100)}px`,
+              }}
+            />
+          </div>
+          
+          {subNode.subordinates
+            .filter(sub => sub && sub.position)
+            .map((grandChild, grandIndex) => (
+              <div
+                key={`${grandChild.position.position_id}-${grandIndex}`}
+                className="subordinate-branch"
+              >
+                <UnifiedPositionCard
+                  node={grandChild}
+                  onPositionClick={onPositionClick}
+                  isTopLevel={false}
+                  showVacancies={showVacancies}
+                />
+              </div>
+            ))
+          }
+        </div>
+      );
+    } else {
+      // Сетка для конечных уровней
+      return (
+        <div className="subordinates-container">
+          <div className="tree-branch-connections">
+            <div
+              className="tree-branch-line"
+              style={{
+                width: `${Math.max(subNode.subordinates.length * 120, 100)}px`,
+              }}
+            />
+          </div>
+          
+          <div className="grid-layout-container" style={{ 
+            display: 'grid',
+            gridTemplateColumns: `repeat(${
+              calculateColumns(
+                containerRef.current?.clientWidth || 800, 
+                subNode.subordinates.length
+              )
+            }, minmax(200px, 1fr))`,
+            gap: '20px',
+            width: '100%'
+          }}>
+            {subNode.subordinates
+              .filter(sub => sub && sub.position)
+              .map((grandChild, grandIndex) => (
+                <div
+                  key={`${grandChild.position.position_id}-${grandIndex}`}
+                  className="grid-layout-item"
+                >
+                  <UnifiedPositionCard
+                    node={grandChild}
+                    onPositionClick={onPositionClick}
+                    isTopLevel={false}
+                    showVacancies={showVacancies}
+                  />
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      );
+    }
+  };
+
+  // Рендер компонента второго уровня (дети) для первой должности
+  const renderFirstNodeChildren = () => {
+    if (!firstNode || !firstNode.subordinates?.length) return null;
+    
+    const hasNestedChildren = firstNode.subordinates.some(sub => sub?.subordinates?.length > 0);
+    
+    if (hasNestedChildren) {
+      // Обычное отображение для неконечных уровней
+      return (
+        <div className="subordinates-container" ref={containerRef}>
+          <div className="tree-branch-connections">
+            <div
+              className="tree-branch-line"
+              style={{
+                width: `${Math.max(firstNode.subordinates.length * 120, 100)}px`,
+              }}
+            />
+          </div>
+          
+          {firstNode.subordinates
+            .filter(sub => sub && sub.position)
+            .map((subNode, index) => (
+              <div
+                key={`${subNode.position.position_id}-${index}`}
+                className="subordinate-branch"
+              >
+                <UnifiedPositionCard
+                  node={subNode}
+                  onPositionClick={onPositionClick}
+                  isTopLevel={isRootView}
+                  showVacancies={showVacancies}
+                />
+                
+                {/* Третий уровень */}
+                {showThreeLevels && renderGrandchildren(subNode)}
+              </div>
+            ))
+          }
+        </div>
+      );
+    } else {
+      // Сетка для конечных уровней
+      return (
+        <div className="subordinates-container" ref={containerRef}>
+          <div className="tree-branch-connections">
+            <div
+              className="tree-branch-line"
+              style={{
+                width: `${Math.max(firstNode.subordinates.length * 120, 100)}px`,
+              }}
+            />
+          </div>
+          
+          <div className="grid-layout-container" style={{ 
+            display: 'grid',
+            gridTemplateColumns: `repeat(${
+              calculateColumns(
+                containerRef.current?.clientWidth || 800, 
+                firstNode.subordinates.length
+              )
+            }, minmax(200px, 1fr))`,
+            gap: '20px',
+            width: '100%'
+          }}>
+            {firstNode.subordinates
+              .filter(sub => sub && sub.position)
+              .map((subNode, index) => (
+                <div
+                  key={`${subNode.position.position_id}-${index}`}
+                  className="grid-layout-item"
+                >
+                  <UnifiedPositionCard
+                    node={subNode}
+                    onPositionClick={onPositionClick}
+                    isTopLevel={isRootView}
+                    showVacancies={showVacancies}
+                  />
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      );
+    }
+  };
+
+  // Рендер компонента второго уровня (дети) для остальных должностей
+  const renderOtherNodeChildren = (node: PositionHierarchyNode) => {
+    if (!node.subordinates?.length) return null;
+    
+    const hasNestedChildren = node.subordinates.some(sub => sub?.subordinates?.length > 0);
+    
+    if (hasNestedChildren) {
+      // Обычное отображение для неконечных уровней
+      return (
+        <div className="subordinates-container">
+          <div className="tree-branch-connections">
+            <div
+              className="tree-branch-line"
+              style={{
+                width: `${Math.max(node.subordinates.length * 120, 100)}px`,
+              }}
+            />
+          </div>
+          
+          {node.subordinates
+            .filter(sub => sub && sub.position)
+            .map((subNode, index) => (
+              <div
+                key={`${subNode.position.position_id}-${index}`}
+                className="subordinate-branch"
+              >
+                <UnifiedPositionCard
+                  node={subNode}
+                  onPositionClick={onPositionClick}
+                  isTopLevel={isRootView}
+                  showVacancies={showVacancies}
+                />
+              </div>
+            ))
+          }
+        </div>
+      );
+    } else {
+      // Сетка для конечных уровней
+      return (
+        <div className="subordinates-container">
+          <div className="tree-branch-connections">
+            <div
+              className="tree-branch-line"
+              style={{
+                width: `${Math.max(node.subordinates.length * 120, 100)}px`,
+              }}
+            />
+          </div>
+          
+          <div className="grid-layout-container" style={{ 
+            display: 'grid',
+            gridTemplateColumns: `repeat(${
+              calculateColumns(
+                document.querySelector('.subordinates-container')?.clientWidth || 800, 
+                node.subordinates.length
+              )
+            }, minmax(200px, 1fr))`,
+            gap: '20px',
+            width: '100%'
+          }}>
+            {node.subordinates
+              .filter(sub => sub && sub.position)
+              .map((subNode, index) => (
+                <div
+                  key={`${subNode.position.position_id}-${index}`}
+                  className="grid-layout-item"
+                >
+                  <UnifiedPositionCard
+                    node={subNode}
+                    onPositionClick={onPositionClick}
+                    isTopLevel={isRootView}
+                    showVacancies={showVacancies}
+                  />
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      );
+    }
+  };
 
   return (
     <div className="tree-node">
@@ -430,82 +702,18 @@ const PositionTree = ({
             <UnifiedPositionCard
               node={firstNode}
               onPositionClick={onPositionClick}
-              isTopLevel={isRootView} // Верхний уровень, если это корневой вид
+              isTopLevel={isRootView}
               showVacancies={showVacancies}
             />
           </div>
 
           {/* Подчиненные первой должности */}
-          {firstNode.subordinates.length > 0 && (
-            <div className="subordinates-container">
-              <div className="tree-branch-connections">
-                {/* Горизонтальная линия */}
-                <div
-                  className="tree-branch-line"
-                  style={{
-                    width: `${Math.max(firstNode.subordinates.length * 120, 100)}px`,
-                  }}
-                ></div>
-              </div>
-
-              {/* Отображаем подчиненных */}
-              {firstNode.subordinates
-                .filter((sub) => sub && sub.position)
-                .map((subNode: PositionHierarchyNode, index: number) => (
-                  <div
-                    key={`${subNode.position.position_id}-${index}`}
-                    className="subordinate-branch"
-                  >
-                    <UnifiedPositionCard
-                      node={subNode}
-                      onPositionClick={onPositionClick}
-                      isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
-                      showVacancies={showVacancies}
-                    />
-
-                    {/* Рекурсивное отображение подчиненных подчиненного, если они есть И настройка позволяет (3 уровня) */}
-                    {subNode.subordinates.length > 0 && showThreeLevels && (
-                      <div className="subordinates-container">
-                        <div className="tree-branch-connections">
-                          <div
-                            className="tree-branch-line"
-                            style={{
-                              width: `${Math.max(subNode.subordinates.length * 120, 100)}px`,
-                            }}
-                          ></div>
-                        </div>
-
-                        {subNode.subordinates
-                          .filter((sub) => sub && sub.position)
-                          .map(
-                            (
-                              grandChild: PositionHierarchyNode,
-                              grandIndex: number,
-                            ) => (
-                              <div
-                                key={`${grandChild.position.position_id}-${grandIndex}`}
-                                className="subordinate-branch"
-                              >
-                                <UnifiedPositionCard
-                                  node={grandChild}
-                                  onPositionClick={onPositionClick}
-                                  isTopLevel={false} // Третий уровень не верхний
-                                  showVacancies={showVacancies}
-                                />
-                              </div>
-                            ),
-                          )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-            </div>
-          )}
+          {firstNode.subordinates.length > 0 && renderFirstNodeChildren()}
         </div>
       )}
 
       {/* Отображаем остальные должности верхнего уровня */}
-      {otherNodes.map((node: PositionHierarchyNode, index: number) => (
+      {otherNodes.map((node, index) => (
         <div
           key={`${node.position.position_id}-${index}`}
           className="tree-branch"
@@ -515,40 +723,13 @@ const PositionTree = ({
             <UnifiedPositionCard
               node={node}
               onPositionClick={onPositionClick}
-              isTopLevel={isRootView} // Верхний уровень, если это корневой вид
+              isTopLevel={isRootView}
               showVacancies={showVacancies}
             />
           </div>
 
           {/* Подчиненные других должностей */}
-          {node.subordinates.length > 0 && (
-            <div className="subordinates-container">
-              <div className="tree-branch-connections">
-                <div
-                  className="tree-branch-line"
-                  style={{
-                    width: `${Math.max(node.subordinates.length * 120, 100)}px`,
-                  }}
-                ></div>
-              </div>
-
-              {node.subordinates
-                .filter((sub) => sub && sub.position)
-                .map((subNode: PositionHierarchyNode, subIndex: number) => (
-                  <div
-                    key={`${subNode.position.position_id}-${subIndex}`}
-                    className="subordinate-branch"
-                  >
-                    <UnifiedPositionCard
-                      node={subNode}
-                      onPositionClick={onPositionClick}
-                      showVacancies={showVacancies}
-                      isTopLevel={isRootView} // Второй уровень тоже верхний, если это корневой вид
-                    />
-                  </div>
-                ))}
-            </div>
-          )}
+          {node.subordinates.length > 0 && renderOtherNodeChildren(node)}
         </div>
       ))}
     </div>
