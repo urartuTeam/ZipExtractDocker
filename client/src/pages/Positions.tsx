@@ -60,6 +60,11 @@ interface DepartmentLink {
     position_id: number;
     name: string;
   } | null;
+  // Новое поле для списка всех родительских должностей
+  parent_positions?: Array<{
+    position_id: number;
+    name: string;
+  }>;
 }
 
 interface Position {
@@ -247,12 +252,42 @@ export default function Positions() {
   // Mutation для удаления связи должности с отделом
   const deletePositionDepartment = useMutation({
     mutationFn: async (id: number) => {
-      const res = await apiRequest("DELETE", `/api/positiondepartments/${id}`);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Ошибка при удалении связи должности с отделом");
+      // Используем fetch напрямую, чтобы обойти проблему с обработкой non-JSON ответов
+      try {
+        const response = await fetch(`/api/positiondepartments/${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        });
+        
+        // Проверяем, успешен ли ответ
+        if (!response.ok) {
+          const contentType = response.headers.get('content-type');
+          
+          // Если ответ не JSON, обрабатываем как текст
+          if (contentType && contentType.indexOf('application/json') === -1) {
+            const errorText = await response.text();
+            throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}. ${errorText.substring(0, 100)}`);
+          }
+          
+          // Если JSON, обрабатываем как обычно
+          const errorData = await response.json();
+          throw new Error(errorData.message || "Ошибка при удалении связи должности с отделом");
+        }
+        
+        // Пытаемся обработать ответ как JSON
+        try {
+          return await response.json();
+        } catch (e) {
+          // Если не получилось, значит ответ не JSON - просто возвращаем статус
+          return { status: 'success' };
+        }
+      } catch (error) {
+        console.error("Ошибка при удалении связи:", error);
+        throw error;
       }
-      return res.json();
     },
     onSuccess: () => {
       toast({
@@ -564,14 +599,19 @@ export default function Positions() {
                             {position.departments && position.departments.length > 0 ? (
                               <div className="border rounded-md divide-y">
                                 {position.departments.map(dept => {
-                                  // Для каждого отдела найдем соответствующую родительскую должность
-                                  // В будущем здесь можно получать parent_position из position_position где department_id = dept.department_id
                                   return (
                                     <div key={dept.position_link_id} className="p-2">
                                       <div className="grid grid-cols-[1fr,1fr,auto] gap-2 items-center">
                                         <div className="text-sm font-medium">
-                                          {dept.parent_position ? (
-                                            <span>{dept.parent_position.name}</span>
+                                          {dept.parent_positions && dept.parent_positions.length > 0 ? (
+                                            <div>
+                                              {dept.parent_positions.map((parent: any, idx: number) => (
+                                                <div key={parent.position_id}>
+                                                  {parent.name}
+                                                  {idx < (dept.parent_positions?.length || 0) - 1 && ', '}
+                                                </div>
+                                              ))}
+                                            </div>
                                           ) : (
                                             <span className="text-gray-500">Нет родительской должности</span>
                                           )}
