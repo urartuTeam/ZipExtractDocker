@@ -932,16 +932,3 @@
   margin-left: auto;
   margin-right: auto;
 }
-
-/* Стили для сетки нижнего уровня должностей */
-.grid-layout-container {
-  display: grid;
-  gap: 20px;
-  padding: 10px 0;
-  width: 100%;
-}
-
-.grid-layout-item {
-  display: flex;
-  justify-content: center;
-}
