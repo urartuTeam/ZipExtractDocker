@@ -868,8 +868,7 @@ export default function Positions() {
                 >
                   <option value="" disabled>Выберите отдел</option>
                   {departmentsData?.data
-                    // Фильтруем отделы, исключая те, которые уже привязаны к этой должности
-                    .filter(dept => !selectedPosition?.departments?.some(d => d.department_id === dept.department_id))
+                    // Показываем все отделы, включая уже привязанные
                     .map(dept => (
                       <option key={dept.department_id} value={dept.department_id}>
                         {dept.name}
