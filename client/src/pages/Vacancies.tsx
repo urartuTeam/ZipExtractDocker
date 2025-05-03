@@ -53,6 +53,14 @@ type PositionDepartment = {
   deleted_at: string | null;
 };
 
+type PositionRelation = {
+  position_position_id: number;
+  position_id: number;
+  parent_position_id: number;
+  department_id: number;
+  deleted: boolean;
+};
+
 export default function Vacancies() {
   const [expDept, setExpDept] = useState<{ [k: number]: boolean }>({});
   const [expPos, setExpPos] = useState<{ [k: string]: boolean }>({});
@@ -82,6 +90,13 @@ export default function Vacancies() {
     data: PositionDepartment[];
   }>({
     queryKey: ["/api/pd"],
+  });
+  
+  // Получаем данные о связях между должностями (parent-child)
+  const { data: posPositionsR } = useQuery<{
+    data: PositionRelation[];
+  }>({
+    queryKey: ["/api/positionpositions"],
   });
 
   console.log("Данные о вакансиях:", posDeptR?.data);
@@ -188,18 +203,45 @@ export default function Vacancies() {
     departments.filter((d) => !d.deleted && d.parent_position_id === posId);
 
   const getDeptPositions = (deptId: number) => {
+    // Получаем все должности, связанные с указанным отделом
     const linked = positions.filter((p) =>
       p.departments.some((dd) => dd.department_id === deptId),
     );
-    const map: { [k: number]: any } = {};
-    linked.forEach((p) => (map[p.position_id] = { ...p, children: [] }));
-    linked.forEach((p) => {
-      if (p.parent_position_id && map[p.parent_position_id]) {
-        map[p.parent_position_id].children.push(map[p.position_id]);
+    
+    // Проверяем, что данные о связях между должностями загружены
+    if (!posPositionsR?.data) {
+      return linked.filter(p => p.parent_position_id === null);
+    }
+    
+    // Получить все связи parent-child для должностей в заданном отделе
+    const rels = posPositionsR.data
+      .filter(r => !r.deleted)
+      .filter(r => {
+        // Находим связи, где либо родительская, либо дочерняя позиция связана с этим отделом
+        const childInDept = linked.some(p => p.position_id === r.position_id);
+        const parentInDept = linked.some(p => p.position_id === r.parent_position_id);
+        return childInDept || parentInDept;
+      });
+    
+    // Собираем map всех позиций в отделе
+    const map: Record<number, any> = {};
+    linked.forEach(p => map[p.position_id] = { ...p, children: [] });
+    
+    // На основе rels вкладываем детей в родителей
+    rels.forEach(r => {
+      const parent = map[r.parent_position_id];
+      const child = map[r.position_id];
+      if (parent && child) {
+        // Проверяем, что ребенок еще не добавлен (избегаем дублирования)
+        if (!parent.children.some((c: any) => c.position_id === child.position_id)) {
+          parent.children.push(child);
+        }
       }
     });
-    return Object.values(map).filter(
-      (p: any) => p.parent_position_id === null || !map[p.parent_position_id],
+    
+    // Корни — те, у кого нет родителя в map или родитель не в текущем отделе
+    return Object.values(map).filter((p: any) => 
+      !rels.some(r => r.position_id === p.position_id && map[r.parent_position_id])
     );
   };
 
@@ -236,7 +278,6 @@ export default function Vacancies() {
     const staffUnits = vacancies + currentCount;
 
     console.log(`Позиция ${posId} в отделе ${deptId}:`, {
-      positionDept,
       staffUnits,
       currentCount,
       vacancies,
@@ -399,8 +440,6 @@ export default function Vacancies() {
       {/* Верхняя панель с логотипами и названием (как на главной странице) */}
       <div className="bg-[#a40000] text-white p-4 shadow-md flex justify-between items-center">
         <div className="flex items-center">
-          {/* Кнопка "На главную" перенесена в заголовок карточки */}
-
           <svg
             width="40"
             height="40"
