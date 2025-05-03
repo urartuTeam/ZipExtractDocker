@@ -5,6 +5,133 @@ import { insertPositionPositionSchema } from "../../shared/schema";
 // Функция для регистрации эндпоинтов для работы с должностями
 export function registerPositionEndpoints(app: Express) {
   
+  // Получить должности с информацией об отделах и родительских должностях
+  app.get('/api/positions/with-departments', async (req: Request, res: Response) => {
+    try {
+      // Получаем все должности, отделы и связи
+      const positions = await storage.getAllPositions();
+      const departments = await storage.getAllDepartments();
+      const positionDepartments = await storage.getAllPositionDepartments();
+      const positionPositions = await storage.getAllPositionPositions();
+      
+      // Создаем обогащенный список должностей с отделами и связями
+      const positionsWithDepts = positions.map((position) => {
+        // Находим все связи position_department для данной должности
+        const links = positionDepartments.filter(
+          (pd) => pd.position_id === position.position_id,
+        );
+        
+        // Находим соответствующие отделы из связей в таблице position_department
+        const linkedDepartments = [];
+        
+        // Для каждой связи из position_department обрабатываем родительские должности
+        for (const link of links) {
+          const dept = departments.find(
+            (d) => d.department_id === link.department_id,
+          );
+          
+          // Находим все родительские позиции для этой должности в этом отделе
+          const parentsForDept = positionPositions.filter(
+            (pp) => 
+              pp.position_id === position.position_id && 
+              pp.department_id === link.department_id
+          );
+          
+          if (parentsForDept.length === 0) {
+            // Если нет родительских должностей, добавляем запись без родителя
+            linkedDepartments.push({
+              position_link_id: link.position_link_id,
+              department_id: link.department_id,
+              department_name: dept?.name || "Неизвестный отдел",
+              sort: link.sort,
+              vacancies: link.vacancies || 0,
+              parent_position: null,
+            });
+          } else {
+            // Для каждой родительской должности создаем отдельную запись
+            for (const parentRelation of parentsForDept) {
+              const parentPosition = positions.find(
+                (p) => p.position_id === parentRelation.parent_position_id,
+              );
+              
+              const parentPositionInfo = parentPosition ? {
+                position_id: parentPosition.position_id,
+                name: parentPosition.name,
+              } : null;
+              
+              linkedDepartments.push({
+                position_link_id: link.position_link_id,
+                department_id: link.department_id,
+                department_name: dept?.name || "Неизвестный отдел",
+                sort: link.sort,
+                vacancies: link.vacancies || 0,
+                parent_position: parentPositionInfo,
+              });
+            }
+          }
+        }
+        
+        // Добавляем информацию о родительских должностях из position_position
+        // Это информация о том, кому подчиняется эта должность
+        const parentRelations = positionPositions.filter(
+          (pp) => pp.position_id === position.position_id,
+        );
+        const parentPositionsInfo = parentRelations
+          .map((relation) => {
+            const parentPosition = positions.find(
+              (p) => p.position_id === relation.parent_position_id,
+            );
+            if (parentPosition) {
+              return {
+                position_id: parentPosition.position_id,
+                name: parentPosition.name,
+                department_id: relation.department_id,
+              };
+            }
+            return null;
+          })
+          .filter(Boolean);
+        
+        // Получаем информацию о подчиненных должностях
+        const childrenRelations = positionPositions.filter(
+          (pp) => pp.parent_position_id === position.position_id,
+        );
+        const childrenPositionsInfo = childrenRelations
+          .map((relation) => {
+            const childPosition = positions.find(
+              (p) => p.position_id === relation.position_id,
+            );
+            if (childPosition) {
+              return {
+                position_id: childPosition.position_id,
+                name: childPosition.name,
+                department_id: relation.department_id,
+              };
+            }
+            return null;
+          })
+          .filter(Boolean);
+        
+        return {
+          ...position,
+          departments: linkedDepartments,
+          parent_positions: parentPositionsInfo,
+          children_positions: childrenPositionsInfo,
+          // Добавляем флаг, указывающий, является ли должность подчиненной
+          is_subordinate: parentRelations.length > 0,
+        };
+      });
+      
+      res.json({ status: 'success', data: positionsWithDepts });
+    } catch (error) {
+      console.error('Ошибка при получении должностей с отделами:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Ошибка сервера при получении должностей с отделами' 
+      });
+    }
+  });
+  
   // Получить должности по отделу
   app.get('/api/positions-by-department/:departmentId', async (req: Request, res: Response) => {
     try {
@@ -140,7 +267,16 @@ export function registerPositionEndpoints(app: Express) {
         });
       }
       
-      const parentPosition = await storage.getPosition(positionPositionData.parent_position_id);
+      // Проверка, что parent_position_id не равен null
+      const parentPositionId = positionPositionData.parent_position_id;
+      if (parentPositionId === null) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'ID родительской должности не может быть null' 
+        });
+      }
+      
+      const parentPosition = await storage.getPosition(parentPositionId);
       if (!parentPosition) {
         return res.status(404).json({ 
           status: 'error', 
@@ -156,7 +292,16 @@ export function registerPositionEndpoints(app: Express) {
         });
       }
       
-      const department = await storage.getDepartment(positionPositionData.department_id);
+      // Проверка, что department_id не равен null
+      const departmentId = positionPositionData.department_id;
+      if (departmentId === null) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'ID отдела не может быть null' 
+        });
+      }
+      
+      const department = await storage.getDepartment(departmentId);
       if (!department) {
         return res.status(404).json({ 
           status: 'error', 
