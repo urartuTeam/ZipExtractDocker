@@ -5,6 +5,15 @@ import DisplaySettings from "./DisplaySettings";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 
+// Тип данных для записей таблицы sort_tree
+type SortTreeItem = {
+  id: number;
+  sort: number;
+  type: string; // 'department' или 'position'
+  type_id: number;
+  parent_id: number | null;
+};
+
 // Расширяем интерфейс Window глобально
 declare global {
   interface Window {
@@ -599,6 +608,15 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   const positionRelations =
     positionHierarchyResponse?.data?.filter((pr) => !pr.deleted) || [];
   const positionPositionsData = positionHierarchyResponse?.data || [];
+  
+  // Получаем данные о сортировке из таблицы sort_tree
+  const { data: sortTreeResponse } = useQuery<{
+    status: string;
+    data: SortTreeItem[];
+  }>({
+    queryKey: ["/api/sort-tree"],
+  });
+  const sortTreeData = sortTreeResponse?.data || [];
 
   const { data: positionsResponse } = useQuery<{
     status: string;
