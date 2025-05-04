@@ -19,6 +19,7 @@ export const positions = pgTable("positions", {
   position_id: serial("position_id").primaryKey(),
   name: text("name").notNull(),
   sort: integer("sort").default(0),
+  is_category: boolean("is_category").default(false),
   deleted: boolean("deleted").default(false),
   deleted_at: timestamp("deleted_at"),
 });
@@ -72,6 +73,7 @@ export const employees = pgTable("employees", {
   email: text("email"),
   manager_id: integer("manager_id"),
   department_id: integer("department_id").references(() => departments.department_id),
+  category_parent_id: integer("category_parent_id").references(() => positions.position_id),
   deleted: boolean("deleted").default(false),
   deleted_at: timestamp("deleted_at"),
 });
@@ -177,6 +179,11 @@ export const employeesRelations = relations(employees, ({ one, many }) => ({
     fields: [employees.manager_id],
     references: [employees.employee_id],
     relationName: "manager_employee",
+  }),
+  categoryParent: one(positions, {
+    fields: [employees.category_parent_id],
+    references: [positions.position_id],
+    relationName: "category_parent_position",
   }),
   subordinates: many(employees, { relationName: "manager_employee" }),
   leaves: many(leaves),
