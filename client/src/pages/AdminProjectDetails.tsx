@@ -69,7 +69,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
 
   // Запрос проекта
   const { data: projectResponse, isLoading: isLoadingProject, refetch: refetchProject } = useQuery<{status: string, data: Project}>({
-    queryKey: ['/api/projects', projectId],
+    queryKey: [`/api/projects/${projectId}`],
     enabled: !!projectId && !isNaN(projectId),
     refetchOnMount: true,
     refetchOnWindowFocus: true,
@@ -119,12 +119,14 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   // Использовать данные запроса
   console.log("Project Response:", projectResponse);
   console.log("Project Data:", projectResponse?.data);
+  console.log("Project Employees Response:", projectEmployeesResponse);
   
   // Правильное получение данных проекта из ответа API
   // При запросе конкретного проекта API возвращает объект, а не массив
   const projectData = projectResponse?.data;
   
   console.log("Обработанные данные проекта:", projectData);
+  console.log("Employees в проекте:", projectEmployeesResponse?.data || []);
   
   const projectEmployees = projectEmployeesResponse?.data || [];
   
@@ -276,7 +278,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
         title: "Проект обновлен",
         description: "Информация о проекте успешно обновлена",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
       setShowEditProjectDialog(false);
     },
     onError: (error: Error) => {
@@ -521,11 +523,12 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
             size="sm" 
             onClick={() => {
               // Принудительно сбрасываем кэш запросов
-              queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId] });
+              queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
               queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
               
               // Принудительно запрашиваем данные заново
               refetchProject();
+              refetchEmployees();
               
               // Оповещаем пользователя
               toast({
@@ -535,7 +538,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
               
               // Через 500мс снова обновляем данные, чтобы гарантировать актуальность
               setTimeout(() => {
-                queryClient.refetchQueries({ queryKey: ['/api/projects', projectId] });
+                queryClient.refetchQueries({ queryKey: [`/api/projects/${projectId}`] });
                 queryClient.refetchQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
               }, 500);
             }}
