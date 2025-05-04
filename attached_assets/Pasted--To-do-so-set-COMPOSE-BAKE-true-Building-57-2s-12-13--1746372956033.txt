@@ -1,0 +1,19 @@
+ To do so, set COMPOSE_BAKE=true.
+[+] Building 57.2s (12/13)                                                                                                             docker:desktop-linux
+ => [app internal] load build definition from Dockerfile                                                                                               0.0s
+ => => transferring dockerfile: 490B                                                                                                                   0.0s
+ => [app internal] load metadata for docker.io/library/node:20-alpine                                                                                  1.0s
+ => [app auth] library/node:pull token for registry-1.docker.io                                                                                        0.0s
+ => [app internal] load .dockerignore                                                                                                                  0.0s
+ => => transferring context: 2B                                                                                                                        0.0s
+ => [app 1/7] FROM docker.io/library/node:20-alpine@sha256:c628bdc7ebc7f95b1b23249a445eb415ce68ae9def8b68364b35ee15e3065b0f                            0.0s
+ => [app internal] load build context                                                                                                                  1.5s
+ => => transferring context: 1.98MB                                                                                                                    1.5s
+ => CACHED [app 2/7] WORKDIR /app                                                                                                                      0.0s
+ => [app 3/7] COPY package*.json ./                                                                                                                    0.2s
+ => [app 4/7] RUN npm ci                                                                                                                              21.8s
+ => [app 5/7] COPY . .                                                                                                                                 9.6s
+ => [app 6/7] RUN rm -rf dist/*                                                                                                                        0.2s
+ => [app 7/7] RUN npm run build || (echo "Build failed" && exit 1)                                                                                    14.3s
+ => [app] exporting to image                                                                                                                           8.4s
+ => => exporting layers

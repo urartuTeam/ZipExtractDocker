@@ -1,0 +1,37 @@
+PS E:\hr-system-v1.0> docker-compose down -v && docker-compose build --no-cache && docker-compose up --build
+time="2025-05-04T18:19:44+03:00" level=warning msg="E:\\hr-system-v1.0\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+[+] Running 4/4
+ ✔ Container hr-system-v10-nginx-1     Removed                                                                                                         0.0s
+ ✔ Container hr-system-v10-postgres-1  Removed                                                                                                         0.0s
+ ✔ Network hr-system-v10_default       Removed                                                                                                         0.2s
+ ✔ Volume hr-system-v10_postgres_data  Removed                                                                                                         0.0s
+time="2025-05-04T18:19:45+03:00" level=warning msg="E:\\hr-system-v1.0\\docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion"
+Compose can now delegate builds to bake for better performance.
+ To do so, set COMPOSE_BAKE=true.
+[+] Building 55.9s (12/13)                                                                                                             docker:desktop-linux
+ => [app internal] load build definition from Dockerfile                                                                                               0.0s
+ => => transferring dockerfile: 562B                                                                                                                   0.0s
+ => [app internal] load metadata for docker.io/library/node:20-alpine                                                                                  1.3s
+ => [app auth] library/node:pull token for registry-1.docker.io                                                                                        0.0s
+ => [app internal] load .dockerignore                                                                                                                  0.0s
+ => => transferring context: 2B                                                                                                                        0.0s
+ => [app 1/8] FROM docker.io/library/node:20-alpine@sha256:c628bdc7ebc7f95b1b23249a445eb415ce68ae9def8b68364b35ee15e3065b0f                            0.0s
+ => [app internal] load build context                                                                                                                  1.3s
+ => => transferring context: 2.01MB                                                                                                                    1.3s
+ => CACHED [app 2/8] WORKDIR /app                                                                                                                      0.0s
+ => [app 3/8] COPY package*.json ./                                                                                                                    0.1s
+ => [app 4/8] RUN npm ci                                                                                                                              23.2s
+ => [app 5/8] COPY . .                                                                                                                                13.7s
+ => [app 6/8] RUN npm run build                                                                                                                       16.0s
+ => ERROR [app 7/8] RUN ls -la dist && ls -la dist/client                                                                                              0.2s
+------
+ > [app 7/8] RUN ls -la dist && ls -la dist/client:
+0.175 total 104
+0.175 drwxr-xr-x    3 root     root          4096 May  4 15:20 .
+0.175 drwxr-xr-x    1 root     root          4096 May  4 15:20 ..
+0.175 -rw-r--r--    1 root     root         88425 May  4 15:20 index.js
+0.175 drwxr-xr-x    3 root     root          4096 May  4 15:20 public
+0.175 ls: dist/client: No such file or directory
+------
+failed to solve: process "/bin/sh -c ls -la dist && ls -la dist/client" did not complete successfully: exit code: 1
+PS E:\hr-system-v1.0>

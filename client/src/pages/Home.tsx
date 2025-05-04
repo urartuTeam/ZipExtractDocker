@@ -33,10 +33,16 @@ export default function Home() {
     queryKey: ['/api/positions/with-departments'],
   });
 
+  // Запрос на получение связей между должностями
+  const { data: positionPositionsResponse, isLoading: isLoadingPositionPositions } = useQuery<{status: string, data: any[]}>({
+    queryKey: ['/api/positionpositions'],
+  });
+
   const departments = departmentsResponse?.data || [];
   const employees = employeesResponse?.data || [];
   const projects = projectsResponse?.data || [];
   const positionsWithDepartments = positionsWithDepartmentsResponse?.data || [];
+  const positionPositions = positionPositionsResponse?.data || [];
   
   // Записываем данные в глобальный объект для доступа из других компонентов
   if (positionsWithDepartments.length > 0) {
@@ -44,7 +50,26 @@ export default function Home() {
     console.log("Данные positionsWithDepartmentsData инициализированы:", positionsWithDepartments.length);
   }
   
-  const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects || isLoadingPositionsWithDepartments;
+  // Подсчет количества вакансий
+  const totalPositionsCount = positionsWithDepartments.reduce((total, position) => {
+    // Проходим по всем отделам, к которым привязана должность
+    position.departments.forEach(dept => {
+      // Учитываем только не удаленные записи
+      if (dept.deleted !== true) {
+        total += dept.vacancies || 0;
+      }
+    });
+    return total;
+  }, 0);
+  
+  // Подсчет занятых должностей (не считая первого сотрудника в дереве)
+  const occupiedPositionsCount = employees.length > 0 ? employees.length - 1 : 0;
+  
+  // Рассчитываем количество вакантных мест
+  const vacantPositionsCount = totalPositionsCount - occupiedPositionsCount;
+  
+  const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects || 
+                   isLoadingPositionsWithDepartments || isLoadingPositionPositions;
 
   return (
     <div className="flex flex-col h-screen">
