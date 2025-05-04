@@ -460,18 +460,20 @@ export default function Vacancies() {
       };
     }
 
-    // СУПЕР ПРОСТАЯ ЛОГИКА:
-    // 1. Берем количество вакансий прямо из базы данных (поле vacancies)
-    // 2. Если значение не задано, то считаем, что вакансий нет
-    
+    // ЖЕСТКАЯ И ПРОСТАЯ ЛОГИКА:
+    // Если в базе указан staff_units, используем его
+    // Если не указан - берем ровно 1 (одна штатная единица)
     // Количество занятых мест - это количество сотрудников
     const currentCount = emps.length;
     
-    // Берем количество вакансий напрямую из базы данных
-    const vacancies = positionDept.vacancies || 0;
+    // Берем ТОЛЬКО ОДНО штатное место, если в базе не указано иное
+    const staffUnits = positionDept.staff_units !== undefined ? positionDept.staff_units : 1;
     
-    // Штатные единицы = занятые места + вакансии
-    const staffUnits = currentCount + vacancies;
+    // Вакансии - это ВСЕГО минус количество занятых мест (сотрудников)
+    const vacancies = Math.max(0, staffUnits - currentCount);
+    
+    // Выводим отладочную информацию
+    console.log(`Должность: ${p.name}, отдел: ${deptId}, штатных единиц: ${staffUnits}, занято: ${currentCount}, вакансий: ${vacancies}, в БД вакансий: ${positionDept.vacancies || 0}`);
 
     return { staffUnits, vacancies, currentCount };
   };

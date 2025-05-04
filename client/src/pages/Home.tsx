@@ -61,26 +61,27 @@ export default function Home() {
     sort: number;
   };
   
-  // СУПЕР ПРОСТАЯ ЛОГИКА:
-  // 1. Берем вакансии прямо из БД (суммируем поле vacancies по всем позициям-отделам)
-  // 2. Считаем занятые места по количеству сотрудников в БД
-  // 3. ВСЕГО = ВАКАНСИИ + ЗАНЯТО
+  // ЖЕСТКАЯ И ПРОСТАЯ ЛОГИКА:
+  // 1. ВСЕГО - сумма штатных единиц по всем позициям (если не указано, то 1 место на позицию)
+  // 2. ВАКАНСИИ - ВСЕГО минус количество сотрудников
 
-  // Подсчет общего количества вакансий
-  const vacantPositionsCount = positionsWithDepartments.reduce((total, position) => {
+  // Подсчет общего количества штатных единиц
+  const totalPositions = positionsWithDepartments.reduce((total, position) => {
     position.departments.forEach((dept: PositionDepartment) => {
       if (dept.deleted !== true) {
-        total += dept.vacancies || 0;
+        // Если staff_units указан, используем его, иначе по умолчанию 1 место
+        const staffUnits = dept.staff_units !== undefined ? dept.staff_units : 1;
+        total += staffUnits;
       }
     });
     return total;
   }, 0);
   
-  // Количество занятых позиций = количество сотрудников
-  const occupiedPositionsCount = employees.length;
+  // ВАКАНСИИ - это ВСЕГО минус количество занятых позиций (сотрудников)
+  const vacantPositionsCount = Math.max(0, totalPositions - employees.length);
   
-  // ВСЕГО = вакансии + занятые места
-  const totalPositionsCount = vacantPositionsCount + occupiedPositionsCount;
+  // ВСЕГО - это общее количество штатных единиц
+  const totalPositionsCount = totalPositions;
   
   const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects || 
                    isLoadingPositionsWithDepartments || isLoadingPositionPositions;
