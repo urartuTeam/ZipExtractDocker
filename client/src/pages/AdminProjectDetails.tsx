@@ -109,6 +109,8 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   ];
   
   // Использовать данные запроса
+  console.log("Project Response:", projectResponse);
+  console.log("Project Data:", projectResponse?.data);
   const projectData = projectResponse?.data;
   const projectEmployees = projectEmployeesResponse?.data || [];
   
@@ -140,10 +142,13 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   
   // Обновление формы при изменении данных проекта
   useEffect(() => {
+    console.log("projectData в useEffect:", projectData);
     if (projectData) {
       // Используем данные из projectData
       const projectName = projectData.name;
       const projectDescription = projectData.description || "";
+      
+      console.log(`Updating form with name: ${projectName}, description: ${projectDescription}`);
       
       editProjectForm.reset({
         name: projectName,
@@ -807,7 +812,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
           <DialogHeader>
             <DialogTitle>Редактирование роли</DialogTitle>
             <DialogDescription>
-              Изменение роли сотрудника {employeeToEditRole?.employeeDetails?.full_name} в проекте
+              {employeeToEditRole ? `Изменение роли сотрудника в проекте` : `Изменение роли сотрудника в проекте`}
             </DialogDescription>
           </DialogHeader>
           
