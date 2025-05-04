@@ -115,16 +115,16 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   // Обновление формы при изменении данных проекта
   useEffect(() => {
     if (projectData) {
-      // Используем данные из projectDetails, если они есть, иначе из projectData
-      const projectName = projectDetails.title || projectData.name;
-      const projectDescription = projectDetails.description || projectData.description || "";
+      // Используем данные из projectData
+      const projectName = projectData.name;
+      const projectDescription = projectData.description || "";
       
       editProjectForm.reset({
         name: projectName,
         description: projectDescription,
       });
     }
-  }, [projectData, projectDetails, editProjectForm]);
+  }, [projectData, editProjectForm]);
 
   // Мутация для добавления сотрудника в проект
   const addEmployeeToProject = useMutation({
@@ -288,7 +288,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   const allDepartments = departmentsResponse?.data || [];
   
   // Получаем полную информацию о сотрудниках проекта
-  const projectEmployeesWithDetails = (projectDetails.employees || []).map((ep: EmployeeProject) => {
+  const projectEmployeesWithDetails = projectEmployees.map((ep: EmployeeProject) => {
     const employee = allEmployees.find(e => e.employee_id === ep.employee_id);
     const position = allPositions.find(p => p.position_id === employee?.position_id);
     const department = allDepartments.find(d => d.department_id === employee?.department_id);
@@ -303,7 +303,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
 
   // Фильтруем сотрудников, которые еще не добавлены в проект
   const availableEmployees = allEmployees.filter(
-    emp => !(projectDetails.employees || []).some((ep: EmployeeProject) => ep.employee_id === emp.employee_id)
+    emp => !projectEmployees.some((ep: EmployeeProject) => ep.employee_id === emp.employee_id)
   );
 
   const isLoading = isLoadingProject || isLoadingProjectEmployees || isLoadingEmployees || isLoadingPositions || isLoadingDepartments;
@@ -389,7 +389,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
             <ArrowLeft className="mr-2 h-4 w-4" />
             Назад к проектам
           </Button>
-          <h1 className="text-2xl font-bold">{projectDetails.title || projectData.name}</h1>
+          <h1 className="text-2xl font-bold">{projectData.name}</h1>
         </div>
         <div className="mt-3 sm:mt-0 flex space-x-2">
           <Button 
@@ -420,11 +420,11 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
           <div className="space-y-4">
             <div>
               <p className="text-sm font-medium text-gray-500">Название проекта:</p>
-              <p className="text-lg">{projectDetails.title || projectData.name}</p>
+              <p className="text-lg">{projectData.name}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Описание:</p>
-              <p className="text-base">{projectDetails.description || projectData.description || "Описание отсутствует"}</p>
+              <p className="text-base">{projectData.description || "Описание отсутствует"}</p>
             </div>
           </div>
         </CardContent>
@@ -494,7 +494,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
           <DialogHeader>
             <DialogTitle>Добавить сотрудника в проект</DialogTitle>
             <DialogDescription>
-              Выберите сотрудника для добавления в проект "{projectDetails.title || projectData.name}"
+              Выберите сотрудника для добавления в проект "{projectData.name}"
             </DialogDescription>
           </DialogHeader>
           
@@ -626,7 +626,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
               Подтверждение удаления
             </DialogTitle>
             <DialogDescription>
-              Вы действительно хотите удалить проект "{projectDetails.title || projectData.name}"?
+              Вы действительно хотите удалить проект "{projectData.name}"?
               Это действие нельзя будет отменить.
             </DialogDescription>
           </DialogHeader>
