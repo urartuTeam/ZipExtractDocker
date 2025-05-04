@@ -2,6 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Стили для тонкого скроллбара */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #a40000 #f0f0f0;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #a40000;
+  border-radius: 4px;
+}
+
 :root {
   --background: 0 0% 100%;
   --foreground: 20 14.3% 4.1%;

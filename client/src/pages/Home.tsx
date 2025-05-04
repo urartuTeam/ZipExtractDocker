@@ -94,7 +94,7 @@ export default function Home() {
               <Skeleton className="h-8 w-1/2 ml-8" />
             </div>
           ) : (
-            <div className="w-full overflow-x-auto" style={{ minHeight: '400px', maxHeight: '600px' }}>
+            <div className="w-full overflow-x-auto custom-scrollbar" style={{ minHeight: '400px', maxHeight: '600px' }}>
               <div style={{ minWidth: 'max-content' }}>
                 <OrganizationTree
                   departmentsData={departments}
