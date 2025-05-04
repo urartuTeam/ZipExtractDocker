@@ -460,25 +460,21 @@ export default function Vacancies() {
       };
     }
 
-    // Получаем данные из БД
+    // ПРОСТАЯ ЛОГИКА:
+    // 1. ВСЕГО - это штатные единицы по позиции
+    // 2. ВАКАНСИИ - ВСЕГО минус количество сотрудников
+    
+    // Количество занятых мест - это количество сотрудников
     const currentCount = emps.length;
     
-    // Получаем значения из БД
-    const dbVacancies = positionDept.vacancies || 0;
-    let dbStaffUnits = positionDept.staff_units || 0;
-    
-    // Вычисляем общее количество штатных единиц
-    // Берем максимальное значение из:
-    // 1. Поля staff_units в БД
-    // 2. Суммы занятых мест и вакансий
-    // 3. Хотя бы столько, сколько есть сотрудников
+    // Берем штатные единицы из БД, или хотя бы вакансии + занятые
     const staffUnits = Math.max(
-      dbStaffUnits,
-      currentCount + dbVacancies,
-      currentCount // как минимум, столько сколько есть сотрудников
+      positionDept.staff_units || 0,
+      currentCount + (positionDept.vacancies || 0),
+      currentCount
     );
     
-    // Вакансии - это разница между штатными единицами и занятыми местами
+    // Вакансии - это ВСЕГО минус количество занятых мест (сотрудников)
     const vacancies = Math.max(0, staffUnits - currentCount);
 
     return { staffUnits, vacancies, currentCount };

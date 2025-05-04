@@ -61,40 +61,28 @@ export default function Home() {
     sort: number;
   };
   
-  // Общее количество штатных единиц по всей организации
-  // Для каждой связки должность-отдел берем максимальное значение из:
-  // 1. Поля staff_units в БД (если указано)
-  // 2. Суммы занятых мест и вакансий
+  // ПРОСТАЯ ЛОГИКА:
+  // 1. ВСЕГО - сумма штатных единиц по всем позициям или хотя бы количество сотрудников
+  // 2. ВАКАНСИИ - ВСЕГО минус количество сотрудников
+
+  // Подсчет общего количества штатных единиц
   const totalPositions = positionsWithDepartments.reduce((total, position) => {
     position.departments.forEach((dept: PositionDepartment) => {
       if (dept.deleted !== true) {
-        // Получаем количество сотрудников на этой позиции в этом отделе
-        const employeesCount = employees.filter(
-          e => e.position_id === position.position_id && e.department_id === dept.department_id
-        ).length;
-        
-        // Берем штатное расписание из БД или расчетное значение
-        // Минимум должно быть столько мест, сколько сотрудников уже назначено
-        const staffUnits = dept.staff_units || 0;
-        const vacancies = dept.vacancies || 0;
-        const posCount = Math.max(
-          staffUnits,
-          employeesCount + vacancies,
-          employeesCount // как минимум, столько сколько есть сотрудников
-        );
-        
-        total += posCount;
+        // Берем штатные единицы из БД, или хотя бы вакансии, если указаны
+        const staffUnits = dept.staff_units || dept.vacancies || 0;
+        total += staffUnits;
       }
     });
     return total;
   }, 0);
   
-  // Общее количество занятых позиций - это количество сотрудников
-  const occupiedPositions = employees.length;
-  
   // Отображаемые данные
-  const totalPositionsCount = Math.max(totalPositions, occupiedPositions);
-  const vacantPositionsCount = Math.max(0, totalPositionsCount - occupiedPositions);
+  // ВСЕГО - это максимум из (общего количества штатных единиц, количества сотрудников)
+  const totalPositionsCount = Math.max(totalPositions, employees.length);
+  
+  // ВАКАНСИИ - это ВСЕГО минус количество занятых позиций (сотрудников)
+  const vacantPositionsCount = Math.max(0, totalPositionsCount - employees.length);
   
   const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects || 
                    isLoadingPositionsWithDepartments || isLoadingPositionPositions;
