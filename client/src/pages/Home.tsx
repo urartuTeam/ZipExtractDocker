@@ -61,48 +61,40 @@ export default function Home() {
     sort: number;
   };
   
-  // Подсчет общего количества позиций
-  const totalPositionsCount = positionsWithDepartments.reduce((total, position) => {
-    // Проходим по всем отделам, к которым привязана должность
+  // Общее количество штатных единиц по всей организации
+  // Для каждой связки должность-отдел берем максимальное значение из:
+  // 1. Поля staff_units в БД (если указано)
+  // 2. Суммы занятых мест и вакансий
+  const totalPositions = positionsWithDepartments.reduce((total, position) => {
     position.departments.forEach((dept: PositionDepartment) => {
-      // Учитываем только не удаленные записи
       if (dept.deleted !== true) {
-        // Используем штатное расписание (staff_units), если оно установлено,
-        // иначе используем сумму вакансий и занятых мест
-        const positionCount = dept.staff_units || 1; // По умолчанию хотя бы 1 место
-        total += positionCount;
+        // Получаем количество сотрудников на этой позиции в этом отделе
+        const employeesCount = employees.filter(
+          e => e.position_id === position.position_id && e.department_id === dept.department_id
+        ).length;
+        
+        // Берем штатное расписание из БД или расчетное значение
+        // Минимум должно быть столько мест, сколько сотрудников уже назначено
+        const staffUnits = dept.staff_units || 0;
+        const vacancies = dept.vacancies || 0;
+        const posCount = Math.max(
+          staffUnits,
+          employeesCount + vacancies,
+          employeesCount // как минимум, столько сколько есть сотрудников
+        );
+        
+        total += posCount;
       }
     });
     return total;
   }, 0);
   
-  // Подсчет вакантных мест (правильно, на основе разницы между штатами и занятыми местами)
-  const vacantPositionsCount = positionsWithDepartments.reduce((total, position) => {
-    // Проходим по всем отделам, к которым привязана должность
-    position.departments.forEach((dept: PositionDepartment) => {
-      // Учитываем только не удаленные записи
-      if (dept.deleted !== true) {
-        // Получаем количество сотрудников на этой должности в этом отделе
-        const empsInPosition = employees.filter(
-          e => e.position_id === position.position_id && e.department_id === dept.department_id
-        ).length;
-        
-        // Общее количество штатных единиц из БД, или по умолчанию 1
-        let staffUnits = dept.staff_units || 1;
-        
-        // Если staff_units = 0 в БД, но есть сотрудники или vacancies, исправляем это
-        if (staffUnits === 0 && (empsInPosition > 0 || dept.vacancies > 0)) {
-          staffUnits = Math.max(empsInPosition, dept.vacancies);
-        }
-        
-        // Вакансии - это разница между штатными единицами и занятыми местами
-        const vacancies = Math.max(0, staffUnits - empsInPosition);
-        
-        total += vacancies;
-      }
-    });
-    return total;
-  }, 0);
+  // Общее количество занятых позиций - это количество сотрудников
+  const occupiedPositions = employees.length;
+  
+  // Отображаемые данные
+  const totalPositionsCount = Math.max(totalPositions, occupiedPositions);
+  const vacantPositionsCount = Math.max(0, totalPositionsCount - occupiedPositions);
   
   const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects || 
                    isLoadingPositionsWithDepartments || isLoadingPositionPositions;
