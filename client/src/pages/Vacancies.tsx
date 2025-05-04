@@ -167,9 +167,47 @@ export default function Vacancies() {
     const matchedDepts = new Set<number>();
     const matchedPositions = new Set<number>();
     
+    // Функция для улучшенного поиска с поддержкой вариаций регистра, отдельных слов и т.д.
+    const isMatch = (text: string): boolean => {
+      if (!text) return false;
+      
+      // Нормализуем строку для улучшенного поиска
+      const normalizedText = text.toLowerCase()
+        .replace(/ё/g, 'е') // заменяем ё на е для лучшего поиска
+        .trim();
+      
+      const normalizedSearchTerm = searchTermLower
+        .replace(/ё/g, 'е')
+        .trim();
+      
+      // Прямое соответствие (часть слова или целое слово)
+      if (normalizedText.includes(normalizedSearchTerm)) {
+        return true;
+      }
+      
+      // Если поисковый запрос состоит из нескольких слов, ищем каждое отдельно
+      if (normalizedSearchTerm.includes(' ')) {
+        const searchWords = normalizedSearchTerm.split(' ').filter(w => w.length > 1);
+        return searchWords.every(word => normalizedText.includes(word));
+      }
+      
+      // Поиск сокращений (первые буквы слов), например "ГД" для "Генеральный Директор"
+      if (normalizedSearchTerm.length >= 2 && !/[^a-zа-яё]/i.test(normalizedSearchTerm)) {
+        const words = normalizedText.split(' ');
+        if (words.length >= normalizedSearchTerm.length) {
+          const acronym = words.map(w => w.charAt(0)).join('');
+          if (acronym.includes(normalizedSearchTerm)) {
+            return true;
+          }
+        }
+      }
+      
+      return false;
+    };
+    
     // Найдем совпадения в отделах
     departments.forEach(dept => {
-      if (!dept.deleted && dept.name.toLowerCase().includes(searchTermLower)) {
+      if (!dept.deleted && isMatch(dept.name)) {
         matchedDepts.add(dept.department_id);
         
         // Добавляем всю цепочку родительских отделов
@@ -190,7 +228,7 @@ export default function Vacancies() {
     
     // Найдем совпадения в должностях
     positions.forEach(pos => {
-      if (pos.name.toLowerCase().includes(searchTermLower)) {
+      if (isMatch(pos.name)) {
         matchedPositions.add(pos.position_id);
         
         // Добавляем связанные отделы
@@ -595,54 +633,55 @@ export default function Vacancies() {
       <div className="flex-1 p-4 bg-gray-100 overflow-auto">
         <Card>
           <CardHeader className="flex flex-col space-y-4">
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <Button asChild variant="outline" className="flex items-center">
                 <Link href="/">На главную</Link>
               </Button>
-              <Button
-                onClick={toggleAll}
-                variant="outline"
-                className="flex items-center"
-              >
-                {allExpanded ? (
-                  <>
-                    <ChevronRight className="h-4 w-4 mr-2" />
-                    Свернуть все
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="h-4 w-4 mr-2" />
-                    Развернуть все
-                  </>
-                )}
-              </Button>
+              
+              {/* Поисковый блок в правом верхнем углу */}
+              <div className="flex items-center space-x-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Поиск по названию"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-8 w-64"
+                  />
+                  {searchTerm && (
+                    <button 
+                      onClick={clearSearch}
+                      className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+                
+                <Button
+                  onClick={toggleAll}
+                  variant="outline"
+                  className="flex items-center"
+                >
+                  {allExpanded ? (
+                    <>
+                      <ChevronRight className="h-4 w-4 mr-2" />
+                      Свернуть все
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown className="h-4 w-4 mr-2" />
+                      Развернуть все
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
             <div>
               <CardTitle>Учет вакансий</CardTitle>
               <CardDescription>
                 Анализ штатных единиц и занятых позиций
               </CardDescription>
-            </div>
-            
-            {/* Поисковый блок */}
-            <div className="flex w-full max-w-md items-center space-x-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Поиск по названию отдела или должности"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-8"
-                />
-                {searchTerm && (
-                  <button 
-                    onClick={clearSearch}
-                    className="absolute right-2 top-2.5 text-muted-foreground hover:text-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
             </div>
           </CardHeader>
           <CardContent>
