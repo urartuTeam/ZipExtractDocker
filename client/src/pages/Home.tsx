@@ -61,28 +61,27 @@ export default function Home() {
     sort: number;
   };
   
-  // ПРОСТАЯ ЛОГИКА:
-  // 1. ВСЕГО - сумма штатных единиц по всем позициям или хотя бы количество сотрудников
+  // ЖЕСТКАЯ И ПРОСТАЯ ЛОГИКА:
+  // 1. ВСЕГО - сумма штатных единиц по всем позициям (если не указано, то 1 место на позицию)
   // 2. ВАКАНСИИ - ВСЕГО минус количество сотрудников
 
   // Подсчет общего количества штатных единиц
   const totalPositions = positionsWithDepartments.reduce((total, position) => {
     position.departments.forEach((dept: PositionDepartment) => {
       if (dept.deleted !== true) {
-        // Берем штатные единицы из БД, или хотя бы вакансии, если указаны
-        const staffUnits = dept.staff_units || dept.vacancies || 0;
+        // Если staff_units указан, используем его, иначе по умолчанию 1 место
+        const staffUnits = dept.staff_units !== undefined ? dept.staff_units : 1;
         total += staffUnits;
       }
     });
     return total;
   }, 0);
   
-  // Отображаемые данные
-  // ВСЕГО - это максимум из (общего количества штатных единиц, количества сотрудников)
-  const totalPositionsCount = Math.max(totalPositions, employees.length);
-  
   // ВАКАНСИИ - это ВСЕГО минус количество занятых позиций (сотрудников)
-  const vacantPositionsCount = Math.max(0, totalPositionsCount - employees.length);
+  const vacantPositionsCount = Math.max(0, totalPositions - employees.length);
+  
+  // ВСЕГО - это общее количество штатных единиц
+  const totalPositionsCount = totalPositions;
   
   const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects || 
                    isLoadingPositionsWithDepartments || isLoadingPositionPositions;

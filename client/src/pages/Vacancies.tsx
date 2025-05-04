@@ -460,22 +460,20 @@ export default function Vacancies() {
       };
     }
 
-    // ПРОСТАЯ ЛОГИКА:
-    // 1. ВСЕГО - это штатные единицы по позиции
-    // 2. ВАКАНСИИ - ВСЕГО минус количество сотрудников
-    
+    // ЖЕСТКАЯ И ПРОСТАЯ ЛОГИКА:
+    // Если в базе указан staff_units, используем его
+    // Если не указан - берем ровно 1 (одна штатная единица)
     // Количество занятых мест - это количество сотрудников
     const currentCount = emps.length;
     
-    // Берем штатные единицы из БД, или хотя бы вакансии + занятые
-    const staffUnits = Math.max(
-      positionDept.staff_units || 0,
-      currentCount + (positionDept.vacancies || 0),
-      currentCount
-    );
+    // Берем ТОЛЬКО ОДНО штатное место, если в базе не указано иное
+    const staffUnits = positionDept.staff_units !== undefined ? positionDept.staff_units : 1;
     
     // Вакансии - это ВСЕГО минус количество занятых мест (сотрудников)
     const vacancies = Math.max(0, staffUnits - currentCount);
+    
+    // Выводим отладочную информацию
+    console.log(`Должность: ${p.name}, отдел: ${deptId}, штатных единиц: ${staffUnits}, занято: ${currentCount}, вакансий: ${vacancies}, в БД вакансий: ${positionDept.vacancies || 0}`);
 
     return { staffUnits, vacancies, currentCount };
   };
