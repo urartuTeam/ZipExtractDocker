@@ -241,22 +241,6 @@ const AdminStructureView: React.FC = () => {
     // Вычисляем отступ в зависимости от уровня
     const paddingLeft = `${lvl * 20}px`;
     
-    // Получаем все должности в отделе
-    const allDeptPositions = deptPositions;
-    
-    // Получаем ТОЛЬКО корневые должности отдела - те, у которых нет родительской должности в этом отделе
-    const rootDeptPositions = allDeptPositions.filter(p => {
-      // Проверяем, есть ли у должности родительская должность в этом отделе
-      const hasParentInDept = positionPositions.some(
-        pp => !pp.deleted && 
-        pp.position_id === p.position_id && 
-        pp.department_id === d.department_id
-      );
-      
-      // Если родительской должности нет, то это корневая должность
-      return !hasParentInDept;
-    });
-    
     // Контент элемента отдела
     const deptContent = (
       <div
@@ -281,8 +265,8 @@ const AdminStructureView: React.FC = () => {
         
         {/* Дочерние элементы (отображаются, если отдел развернут) */}
         <div className={`ml-6 ${ex ? 'block' : 'hidden'}`}>
-          {/* Корневые должности отдела */}
-          {rootDeptPositions.map((p) => renderPos(p, d, lvl + 1))}
+          {/* Должности отдела */}
+          {deptPositions.map((p) => renderPos(p, d, lvl + 1))}
           
           {/* Дочерние отделы */}
           {childDepts.map((cd) => renderDept(cd, lvl + 1))}
