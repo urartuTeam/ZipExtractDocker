@@ -458,8 +458,14 @@ const PositionTree = ({
               </div>
 
               {/* Отображаем подчиненных */}
+              {/* Сортируем подчиненные по порядку sort из sort_tree */}
               {firstNode.subordinates
                 .filter((sub) => sub && sub.position)
+                .sort((a, b) => {
+                  const aSort = getSortOrderForPosition(a.position.position_id, firstNode.position.position_id);
+                  const bSort = getSortOrderForPosition(b.position.position_id, firstNode.position.position_id);
+                  return aSort - bSort;
+                })
                 .map((subNode: PositionHierarchyNode, index: number) => (
                   <div
                     key={`${subNode.position.position_id}-${index}`}
@@ -486,6 +492,11 @@ const PositionTree = ({
 
                         {subNode.subordinates
                           .filter((sub) => sub && sub.position)
+                          .sort((a, b) => {
+                            const aSort = getSortOrderForPosition(a.position.position_id, subNode.position.position_id);
+                            const bSort = getSortOrderForPosition(b.position.position_id, subNode.position.position_id);
+                            return aSort - bSort;
+                          })
                           .map(
                             (
                               grandChild: PositionHierarchyNode,
@@ -617,6 +628,24 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     queryKey: ["/api/sort-tree"],
   });
   const sortTreeData = sortTreeResponse?.data || [];
+  
+  // Функция для получения значения сортировки для должности
+  const getSortOrderForPosition = (positionId: number, parentPositionId: number | null): number => {
+    // Если sortTreeData не загружены, вернем 0 как дефолтное значение сортировки
+    if (!sortTreeData || sortTreeData.length === 0) {
+      return 0;
+    }
+    
+    // Ищем запись сортировки для данной должности с указанным родителем
+    const sortItem = sortTreeData.find(item => 
+      item.type === 'position' && 
+      item.type_id === positionId && 
+      (item.parent_id === parentPositionId || (item.parent_id === null && parentPositionId === null))
+    );
+    
+    // Возвращаем значение сортировки или дефолтное значение (99999 - для отображения в конце)
+    return sortItem ? sortItem.sort : 99999;
+  }
 
   const { data: positionsResponse } = useQuery<{
     status: string;
@@ -1016,23 +1045,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
   };
 
-  // Функция для получения данных о сортировке из sort_tree
-  const getSortOrderForPosition = (positionId: number, parentId: number | null) => {
-    // Если sortTreeData не загружены, вернем 0 как дефолтное значение сортировки
-    if (!sortTreeData || sortTreeData.length === 0) {
-      return 0;
-    }
-    
-    // Ищем запись сортировки для данной должности с указанным родителем
-    const sortItem = sortTreeData.find(item => 
-      item.type === 'position' && 
-      item.type_id === positionId && 
-      ((item.parent_id === null && parentId === null) || item.parent_id === parentId)
-    );
-    
-    // Возвращаем значение сортировки, если запись найдена, иначе 0
-    return sortItem ? sortItem.sort : 0;
-  };
+  // Эта функция была перемещена выше
   
   // Функция для построения иерархии должностей на основе новой таблицы position_position и sort_tree
   const buildPositionHierarchy = () => {
@@ -1739,6 +1752,24 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     }
 
     console.log("Построено", rootNodes.length, "корневых узлов");
+    
+    // Сортируем корневые узлы на основе данных sort_tree
+    rootNodes.sort((a, b) => {
+      const aSort = getSortOrderForPosition(a.position.position_id, null);
+      const bSort = getSortOrderForPosition(b.position.position_id, null);
+      return aSort - bSort;
+    });
+    
+    // Также сортируем подчиненных для каждого узла
+    rootNodes.forEach(node => {
+      if (node.subordinates.length > 1) {
+        node.subordinates.sort((a, b) => {
+          const aSort = getSortOrderForPosition(a.position.position_id, node.position.position_id);
+          const bSort = getSortOrderForPosition(b.position.position_id, node.position.position_id);
+          return aSort - bSort;
+        });
+      }
+    });
 
     return rootNodes;
   };
