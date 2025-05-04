@@ -146,12 +146,22 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
       
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Сотрудник добавлен в проект",
         description: "Сотрудник успешно добавлен в проект",
       });
+      // Принудительное обновление всех связанных запросов
       queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects`, projectId] });
+      
+      // Задержка для завершения анимации закрытия диалога
+      setTimeout(() => {
+        // Еще раз обновляем данные, чтобы точно получить актуальную информацию
+        queryClient.refetchQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
+      }, 300);
+      
       setShowAddEmployeeDialog(false);
       addEmployeeForm.reset();
     },
@@ -181,7 +191,17 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
         title: "Сотрудник удален из проекта",
         description: "Сотрудник успешно удален из проекта",
       });
+      // Принудительное обновление всех связанных запросов
       queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects`, projectId] });
+      
+      // Задержка для завершения анимации закрытия диалога
+      setTimeout(() => {
+        // Еще раз обновляем данные, чтобы точно получить актуальную информацию
+        queryClient.refetchQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
+      }, 300);
+      
       setShowRemoveEmployeeDialog(false);
       setEmployeeToRemove(null);
     },
