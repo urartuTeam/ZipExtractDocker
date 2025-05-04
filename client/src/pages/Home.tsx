@@ -60,8 +60,23 @@ export default function Home() {
     sort: number;
   };
   
-  // Подсчет количества вакансий
+  // Подсчет общего количества позиций
   const totalPositionsCount = positionsWithDepartments.reduce((total, position) => {
+    // Проходим по всем отделам, к которым привязана должность
+    position.departments.forEach((dept: PositionDepartment) => {
+      // Учитываем только не удаленные записи
+      if (dept.deleted !== true) {
+        // Используем штатное расписание (staff_units), если оно установлено,
+        // иначе используем сумму вакансий и занятых мест
+        const positionCount = dept.staff_units || 1; // По умолчанию хотя бы 1 место
+        total += positionCount;
+      }
+    });
+    return total;
+  }, 0);
+  
+  // Подсчет вакантных мест
+  const vacantPositionsCount = positionsWithDepartments.reduce((total, position) => {
     // Проходим по всем отделам, к которым привязана должность
     position.departments.forEach((dept: PositionDepartment) => {
       // Учитываем только не удаленные записи
@@ -71,12 +86,6 @@ export default function Home() {
     });
     return total;
   }, 0);
-  
-  // Подсчет занятых должностей (не считая первого сотрудника в дереве)
-  const occupiedPositionsCount = employees.length > 0 ? employees.length - 1 : 0;
-  
-  // Рассчитываем количество вакантных мест
-  const vacantPositionsCount = totalPositionsCount - occupiedPositionsCount;
   
   const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects || 
                    isLoadingPositionsWithDepartments || isLoadingPositionPositions;

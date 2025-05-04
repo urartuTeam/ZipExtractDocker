@@ -460,9 +460,11 @@ export default function Vacancies() {
       };
     }
 
+    // Поле vacancies уже содержит количество вакантных (свободных) мест
     const vacancies = positionDept.vacancies || 0;
     const currentCount = emps.length;
-    const staffUnits = vacancies + currentCount;
+    // Общее количество штатных единиц должно соответствовать полю в БД
+    const staffUnits = positionDept.staff_units || vacancies;
 
     return { staffUnits, vacancies, currentCount };
   };
