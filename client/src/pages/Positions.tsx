@@ -815,43 +815,7 @@ export default function Positions() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="parent_position_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Родительская должность</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(
-                          value === "null" ? null : parseInt(value),
-                        );
-                      }}
-                      value={field.value?.toString() || undefined}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите родительскую должность" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">
-                          Нет (верхний уровень)
-                        </SelectItem>
-                        {positionsData?.data.map((position) => (
-                          <SelectItem
-                            key={position.position_id}
-                            value={position.position_id.toString()}
-                          >
-                            {position.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Родительская должность удалена: теперь связи между должностями создаются только внутри отделов */}
 
               {/* Убрали поле department_id, теперь свe�зь с отделами управляется через таблицу position_department */}
               <div className="text-sm text-muted-foreground mt-2">
@@ -901,48 +865,7 @@ export default function Positions() {
                 )}
               />
 
-              <FormField
-                control={editForm.control}
-                name="parent_position_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Родительская должность</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(
-                          value === "null" ? null : parseInt(value),
-                        );
-                      }}
-                      value={field.value?.toString() || undefined}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите родительскую должность" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">
-                          Нет (верхний уровень)
-                        </SelectItem>
-                        {positionsData?.data
-                          .filter(
-                            (pos) =>
-                              pos.position_id !== selectedPosition?.position_id,
-                          ) // Исключаем текущую должность
-                          .map((position) => (
-                            <SelectItem
-                              key={position.position_id}
-                              value={position.position_id.toString()}
-                            >
-                              {position.name}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Родительская должность удалена: теперь связи между должностями создаются только внутри отделов */}
 
               {/* Информацию о связях с отделами отображаем и управляем через отдельный интерфейс */}
 
