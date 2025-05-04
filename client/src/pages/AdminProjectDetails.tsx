@@ -272,7 +272,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   const allDepartments = departmentsResponse?.data || [];
   
   // Получаем полную информацию о сотрудниках проекта
-  const projectEmployeesWithDetails = projectDetails.employees.map((ep: EmployeeProject) => {
+  const projectEmployeesWithDetails = (projectDetails.employees || []).map((ep: EmployeeProject) => {
     const employee = allEmployees.find(e => e.employee_id === ep.employee_id);
     const position = allPositions.find(p => p.position_id === employee?.position_id);
     const department = allDepartments.find(d => d.department_id === employee?.department_id);
@@ -287,7 +287,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
 
   // Фильтруем сотрудников, которые еще не добавлены в проект
   const availableEmployees = allEmployees.filter(
-    emp => !projectDetails.employees.some((ep: EmployeeProject) => ep.employee_id === emp.employee_id)
+    emp => !(projectDetails.employees || []).some((ep: EmployeeProject) => ep.employee_id === emp.employee_id)
   );
 
   const isLoading = isLoadingProject || isLoadingProjectEmployees || isLoadingEmployees || isLoadingPositions || isLoadingDepartments;
