@@ -73,13 +73,18 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
     enabled: !!projectId && !isNaN(projectId),
     refetchOnMount: true,
     refetchOnWindowFocus: true,
-    retry: 3
+    retry: 3,
+    staleTime: 1000 * 60, // 1 минута
   });
 
   // Запрос сотрудников проекта
-  const { data: projectEmployeesResponse, isLoading: isLoadingProjectEmployees } = useQuery<{status: string, data: EmployeeProject[]}>({
+  const { data: projectEmployeesResponse, isLoading: isLoadingProjectEmployees, refetch: refetchEmployees } = useQuery<{status: string, data: EmployeeProject[]}>({
     queryKey: [`/api/employeeprojects/project/${projectId}`],
     enabled: !!projectId && !isNaN(projectId),
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    retry: 3,
+    staleTime: 1000 * 60, // 1 минута
   });
 
   // Запрос всех сотрудников
@@ -116,10 +121,8 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   console.log("Project Data:", projectResponse?.data);
   
   // Правильное получение данных проекта из ответа API
-  // Проверяем, является ли data массивом и берем первый элемент, иначе используем data напрямую
-  const projectData = Array.isArray(projectResponse?.data) 
-    ? projectResponse?.data[0] 
-    : projectResponse?.data;
+  // При запросе конкретного проекта API возвращает объект, а не массив
+  const projectData = projectResponse?.data;
   
   console.log("Обработанные данные проекта:", projectData);
   
@@ -517,11 +520,24 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
             variant="outline" 
             size="sm" 
             onClick={() => {
+              // Принудительно сбрасываем кэш запросов
+              queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId] });
+              queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
+              
+              // Принудительно запрашиваем данные заново
               refetchProject();
+              
+              // Оповещаем пользователя
               toast({
                 title: "Обновление данных",
                 description: "Данные проекта обновляются...",
               });
+              
+              // Через 500мс снова обновляем данные, чтобы гарантировать актуальность
+              setTimeout(() => {
+                queryClient.refetchQueries({ queryKey: ['/api/projects', projectId] });
+                queryClient.refetchQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
+              }, 500);
             }}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
