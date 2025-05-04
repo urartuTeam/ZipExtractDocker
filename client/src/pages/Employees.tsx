@@ -30,6 +30,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import {
   Select,
@@ -111,6 +112,8 @@ export default function Employees() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [selectedDepartment, setSelectedDepartment] = useState<string | null>(null);
+  const [selectedPosition, setSelectedPosition] = useState<string | null>(null);
+  const [editSelectedPosition, setEditSelectedPosition] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   // Form для создания
@@ -353,6 +356,39 @@ export default function Employees() {
 
   // Отфильтрованные должности на основе выбранного отдела
   const filteredPositions = getPositionsForDepartment(selectedDepartment);
+  
+  // Проверка, является ли должность категорией
+  const isPositionCategory = (positionId: string | null): boolean => {
+    if (!positionId || positionId === "null" || !positionsData?.data) return false;
+    const position = positionsData.data.find(pos => pos.position_id.toString() === positionId);
+    return position?.is_category || false;
+  };
+  
+  // Обработчик изменения должности в форме создания
+  const handlePositionChange = (positionId: string) => {
+    setSelectedPosition(positionId);
+    // Преобразуем строку в число или null
+    const numericValue = positionId !== "null" ? positionId : null;
+    form.setValue('position_id', numericValue as any);
+    
+    // Если выбрана не категория, сбрасываем родительскую должность
+    if (!isPositionCategory(positionId)) {
+      form.setValue('category_parent_id', null);
+    }
+  };
+  
+  // Обработчик изменения должности в форме редактирования
+  const handleEditPositionChange = (positionId: string) => {
+    setEditSelectedPosition(positionId);
+    // Преобразуем строку в число или null
+    const numericValue = positionId !== "null" ? positionId : null;
+    editForm.setValue('position_id', numericValue as any);
+    
+    // Если выбрана не категория, сбрасываем родительскую должность
+    if (!isPositionCategory(positionId)) {
+      editForm.setValue('category_parent_id', null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -522,8 +558,11 @@ export default function Employees() {
                     <FormItem>
                       <FormLabel>Должность</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => {
+                          handlePositionChange(value);
+                        }}
                         defaultValue={field.value?.toString() || "null"}
+                        value={field.value?.toString() || "null"}
                       >
                         <FormControl>
                           <SelectTrigger>
@@ -537,7 +576,7 @@ export default function Employees() {
                               key={position.position_id} 
                               value={position.position_id.toString()}
                             >
-                              {position.name}
+                              {position.name} {position.is_category ? "(Категория)" : ""}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -547,6 +586,49 @@ export default function Employees() {
                   )}
                 />
               </div>
+              
+              {/* Поле для выбора родительской должности (если выбрана категория) */}
+              {isPositionCategory(selectedPosition) && (
+                <FormField
+                  control={form.control}
+                  name="category_parent_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Родительская должность</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value?.toString() || "null"}
+                        value={field.value?.toString() || "null"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Выберите родительскую должность" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="null">Не указана</SelectItem>
+                          {/* Фильтруем только не категории */}
+                          {positionsData?.data
+                            .filter(pos => !pos.is_category)
+                            .map((position) => (
+                              <SelectItem 
+                                key={position.position_id} 
+                                value={position.position_id.toString()}
+                              >
+                                {position.name}
+                              </SelectItem>
+                            ))
+                          }
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                      <FormDescription>
+                        Выберите родительскую должность для этой категории
+                      </FormDescription>
+                    </FormItem>
+                  )}
+                />
+              )}
               
               <FormField
                 control={form.control}
@@ -693,7 +775,9 @@ export default function Employees() {
                     <FormItem>
                       <FormLabel>Должность</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(value) => {
+                          handleEditPositionChange(value);
+                        }}
                         defaultValue={field.value?.toString() || "null"}
                         value={field.value?.toString() || "null"}
                       >
@@ -709,7 +793,7 @@ export default function Employees() {
                               key={position.position_id} 
                               value={position.position_id.toString()}
                             >
-                              {position.name}
+                              {position.name} {position.is_category ? "(Категория)" : ""}
                             </SelectItem>
                           ))}
                         </SelectContent>
