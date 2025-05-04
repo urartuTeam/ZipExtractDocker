@@ -20,6 +20,7 @@ import { ChevronRight, ChevronDown, Building, Users, Search, X } from "lucide-re
 import { Link } from "wouter";
 import { Input } from "@/components/ui/input";
 
+// Типы данных
 type Department = {
   department_id: number;
   name: string;
@@ -62,191 +63,141 @@ type PositionRelation = {
   deleted: boolean;
 };
 
+type SearchMatch = {
+  departments: Set<number>;
+  positions: Set<number>;
+};
+
 export default function Vacancies() {
+  // State для UI
   const [expDept, setExpDept] = useState<{ [k: number]: boolean }>({});
   const [expPos, setExpPos] = useState<{ [k: string]: boolean }>({});
   const [allExpanded, setAllExpanded] = useState(true);
   const [searchTerm, setSearchTerm] = useState<string>("");
-  
-  // Состояние для хранения совпадений поиска (используется для фильтрации и раскрытия)
-  const [searchMatches, setSearchMatches] = useState<{
-    departments: Set<number>;
-    positions: Set<number>;
-  }>({
+  const [searchMatches, setSearchMatches] = useState<SearchMatch>({
     departments: new Set<number>(),
-    positions: new Set<number>(),
+    positions: new Set<number>()
   });
 
-  // Получаем данные о департаментах
-  const { data: deptR, isLoading: ld } = useQuery<{ data: Department[] }>({
+  // API запросы
+  const { data: deptData, isLoading: ldDept } = useQuery<{ data: Department[] }>({
     queryKey: ["/api/departments"],
   });
 
-  // Получаем данные о позициях
-  const { data: posR, isLoading: lp } = useQuery<{
-    data: Position[];
-  }>({
+  const { data: posData, isLoading: ldPos } = useQuery<{ data: Position[] }>({
     queryKey: ["/api/positions/with-departments"],
   });
 
-  // Получаем данные о сотрудниках
-  const { data: empR, isLoading: le } = useQuery<{
-    data: Employee[];
-  }>({
+  const { data: empData, isLoading: ldEmp } = useQuery<{ data: Employee[] }>({
     queryKey: ["/api/employees"],
   });
 
-  // Получаем данные о связях должностей с отделами (информация о вакансиях)
-  const { data: posDeptR } = useQuery<{
-    data: PositionDepartment[];
-  }>({
+  const { data: pdData } = useQuery<{ data: PositionDepartment[] }>({
     queryKey: ["/api/pd"],
   });
-  
-  // Получаем данные о связях между должностями (parent-child)
-  const { data: posPositionsR } = useQuery<{
-    data: PositionRelation[];
-  }>({
+
+  const { data: prData } = useQuery<{ data: PositionRelation[] }>({
     queryKey: ["/api/positionpositions"],
   });
 
-  if (ld || lp || le) return <div>Загрузка...</div>;
+  // Обработчики событий UI
+  const clearSearch = () => setSearchTerm("");
+  const toggleDept = (id: number) => setExpDept(s => ({ ...s, [id]: !s[id] }));
+  const togglePos = (key: string) => setExpPos(s => ({ ...s, [key]: !s[key] }));
 
-  const departments = deptR?.data || [];
-  const positions = posR?.data || [];
-  const employees = empR?.data || [];
-  const positionDepartments = posDeptR?.data || [];
-  const positionRelations = posPositionsR?.data || [];
-
-  // Автоматически раскрываем все дерево при загрузке данных
+  // Эффект для начального раскрытия дерева
   useEffect(() => {
-    if (!ld && !lp && deptR && posR) {
-      const departs = deptR.data || [];
-      const posits = posR.data || [];
+    if (deptData?.data && posData?.data) {
+      const departments = deptData.data;
+      const positions = posData.data;
 
-      // Создаем объект для всех департаментов, где все изначально раскрыты
-      const allDepts = departs.reduce(
+      const allDepts = departments.reduce(
         (acc, dept) => {
           if (!dept.deleted) {
             acc[dept.department_id] = true;
           }
           return acc;
         },
-        {} as { [k: number]: boolean },
+        {} as { [k: number]: boolean }
       );
 
-      // Создаем объект для всех позиций, где все изначально раскрыты
-      const allPos = posits.reduce(
+      const allPos = positions.reduce(
         (acc, pos) => {
-          pos.departments.forEach((dept) => {
+          pos.departments.forEach(dept => {
             const key = `${pos.position_id}-${dept.department_id}`;
             acc[key] = true;
           });
           return acc;
         },
-        {} as { [k: string]: boolean },
+        {} as { [k: string]: boolean }
       );
 
       setExpDept(allDepts);
       setExpPos(allPos);
     }
-  }, [ld, lp, deptR, posR]);
-  
-  // Эффект для обработки поиска
+  }, [deptData, posData]);
+
+  // Эффект для поиска и соответствий
   useEffect(() => {
-    if (!searchTerm.trim() || !departments.length || !positions.length) {
-      // Если поисковый запрос пустой, сбрасываем состояние поиска
+    if (!deptData?.data || !posData?.data || !prData?.data) return;
+
+    const departments = deptData.data;
+    const positions = posData.data;
+    const positionRelations = prData.data;
+
+    if (!searchTerm.trim()) {
       setSearchMatches({
         departments: new Set<number>(),
         positions: new Set<number>(),
       });
       return;
     }
-    
+
+    const deptMatches = new Set<number>();
+    const posMatches = new Set<number>();
     const searchTermLower = searchTerm.toLowerCase();
-    const matchedDepts = new Set<number>();
-    const matchedPositions = new Set<number>();
-    
-    // Функция для улучшенного поиска с поддержкой вариаций регистра, отдельных слов и т.д.
-    const isMatch = (text: string): boolean => {
-      if (!text) return false;
-      
-      // Нормализуем строку для улучшенного поиска
-      const normalizedText = text.toLowerCase()
-        .replace(/ё/g, 'е') // заменяем ё на е для лучшего поиска
-        .trim();
-      
-      const normalizedSearchTerm = searchTermLower
-        .replace(/ё/g, 'е')
-        .trim();
-      
-      // Прямое соответствие (часть слова или целое слово)
-      if (normalizedText.includes(normalizedSearchTerm)) {
-        return true;
-      }
-      
-      // Если поисковый запрос состоит из нескольких слов, ищем каждое отдельно
-      if (normalizedSearchTerm.includes(' ')) {
-        const searchWords = normalizedSearchTerm.split(' ').filter(w => w.length > 1);
-        return searchWords.every(word => normalizedText.includes(word));
-      }
-      
-      // Поиск сокращений (первые буквы слов), например "ГД" для "Генеральный Директор"
-      if (normalizedSearchTerm.length >= 2 && !/[^a-zа-яё]/i.test(normalizedSearchTerm)) {
-        const words = normalizedText.split(' ');
-        if (words.length >= normalizedSearchTerm.length) {
-          const acronym = words.map(w => w.charAt(0)).join('');
-          if (acronym.includes(normalizedSearchTerm)) {
-            return true;
-          }
-        }
-      }
-      
-      return false;
-    };
-    
-    // Найдем совпадения в отделах
+
+    // Поиск отделов
     departments.forEach(dept => {
-      if (!dept.deleted && isMatch(dept.name)) {
-        matchedDepts.add(dept.department_id);
-        
-        // Добавляем всю цепочку родительских отделов
+      if (!dept.deleted && dept.name.toLowerCase().includes(searchTermLower)) {
+        deptMatches.add(dept.department_id);
+
+        // Добавляем цепочку родителей
         let currentDept = dept;
         while (currentDept.parent_department_id) {
-          matchedDepts.add(currentDept.parent_department_id);
+          deptMatches.add(currentDept.parent_department_id);
           const parentDept = departments.find(d => d.department_id === currentDept.parent_department_id);
           if (!parentDept) break;
           currentDept = parentDept;
         }
-        
-        // Если отдел связан с родительской должностью, добавляем и ее
+
         if (dept.parent_position_id) {
-          matchedPositions.add(dept.parent_position_id);
+          posMatches.add(dept.parent_position_id);
         }
       }
     });
-    
-    // Найдем совпадения в должностях
+
+    // Поиск должностей
     positions.forEach(pos => {
-      if (isMatch(pos.name)) {
-        matchedPositions.add(pos.position_id);
-        
-        // Добавляем связанные отделы
+      if (pos.name.toLowerCase().includes(searchTermLower)) {
+        posMatches.add(pos.position_id);
+
+        // Добавляем отделы позиции
         pos.departments.forEach(dept => {
           const department = departments.find(d => d.department_id === dept.department_id);
           if (department && !department.deleted) {
-            matchedDepts.add(dept.department_id);
+            deptMatches.add(dept.department_id);
           }
         });
-        
-        // Найдем все дочерние должности текущей должности через positionRelations
+
+        // Находим дочерние должности
         const findChildPositions = (parentId: number) => {
           const children = positionRelations.filter(rel => 
             !rel.deleted && rel.parent_position_id === parentId
           );
           
           children.forEach(child => {
-            matchedPositions.add(child.position_id);
+            posMatches.add(child.position_id);
             findChildPositions(child.position_id);
           });
         };
@@ -254,23 +205,19 @@ export default function Vacancies() {
         findChildPositions(pos.position_id);
       }
     });
-    
+
     setSearchMatches({
-      departments: matchedDepts,
-      positions: matchedPositions,
+      departments: deptMatches,
+      positions: posMatches,
     });
-    
-    // Автоматически раскрываем соответствующие элементы
-    if (matchedDepts.size > 0 || matchedPositions.size > 0) {
-      // Раскрываем все отделы, содержащие найденные элементы
+
+    // Раскрываем найденные элементы
+    if (deptMatches.size > 0 || posMatches.size > 0) {
       const newExpDept = { ...expDept };
-      matchedDepts.forEach(deptId => {
-        newExpDept[deptId] = true;
-      });
+      deptMatches.forEach(deptId => { newExpDept[deptId] = true; });
       
-      // Раскрываем все должности, содержащие найденные элементы
       const newExpPos = { ...expPos };
-      matchedPositions.forEach(posId => {
+      posMatches.forEach(posId => {
         positions.forEach(pos => {
           if (pos.position_id === posId) {
             pos.departments.forEach(dept => {
@@ -284,25 +231,17 @@ export default function Vacancies() {
       setExpDept(newExpDept);
       setExpPos(newExpPos);
     }
-    
-  }, [searchTerm, departments, positions, positionRelations, expDept, expPos]);
+  }, [searchTerm, deptData, posData, prData, expDept, expPos]);
 
-  const toggleDept = (id: number) => {
-    setExpDept((s) => ({ ...s, [id]: !s[id] }));
-  };
-
-  const togglePos = (key: string) => {
-    setExpPos((s) => ({ ...s, [key]: !s[key] }));
-  };
-
-  // Функция для переключения состояния всех элементов (развернуть/свернуть все)
+  // Функция для переключения сворачивания/разворачивания всех узлов
   const toggleAll = () => {
     if (allExpanded) {
-      // Сворачиваем все
       setExpDept({});
       setExpPos({});
-    } else {
-      // Разворачиваем все
+    } else if (deptData?.data && posData?.data) {
+      const departments = deptData.data;
+      const positions = posData.data;
+
       const allDepts = departments.reduce(
         (acc, dept) => {
           if (!dept.deleted) {
@@ -310,18 +249,18 @@ export default function Vacancies() {
           }
           return acc;
         },
-        {} as { [k: number]: boolean },
+        {} as { [k: number]: boolean }
       );
 
       const allPos = positions.reduce(
         (acc, pos) => {
-          pos.departments.forEach((dept) => {
+          pos.departments.forEach(dept => {
             const key = `${pos.position_id}-${dept.department_id}`;
             acc[key] = true;
           });
           return acc;
         },
-        {} as { [k: string]: boolean },
+        {} as { [k: string]: boolean }
       );
 
       setExpDept(allDepts);
@@ -331,9 +270,21 @@ export default function Vacancies() {
     setAllExpanded(!allExpanded);
   };
 
-  // Функция для проверки, должен ли элемент отображаться с учетом фильтра поиска
+  // Если данные загружаются, показываем индикатор загрузки
+  if (ldDept || ldPos || ldEmp) {
+    return <div>Загрузка...</div>;
+  }
+
+  // Получаем данные из запросов
+  const departments = deptData?.data || [];
+  const positions = posData?.data || [];
+  const employees = empData?.data || [];
+  const positionDepartments = pdData?.data || [];
+  const positionRelations = prData?.data || [];
+
+  // Функция для проверки соответствия поиску
   const shouldShowInSearch = (itemType: 'department' | 'position', id: number): boolean => {
-    if (!searchTerm.trim()) return true; // Если нет поискового запроса, показываем все
+    if (!searchTerm.trim()) return true;
     
     if (itemType === 'department') {
       return searchMatches.departments.has(id);
@@ -341,37 +292,26 @@ export default function Vacancies() {
       return searchMatches.positions.has(id);
     }
   };
-  
-  // Фильтруем корневые отделы в соответствии с поисковым запросом
-  const roots = departments.filter(
-    (d) =>
-      !d.deleted &&
-      d.parent_department_id === null &&
-      d.parent_position_id === null &&
-      (
-        !searchTerm.trim() || // Если нет поискового запроса, показываем все
-        shouldShowInSearch('department', d.department_id)
-      ),
-  );
 
+  // Вспомогательные функции для получения данных
   const getChildDeptsByDept = (deptId: number) =>
     departments.filter(
-      (d) => !d.deleted && 
+      d => !d.deleted && 
       d.parent_department_id === deptId && 
       (!searchTerm.trim() || shouldShowInSearch('department', d.department_id))
     );
 
   const getChildDeptsByPosition = (posId: number) =>
     departments.filter(
-      (d) => !d.deleted && 
+      d => !d.deleted && 
       d.parent_position_id === posId && 
       (!searchTerm.trim() || shouldShowInSearch('department', d.department_id))
     );
 
   const getDeptPositions = (deptId: number) => {
-    // Получаем все должности, связанные с указанным отделом
-    const linked = positions.filter((p) =>
-      p.departments.some((dd) => dd.department_id === deptId) &&
+    // Находим должности в отделе
+    const linked = positions.filter(p =>
+      p.departments.some(dd => dd.department_id === deptId) &&
       (!searchTerm.trim() || shouldShowInSearch('position', p.position_id))
     );
     
@@ -379,33 +319,30 @@ export default function Vacancies() {
       return linked.filter(p => p.parent_position_id === null);
     }
     
-    // Получить все связи parent-child для должностей в заданном отделе
+    // Отношения между должностями
     const rels = positionRelations
       .filter(r => !r.deleted)
       .filter(r => {
-        // Находим связи, где либо родительская, либо дочерняя позиция связана с этим отделом
         const childInDept = linked.some(p => p.position_id === r.position_id);
         const parentInDept = linked.some(p => p.position_id === r.parent_position_id);
         return childInDept || parentInDept;
       });
     
-    // Собираем map всех позиций в отделе
+    // Строим дерево
     const map: Record<number, any> = {};
     linked.forEach(p => map[p.position_id] = { ...p, children: [] });
     
-    // На основе rels вкладываем детей в родителей
     rels.forEach(r => {
       const parent = map[r.parent_position_id];
       const child = map[r.position_id];
       if (parent && child) {
-        // Проверяем, что ребенок еще не добавлен (избегаем дублирования)
         if (!parent.children.some((c: any) => c.position_id === child.position_id)) {
           parent.children.push(child);
         }
       }
     });
     
-    // Корни — те, у кого нет родителя в map или родитель не в текущем отделе
+    // Возвращаем корневые должности
     return Object.values(map).filter((p: any) => 
       !rels.some(r => r.position_id === p.position_id && map[r.parent_position_id])
     );
@@ -413,51 +350,39 @@ export default function Vacancies() {
 
   const getEmps = (posId: number, deptId: number) =>
     employees.filter(
-      (e) => e.position_id === posId && e.department_id === deptId,
+      e => e.position_id === posId && e.department_id === deptId
     );
 
-  // Функция для получения информации о вакансиях для позиции в отделе
+  // Функция для получения информации о вакансиях
   const getPositionDepartmentInfo = (posId: number, deptId: number) => {
-    const positionDept = positionDepartments.find(
-      (pd) =>
-        pd.position_id === posId && pd.department_id === deptId && !pd.deleted,
+    const positionDept = positionDepartments?.find(
+      pd => pd.position_id === posId && pd.department_id === deptId && !pd.deleted
     );
 
-    // Получаем список сотрудников для этой позиции и отдела
     const emps = getEmps(posId, deptId);
 
     if (!positionDept) {
       return {
-        staffUnits: 0, // Общее количество мест
-        vacancies: 0, // Количество свободных мест
-        currentCount: emps.length, // Текущее количество сотрудников
+        staffUnits: 0,
+        vacancies: 0,
+        currentCount: emps.length,
       };
     }
 
-    // В БД поле vacancies хранит прямо количество вакансий (не общее количество мест)
     const vacancies = positionDept.vacancies || 0;
-
-    // Текущее количество сотрудников - это фактическое количество сотрудников в этой должности
     const currentCount = emps.length;
-
-    // Общее количество мест - это сумма вакансий и занятых мест
     const staffUnits = vacancies + currentCount;
 
-    return {
-      staffUnits, // Общее количество мест
-      vacancies, // Количество свободных мест
-      currentCount, // Текущее количество сотрудников
-    };
+    return { staffUnits, vacancies, currentCount };
   };
 
-  // Рендер строки таблицы для должности
+  // Рендеринг строки должности
   const renderPositionRow = (
     p: any,
     deptId: number,
     lvl = 0,
     parentId?: string,
   ) => {
-    // Проверяем, должна ли должность отображаться с учетом фильтра поиска
     if (searchTerm.trim() && !shouldShowInSearch('position', p.position_id)) {
       return [];
     }
@@ -467,29 +392,14 @@ export default function Vacancies() {
     const emps = getEmps(p.position_id, deptId);
     const childPositions = p.children || [];
     const childDepts = getChildDeptsByPosition(p.position_id);
-
-    // Получаем информацию о вакансиях
-    const { staffUnits, vacancies, currentCount } = getPositionDepartmentInfo(
-      p.position_id,
-      deptId,
-    );
-
-    // Проверяем развернуто ли это поддерево
+    const { staffUnits, vacancies } = getPositionDepartmentInfo(p.position_id, deptId);
     const ex = expPos[key] ?? false;
-
     const rows = [];
 
     // Определяем цвет фона в зависимости от наличия вакансий
     let bgClass = "";
-
     if (staffUnits > 0) {
-      if (emps.length < staffUnits) {
-        // Есть вакансии - красноватый фон
-        bgClass = "bg-red-100";
-      } else if (emps.length >= staffUnits) {
-        // Нет вакансий - зеленоватый фон
-        bgClass = "bg-green-100";
-      }
+      bgClass = emps.length < staffUnits ? "bg-red-100" : "bg-green-100";
     }
 
     // Добавляем строку для текущей должности
@@ -520,18 +430,16 @@ export default function Vacancies() {
             vacancies
           )}
         </TableCell>
-      </TableRow>,
+      </TableRow>
     );
 
     // Если поддерево развернуто, добавляем дочерние элементы
     if (ex) {
-      // Добавляем дочерние должности
       childPositions.forEach((child: any) => {
         rows.push(...renderPositionRow(child, deptId, lvl + 1, rowId));
       });
 
-      // Добавляем дочерние департаменты
-      childDepts.forEach((dept) => {
+      childDepts.forEach(dept => {
         rows.push(...renderDepartmentRow(dept, lvl + 1, rowId));
       });
     }
@@ -539,22 +447,16 @@ export default function Vacancies() {
     return rows;
   };
 
-  // Рендер строк таблицы для отдела
+  // Рендеринг строки отдела
   const renderDepartmentRow = (d: Department, lvl = 0, parentId?: string) => {
-    // Проверяем, должен ли отдел отображаться с учетом фильтра поиска
     if (searchTerm.trim() && !shouldShowInSearch('department', d.department_id)) {
       return [];
     }
     
-    const rowId = parentId
-      ? `${parentId}-dept-${d.department_id}`
-      : `dept-${d.department_id}`;
+    const rowId = parentId ? `${parentId}-dept-${d.department_id}` : `dept-${d.department_id}`;
     const childDepts = getChildDeptsByDept(d.department_id);
     const deptPositions = getDeptPositions(d.department_id);
-
-    // Проверяем развернуто ли это поддерево
     const ex = expDept[d.department_id] ?? false;
-
     const rows = [];
 
     // Добавляем строку для текущего отдела
@@ -577,20 +479,16 @@ export default function Vacancies() {
             <span className="ml-2 text-neutral-500 text-sm">(Отдел)</span>
           </div>
         </TableCell>
-      </TableRow>,
+      </TableRow>
     );
 
     // Если поддерево развернуто, добавляем дочерние элементы
     if (ex) {
-      // Добавляем должности отдела
-      deptPositions.forEach((position) => {
-        rows.push(
-          ...renderPositionRow(position, d.department_id, lvl + 1, rowId),
-        );
+      deptPositions.forEach(position => {
+        rows.push(...renderPositionRow(position, d.department_id, lvl + 1, rowId));
       });
 
-      // Добавляем дочерние отделы
-      childDepts.forEach((childDept) => {
+      childDepts.forEach(childDept => {
         rows.push(...renderDepartmentRow(childDept, lvl + 1, rowId));
       });
     }
@@ -598,18 +496,19 @@ export default function Vacancies() {
     return rows;
   };
 
-  // Обработчик для очистки поискового запроса
-  const clearSearch = () => {
-    setSearchTerm("");
-    setSearchMatches({
-      departments: new Set<number>(),
-      positions: new Set<number>(),
-    });
-  };
+  // Фильтруем корневые отделы в соответствии с поисковым запросом
+  const roots = departments.filter(
+    d =>
+      !d.deleted &&
+      d.parent_department_id === null &&
+      d.parent_position_id === null &&
+      (!searchTerm.trim() || shouldShowInSearch('department', d.department_id))
+  );
 
+  // Компонент пользовательского интерфейса
   return (
     <div className="flex flex-col h-screen">
-      {/* Верхняя панель с логотипами и названием (как на главной странице) */}
+      {/* Верхняя панель с логотипами и названием */}
       <div className="bg-[#a40000] text-white p-4 shadow-md flex justify-between items-center">
         <div className="flex items-center">
           <svg
