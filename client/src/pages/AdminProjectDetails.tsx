@@ -71,12 +71,8 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
     enabled: !!projectId && !isNaN(projectId)
   });
 
-  // Запрос данных проекта и его сотрудников
-  const { data: projectEmployeesResponse, isLoading: isLoadingProjectEmployees } = useQuery<{status: string, data: {
-    title: string;
-    description: string;
-    employees: EmployeeProject[];
-  }}>({
+  // Запрос сотрудников проекта
+  const { data: projectEmployeesResponse, isLoading: isLoadingProjectEmployees } = useQuery<{status: string, data: EmployeeProject[]}>({
     queryKey: [`/api/employeeprojects/project/${projectId}`],
     enabled: !!projectId && !isNaN(projectId),
   });
@@ -100,7 +96,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   
   // Использовать данные запроса
   const projectData = projectResponse?.data;
-  const projectDetails = projectEmployeesResponse?.data || { title: '', description: '', employees: [] };
+  const projectEmployees = projectEmployeesResponse?.data || [];
   
   // Форма редактирования проекта
   const editProjectForm = useForm<{ name: string, description: string }>({
