@@ -79,7 +79,7 @@ export default function OrganizationStructure() {
   const { data: posDeptR, isLoading: lpd } = useQuery<{
     data: PositionDepartment[];
   }>({
-    queryKey: ["/api/positiondepartments"],
+    queryKey: ["/api/pd"],
   });
   
   // Получаем данные о иерархии должностей (связи родитель-дочерний элемент)

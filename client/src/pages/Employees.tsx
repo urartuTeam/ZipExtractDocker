@@ -237,11 +237,11 @@ export default function Employees() {
 
   // Запрос на получение связей между должностями и отделами
   const { data: positionDepartmentsData } = useQuery<{ status: string, data: PositionDepartment[] }>({
-    queryKey: ['/api/positiondepartments'],
+    queryKey: ['/api/pd'],
   });
 
   // Настройка автоматического обновления данных каждые 5 секунд
-  useDataRefresh(['/api/employees', '/api/positions', '/api/departments', '/api/positiondepartments']);
+  useDataRefresh(['/api/employees', '/api/positions', '/api/departments', '/api/pd']);
 
   // Фильтрация сотрудников на основе поискового запроса
   const filteredEmployees = employeesData?.data.filter(employee => 

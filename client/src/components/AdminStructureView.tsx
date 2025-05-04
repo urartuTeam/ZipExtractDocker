@@ -68,7 +68,7 @@ const AdminStructureView: React.FC = () => {
   const { data: posDeptR, isLoading: lpd } = useQuery<{
     data: PositionDepartment[];
   }>({
-    queryKey: ["/api/positiondepartments"],
+    queryKey: ["/api/pd"],
   });
   
   // Получаем данные о иерархии должностей

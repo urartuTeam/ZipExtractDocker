@@ -125,7 +125,7 @@ const DepartmentWithChildren = ({
     status: string;
     data: any[];
   }>({
-    queryKey: [`/api/positiondepartments`],
+    queryKey: [`/api/pd`],
   });
 
   // Загружаем связи должностей по иерархии
