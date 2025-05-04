@@ -250,8 +250,13 @@ export default function Employees() {
     queryKey: ['/api/pd'],
   });
 
+  // Запрос на получение связей между должностями и их родителями
+  const { data: positionPositionsData } = useQuery<{ status: string, data: { position_position_id: number, position_id: number, parent_position_id: number }[] }>({
+    queryKey: ['/api/positionpositions'],
+  });
+
   // Настройка автоматического обновления данных каждые 5 секунд
-  useDataRefresh(['/api/employees', '/api/positions', '/api/departments', '/api/pd']);
+  useDataRefresh(['/api/employees', '/api/positions', '/api/departments', '/api/pd', '/api/positionpositions']);
 
   // Фильтрация сотрудников на основе поискового запроса
   const filteredEmployees = employeesData?.data.filter(employee => 
@@ -366,6 +371,23 @@ export default function Employees() {
     if (!positionId || positionId === "null" || !positionsData?.data) return false;
     const position = positionsData.data.find(pos => pos.position_id.toString() === positionId);
     return position?.is_category || false;
+  };
+  
+  // Получение списка родительских должностей для выбранной категории
+  const getParentPositionsForCategory = (categoryPositionId: string | null) => {
+    if (!categoryPositionId || categoryPositionId === "null" || !positionPositionsData?.data || !positionsData?.data) {
+      return [];
+    }
+    
+    const categoryId = Number(categoryPositionId);
+    
+    // Находим все связи для этой категории
+    const parentPositionIds = positionPositionsData.data
+      .filter(pp => pp.position_id === categoryId)
+      .map(pp => pp.parent_position_id);
+      
+    // Возвращаем все родительские должности для этой категории
+    return positionsData.data.filter(pos => parentPositionIds.includes(pos.position_id));
   };
   
   // Обработчик изменения должности в форме создания
@@ -611,18 +633,15 @@ export default function Employees() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="null">Не указана</SelectItem>
-                          {/* Фильтруем только не категории */}
-                          {positionsData?.data
-                            .filter(pos => !pos.is_category)
-                            .map((position) => (
-                              <SelectItem 
-                                key={position.position_id} 
-                                value={position.position_id.toString()}
-                              >
-                                {position.name}
-                              </SelectItem>
-                            ))
-                          }
+                          {/* Показываем только родительские должности для выбранной категории */}
+                          {getParentPositionsForCategory(selectedPosition).map((position) => (
+                            <SelectItem 
+                              key={position.position_id} 
+                              value={position.position_id.toString()}
+                            >
+                              {position.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -828,18 +847,15 @@ export default function Employees() {
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="null">Не указана</SelectItem>
-                          {/* Фильтруем только не категории */}
-                          {positionsData?.data
-                            .filter(pos => !pos.is_category)
-                            .map((position) => (
-                              <SelectItem 
-                                key={position.position_id} 
-                                value={position.position_id.toString()}
-                              >
-                                {position.name}
-                              </SelectItem>
-                            ))
-                          }
+                          {/* Показываем только родительские должности для выбранной категории */}
+                          {getParentPositionsForCategory(editSelectedPosition).map((position) => (
+                            <SelectItem 
+                              key={position.position_id} 
+                              value={position.position_id.toString()}
+                            >
+                              {position.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
