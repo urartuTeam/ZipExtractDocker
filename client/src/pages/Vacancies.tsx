@@ -460,16 +460,16 @@ export default function Vacancies() {
       };
     }
 
-    // СУПЕР ПРОСТАЯ ЛОГИКА:
-    // 1. Занято - количество сотрудников
-    // 2. Вакансий - значение из БД (поле vacancies)
-    // 3. Всего - сумма занятых мест и вакансий
+    // ПРЕДЕЛЬНО ПРОСТАЯ ЛОГИКА ПО УКАЗАНИЮ:
+    // 1. ВСЕГО - значение из БД (поле vacancies)
+    // 2. Занято - количество сотрудников (emps.length)
+    // 3. Вакансии = ВСЕГО - Занято (если получается отрицательное, то 0)
     
     const currentCount = emps.length;
-    const vacancies = positionDept.vacancies || 0;
-    const totalCount = currentCount + vacancies;
+    const totalCount = positionDept.vacancies || 0;
+    const vacancies = Math.max(0, totalCount - currentCount);
     
-    console.log(`Позиция в отделе ${positionDept?.department_id}, занято: ${currentCount}, вакансий: ${vacancies}, всего: ${totalCount}`);
+    console.log(`Позиция в отделе ${positionDept?.department_id}, всего (vacancies из БД): ${totalCount}, занято: ${currentCount}, вакансий: ${vacancies}`);
 
     return { 
       staffUnits: totalCount, 
