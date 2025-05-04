@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -50,6 +51,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { toast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
@@ -820,6 +822,27 @@ export default function Positions() {
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="is_category"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Это категория должности</FormLabel>
+                      <FormDescription>
+                        Отметьте, если это должность-категория (например, "I категория", "II категория")
+                      </FormDescription>
+                    </div>
+                  </FormItem>
+                )}
+              />
+
               {/* Родительская должность удалена: теперь связи между должностями создаются только внутри отделов */}
 
               {/* Убрали поле department_id, теперь свe�зь с отделами управляется через таблицу position_department */}
@@ -866,6 +889,27 @@ export default function Positions() {
                       />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editForm.control}
+                name="is_category"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Это категория должности</FormLabel>
+                      <FormDescription>
+                        Отметьте, если это должность-категория (например, "I категория", "II категория")
+                      </FormDescription>
+                    </div>
                   </FormItem>
                 )}
               />
