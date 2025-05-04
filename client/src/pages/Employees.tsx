@@ -266,11 +266,21 @@ export default function Employees() {
   const isLoading = isLoadingEmployees;
   const error = employeesError;
 
-  // Получение названия должности по ID
-  const getPositionName = (positionId: number | null) => {
+  // Получение названия должности по ID (с учетом категорий)
+  const getPositionName = (positionId: number | null, categoryParentId: number | null = null) => {
     if (!positionId) return '—';
     const position = positionsData?.data.find(pos => pos.position_id === positionId);
-    return position ? position.name : '—';
+    
+    // Если это не категория или нет родительской должности, просто возвращаем название
+    if (!position || !position.is_category || !categoryParentId) {
+      return position ? position.name : '—';
+    }
+    
+    // Если это категория с родительской должностью, форматируем "Родительская должность (Категория)"
+    const parentPosition = positionsData?.data.find(pos => pos.position_id === categoryParentId);
+    if (!parentPosition) return position.name; // Если родитель не найден, возвращаем только название категории
+    
+    return `${parentPosition.name} (${position.name})`;
   };
 
   // Получение названия отдела по ID
@@ -477,7 +487,7 @@ export default function Employees() {
                         <TableRow key={employee.employee_id}>
                           <TableCell>{employee.employee_id}</TableCell>
                           <TableCell className="font-medium">{employee.full_name}</TableCell>
-                          <TableCell>{getPositionName(employee.position_id)}</TableCell>
+                          <TableCell>{getPositionName(employee.position_id, employee.category_parent_id)}</TableCell>
                           <TableCell>{getDepartmentName(employee.department_id)}</TableCell>
                           <TableCell>{getManagerName(employee.manager_id)}</TableCell>
                           <TableCell>
