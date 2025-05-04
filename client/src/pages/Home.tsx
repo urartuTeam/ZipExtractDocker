@@ -83,9 +83,9 @@ export default function Home() {
       </div>
       
       {/* Основной контент */}
-      <div className="flex-1 p-4 bg-gray-100 overflow-y-auto">
-        {/* Только дерево организации */}
-        <div className="bg-white rounded-md shadow-sm p-6 mb-8">
+      <div className="flex-1 p-4 bg-gray-100 overflow-y-auto flex flex-col">
+        {/* Дерево организации в гибком контейнере */}
+        <div className="bg-white rounded-md shadow-sm p-6 mb-8 flex-grow-0">
           {isLoading ? (
             <div className="space-y-4">
               <Skeleton className="h-12 w-1/2" />
@@ -94,7 +94,7 @@ export default function Home() {
               <Skeleton className="h-8 w-1/2 ml-8" />
             </div>
           ) : (
-            <div className="w-full overflow-x-auto" style={{ maxHeight: '60vh' }}>
+            <div className="w-full overflow-x-auto" style={{ minHeight: '400px', maxHeight: '600px' }}>
               <div style={{ minWidth: 'max-content' }}>
                 <OrganizationTree
                   departmentsData={departments}
@@ -106,8 +106,11 @@ export default function Home() {
           )}
         </div>
 
-        {/* Статистика в нижней части страницы */}
-        <div className="grid gap-4 md:grid-cols-4">
+        {/* Растягивающийся элемент */}
+        <div className="flex-grow"></div>
+
+        {/* Статистика в нижней части страницы, прижатая к низу */}
+        <div className="grid gap-4 md:grid-cols-4 mt-auto">
           <div className="bg-white p-4 rounded-md shadow-sm">
             <div className="flex justify-between items-center mb-2">
               <h3 className="font-medium text-lg">Отделы</h3>
