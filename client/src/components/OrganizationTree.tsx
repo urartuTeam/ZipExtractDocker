@@ -5,15 +5,6 @@ import DisplaySettings from "./DisplaySettings";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 
-// Тип данных для записей таблицы sort_tree
-type SortTreeItem = {
-  id: number;
-  sort: number;
-  type: string; // 'department' или 'position'
-  type_id: number;
-  parent_id: number | null;
-};
-
 // Расширяем интерфейс Window глобально
 declare global {
   interface Window {
@@ -358,7 +349,6 @@ const PositionTree = ({
   selectedPositionId?: number;
   hierarchyInitialLevels?: number;
   showThreeLevels?: boolean;
-  getSortOrderForPosition: (positionId: number, parentPositionId: number | null) => number;
   showVacancies?: boolean;
 }) => {
   // Проверяем, есть ли хотя бы одна действительная должность
@@ -459,7 +449,6 @@ const PositionTree = ({
               </div>
 
               {/* Отображаем подчиненных */}
-              {/* Сортируем подчиненные по порядку sort из sort_tree */}
               {firstNode.subordinates
                 .filter((sub) => sub && sub.position)
                 .map((subNode: PositionHierarchyNode, index: number) => (
@@ -610,33 +599,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   const positionRelations =
     positionHierarchyResponse?.data?.filter((pr) => !pr.deleted) || [];
   const positionPositionsData = positionHierarchyResponse?.data || [];
-  
-  // Получаем данные о сортировке из таблицы sort_tree
-  const { data: sortTreeResponse } = useQuery<{
-    status: string;
-    data: SortTreeItem[];
-  }>({
-    queryKey: ["/api/sort-tree"],
-  });
-  const sortTreeData = sortTreeResponse?.data || [];
-  
-  // Функция для получения значения сортировки для должности
-  const getSortOrderForPosition = (positionId: number, parentPositionId: number | null): number => {
-    // Если sortTreeData не загружены, вернем 0 как дефолтное значение сортировки
-    if (!sortTreeData || sortTreeData.length === 0) {
-      return 0;
-    }
-    
-    // Ищем запись сортировки для данной должности с указанным родителем
-    const sortItem = sortTreeData.find(item => 
-      item.type === 'position' && 
-      item.type_id === positionId && 
-      (item.parent_id === parentPositionId || (item.parent_id === null && parentPositionId === null))
-    );
-    
-    // Возвращаем значение сортировки или дефолтное значение (99999 - для отображения в конце)
-    return sortItem ? sortItem.sort : 99999;
-  }
 
   const { data: positionsResponse } = useQuery<{
     status: string;
@@ -1036,9 +998,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
   };
 
-  // Эта функция была перемещена выше
-  
-  // Функция для построения иерархии должностей на основе новой таблицы position_position и sort_tree
+  // Функция для построения иерархии должностей на основе новой таблицы position_position
   const buildPositionHierarchy = () => {
     if (positions.length === 0) {
       return [];
@@ -1743,24 +1703,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     }
 
     console.log("Построено", rootNodes.length, "корневых узлов");
-    
-    // Сортируем корневые узлы на основе данных sort_tree
-    rootNodes.sort((a, b) => {
-      const aSort = getSortOrderForPosition(a.position.position_id, null);
-      const bSort = getSortOrderForPosition(b.position.position_id, null);
-      return aSort - bSort;
-    });
-    
-    // Также сортируем подчиненных для каждого узла
-    rootNodes.forEach(node => {
-      if (node.subordinates.length > 1) {
-        node.subordinates.sort((a, b) => {
-          const aSort = getSortOrderForPosition(a.position.position_id, node.position.position_id);
-          const bSort = getSortOrderForPosition(b.position.position_id, node.position.position_id);
-          return aSort - bSort;
-        });
-      }
-    });
 
     return rootNodes;
   };
@@ -1951,7 +1893,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           hierarchyInitialLevels={Number(hierarchyInitialLevels)}
           showThreeLevels={showThreeLevels}
           showVacancies={showVacancies}
-          getSortOrderForPosition={getSortOrderForPosition}
         />
       </div>
     </div>

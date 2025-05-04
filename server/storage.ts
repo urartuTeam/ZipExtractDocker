@@ -13,7 +13,7 @@ import {
   type SortTree, type InsertSortTree
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, or, inArray, isNull as isNullDrizzle } from "drizzle-orm";
+import { eq, and, or, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Пользователи
@@ -636,11 +636,11 @@ export class DatabaseStorage implements IStorage {
     let query;
     
     if (parent_id === null) {
-      // Когда parent_id null, используем isNull вместо eq для сравнения
       query = and(
         eq(sort_tree.type, type),
         eq(sort_tree.type_id, type_id),
-        isNullDrizzle(sort_tree.parent_id)
+        // eq(sort_tree.parent_id, null) - this is causing issues
+        eq(sort_tree.parent_id, undefined as any) // workaround
       );
     } else {
       query = and(
