@@ -358,6 +358,7 @@ const PositionTree = ({
   selectedPositionId?: number;
   hierarchyInitialLevels?: number;
   showThreeLevels?: boolean;
+  getSortOrderForPosition: (positionId: number, parentPositionId: number | null) => number;
   showVacancies?: boolean;
 }) => {
   // Проверяем, есть ли хотя бы одна действительная должность
@@ -461,11 +462,6 @@ const PositionTree = ({
               {/* Сортируем подчиненные по порядку sort из sort_tree */}
               {firstNode.subordinates
                 .filter((sub) => sub && sub.position)
-                .sort((a, b) => {
-                  const aSort = getSortOrderForPosition(a.position.position_id, firstNode.position.position_id);
-                  const bSort = getSortOrderForPosition(b.position.position_id, firstNode.position.position_id);
-                  return aSort - bSort;
-                })
                 .map((subNode: PositionHierarchyNode, index: number) => (
                   <div
                     key={`${subNode.position.position_id}-${index}`}
@@ -492,11 +488,6 @@ const PositionTree = ({
 
                         {subNode.subordinates
                           .filter((sub) => sub && sub.position)
-                          .sort((a, b) => {
-                            const aSort = getSortOrderForPosition(a.position.position_id, subNode.position.position_id);
-                            const bSort = getSortOrderForPosition(b.position.position_id, subNode.position.position_id);
-                            return aSort - bSort;
-                          })
                           .map(
                             (
                               grandChild: PositionHierarchyNode,
@@ -1960,6 +1951,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           hierarchyInitialLevels={Number(hierarchyInitialLevels)}
           showThreeLevels={showThreeLevels}
           showVacancies={showVacancies}
+          getSortOrderForPosition={getSortOrderForPosition}
         />
       </div>
     </div>
