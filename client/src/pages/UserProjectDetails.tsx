@@ -177,7 +177,7 @@ export default function UserProjectDetails({ params }: RouteComponentProps<{ id:
             Назад к проектам
           </Button>
           <div>
-            <h1 className="text-2xl font-bold mb-2">{projectData.name}</h1>
+            <h1 className="text-2xl font-bold mb-2 text-red-600">{projectData.name}</h1>
             <p className="text-gray-500">Проект №{projectData.project_id}</p>
           </div>
         </div>
