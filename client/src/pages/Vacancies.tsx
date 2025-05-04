@@ -460,22 +460,22 @@ export default function Vacancies() {
       };
     }
 
-    // ЖЕСТКАЯ И ПРОСТАЯ ЛОГИКА:
-    // Если в базе указан staff_units, используем его
-    // Если не указан - берем ровно 1 (одна штатная единица)
-    // Количество занятых мест - это количество сотрудников
+    // СУПЕР ПРОСТАЯ ЛОГИКА:
+    // 1. Занято - количество сотрудников
+    // 2. Вакансий - значение из БД (поле vacancies)
+    // 3. Всего - сумма занятых мест и вакансий
+    
     const currentCount = emps.length;
+    const vacancies = positionDept.vacancies || 0;
+    const totalCount = currentCount + vacancies;
     
-    // Берем ТОЛЬКО ОДНО штатное место, если в базе не указано иное
-    const staffUnits = positionDept.staff_units !== undefined ? positionDept.staff_units : 1;
-    
-    // Вакансии - это ВСЕГО минус количество занятых мест (сотрудников)
-    const vacancies = Math.max(0, staffUnits - currentCount);
-    
-    // Выводим отладочную информацию
-    console.log(`Должность: ${p.name}, отдел: ${deptId}, штатных единиц: ${staffUnits}, занято: ${currentCount}, вакансий: ${vacancies}, в БД вакансий: ${positionDept.vacancies || 0}`);
+    console.log(`Позиция в отделе ${positionDept?.department_id}, занято: ${currentCount}, вакансий: ${vacancies}, всего: ${totalCount}`);
 
-    return { staffUnits, vacancies, currentCount };
+    return { 
+      staffUnits: totalCount, 
+      vacancies: vacancies, 
+      currentCount: currentCount 
+    };
   };
 
   // Рендеринг строки должности
