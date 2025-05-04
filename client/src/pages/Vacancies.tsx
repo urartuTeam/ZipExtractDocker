@@ -460,11 +460,22 @@ export default function Vacancies() {
       };
     }
 
-    // Поле vacancies уже содержит количество вакантных (свободных) мест
-    const vacancies = positionDept.vacancies || 0;
+    // Получаем данные из БД
     const currentCount = emps.length;
-    // Общее количество штатных единиц должно соответствовать полю в БД
-    const staffUnits = positionDept.staff_units || vacancies;
+    
+    // Общее количество штатных единиц из БД, или по умолчанию 1
+    let staffUnits = positionDept.staff_units || 1;
+    
+    // Вычисляем правильное количество вакансий
+    // Если staff_units = 0 в БД, но есть сотрудники или vacancies, исправляем это
+    if (staffUnits === 0 && (currentCount > 0 || positionDept.vacancies > 0)) {
+      staffUnits = Math.max(currentCount, positionDept.vacancies);
+    }
+    
+    // Вакансии - это разница между штатными единицами и занятыми местами
+    const vacancies = Math.max(0, staffUnits - currentCount);
+    
+    console.log(`staffUnits: ${staffUnits}, vacancies DB: ${positionDept.vacancies}, vacancies calc: ${vacancies}, currentCount: ${currentCount}`);
 
     return { staffUnits, vacancies, currentCount };
   };

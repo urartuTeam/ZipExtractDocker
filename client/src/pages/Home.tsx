@@ -56,6 +56,7 @@ export default function Home() {
     department_name: string;
     deleted?: boolean;
     vacancies?: number;
+    staff_units?: number;
     position_link_id: number;
     sort: number;
   };
@@ -75,13 +76,29 @@ export default function Home() {
     return total;
   }, 0);
   
-  // Подсчет вакантных мест
+  // Подсчет вакантных мест (правильно, на основе разницы между штатами и занятыми местами)
   const vacantPositionsCount = positionsWithDepartments.reduce((total, position) => {
     // Проходим по всем отделам, к которым привязана должность
     position.departments.forEach((dept: PositionDepartment) => {
       // Учитываем только не удаленные записи
       if (dept.deleted !== true) {
-        total += dept.vacancies || 0;
+        // Получаем количество сотрудников на этой должности в этом отделе
+        const empsInPosition = employees.filter(
+          e => e.position_id === position.position_id && e.department_id === dept.department_id
+        ).length;
+        
+        // Общее количество штатных единиц из БД, или по умолчанию 1
+        let staffUnits = dept.staff_units || 1;
+        
+        // Если staff_units = 0 в БД, но есть сотрудники или vacancies, исправляем это
+        if (staffUnits === 0 && (empsInPosition > 0 || dept.vacancies > 0)) {
+          staffUnits = Math.max(empsInPosition, dept.vacancies);
+        }
+        
+        // Вакансии - это разница между штатными единицами и занятыми местами
+        const vacancies = Math.max(0, staffUnits - empsInPosition);
+        
+        total += vacancies;
       }
     });
     return total;
