@@ -386,7 +386,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllEmployees(): Promise<Employee[]> {
-    return await db.select().from(employees).where(eq(employees.deleted, false));
+    return await db
+      .select()
+      .from(employees)
+      .where(eq(employees.deleted, false))
+      .orderBy(employees.full_name);
   }
 
   async createEmployee(insertEmployee: InsertEmployee): Promise<Employee> {
