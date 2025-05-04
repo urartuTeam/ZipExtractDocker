@@ -428,4 +428,179 @@ export function registerPositionEndpoints(app: Express) {
       });
     }
   });
+
+  // CRUD для position_department
+  
+  // Получить все связи position_department
+  app.get('/api/pd', async (_req: Request, res: Response) => {
+    try {
+      const positionDepartments = await storage.getAllPositionDepartments();
+      res.json({ status: 'success', data: positionDepartments });
+    } catch (error) {
+      console.error('Ошибка при получении связей position_department:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Ошибка сервера при получении связей position_department' 
+      });
+    }
+  });
+  
+  // Получить связь position_department по ID
+  app.get('/api/pd/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Некорректный ID связи' 
+        });
+      }
+      
+      const positionDepartment = await storage.getPositionDepartment(id);
+      if (!positionDepartment) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Связь position_department не найдена' 
+        });
+      }
+      
+      res.json({ status: 'success', data: positionDepartment });
+    } catch (error) {
+      console.error('Ошибка при получении связи position_department:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Ошибка сервера при получении связи position_department' 
+      });
+    }
+  });
+  
+  // Создать новую связь position_department
+  app.post('/api/pd', async (req: Request, res: Response) => {
+    try {
+      // Проверяем наличие необходимых полей
+      const { position_id, department_id, vacancies, sort } = req.body;
+      
+      if (position_id === undefined) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'ID должности не указан' 
+        });
+      }
+      
+      if (department_id === undefined) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'ID отдела не указан' 
+        });
+      }
+      
+      // Проверка существования должности и отдела
+      const position = await storage.getPosition(position_id);
+      if (!position) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Должность не найдена' 
+        });
+      }
+      
+      const department = await storage.getDepartment(department_id);
+      if (!department) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Отдел не найден' 
+        });
+      }
+      
+      // Создаем связь
+      const positionDepartmentData = {
+        position_id,
+        department_id,
+        vacancies: vacancies || 1, // По умолчанию 1 вакансия
+        sort: sort || 0 // По умолчанию сортировка 0
+      };
+      
+      const positionDepartment = await storage.createPositionDepartment(positionDepartmentData);
+      res.status(201).json({ status: 'success', data: positionDepartment });
+    } catch (error) {
+      console.error('Ошибка при создании связи position_department:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Ошибка сервера при создании связи position_department' 
+      });
+    }
+  });
+  
+  // Обновить связь position_department
+  app.put('/api/pd/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Некорректный ID связи' 
+        });
+      }
+      
+      // Проверяем, существует ли связь
+      const existingPositionDepartment = await storage.getPositionDepartment(id);
+      if (!existingPositionDepartment) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Связь position_department не найдена' 
+        });
+      }
+      
+      // Получаем данные для обновления
+      const { position_id, department_id, vacancies, sort } = req.body;
+      
+      // Создаем объект с данными для обновления
+      const updateData: any = {};
+      if (position_id !== undefined) updateData.position_id = position_id;
+      if (department_id !== undefined) updateData.department_id = department_id;
+      if (vacancies !== undefined) updateData.vacancies = vacancies;
+      if (sort !== undefined) updateData.sort = sort;
+      
+      // Обновляем связь
+      const positionDepartment = await storage.updatePositionDepartment(id, updateData);
+      res.json({ status: 'success', data: positionDepartment });
+    } catch (error) {
+      console.error('Ошибка при обновлении связи position_department:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Ошибка сервера при обновлении связи position_department' 
+      });
+    }
+  });
+  
+  // Удалить связь position_department
+  app.delete('/api/pd/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Некорректный ID связи' 
+        });
+      }
+      
+      // Проверяем, существует ли связь
+      const existingPositionDepartment = await storage.getPositionDepartment(id);
+      if (!existingPositionDepartment) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Связь position_department не найдена' 
+        });
+      }
+      
+      // Удаляем связь
+      await storage.deletePositionDepartment(id);
+      res.json({ status: 'success', message: 'Связь удалена' });
+    } catch (error) {
+      console.error('Ошибка при удалении связи position_department:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Ошибка сервера при удалении связи position_department' 
+      });
+    }
+  });
 }
