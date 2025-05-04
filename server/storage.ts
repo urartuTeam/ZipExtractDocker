@@ -41,6 +41,7 @@ export interface IStorage {
   // Должности
   getPosition(id: number): Promise<Position | undefined>;
   getAllPositions(): Promise<Position[]>;
+  getPositionCategories(): Promise<Position[]>;
   createPosition(position: InsertPosition): Promise<Position>;
   updatePosition(id: number, position: Partial<InsertPosition>): Promise<Position | undefined>;
   deletePosition(id: number): Promise<boolean>;
@@ -197,6 +198,15 @@ export class DatabaseStorage implements IStorage {
 
   async getAllPositions(): Promise<Position[]> {
     return await db.select().from(positions).where(eq(positions.deleted, false));
+  }
+  
+  async getPositionCategories(): Promise<Position[]> {
+    return await db.select().from(positions).where(
+      and(
+        eq(positions.deleted, false),
+        eq(positions.is_category, true)
+      )
+    );
   }
 
   async createPosition(insertPosition: InsertPosition): Promise<Position> {

@@ -227,6 +227,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ status: 'error', message: 'Failed to fetch positions' });
     }
   });
+  
+  app.get('/api/positions/categories', async (req: Request, res: Response) => {
+    try {
+      // Получаем только должности, которые являются категориями
+      const positions = await storage.getPositionCategories();
+      res.json({ status: 'success', data: positions });
+    } catch (error) {
+      console.error('Error fetching position categories:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch position categories' });
+    }
+  });
 
   app.get('/api/positions/:id', async (req: Request, res: Response) => {
     try {
@@ -250,6 +261,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/positions', async (req: Request, res: Response) => {
     try {
       const positionData = insertPositionSchema.parse(req.body);
+      // По умолчанию is_category = false, если не указано явно
+      if (positionData.is_category === undefined) {
+        positionData.is_category = false;
+      }
       const position = await storage.createPosition(positionData);
       res.status(201).json({ status: 'success', data: position });
     } catch (error) {
@@ -336,6 +351,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/employees', async (req: Request, res: Response) => {
     try {
       const employeeData = insertEmployeeSchema.parse(req.body);
+      
+      // Проверка, является ли позиция категорией
+      if (employeeData.position_id) {
+        const position = await storage.getPosition(employeeData.position_id);
+        if (position && position.is_category === true) {
+          // Для категории нужен родительский position_id
+          if (!employeeData.category_parent_id) {
+            return res.status(400).json({
+              status: 'error',
+              message: 'При назначении сотрудника на должность-категорию необходимо указать category_parent_id'
+            });
+          }
+        } else {
+          // Если не категория, устанавливаем category_parent_id в null
+          employeeData.category_parent_id = null;
+        }
+      }
+      
       const employee = await storage.createEmployee(employeeData);
       res.status(201).json({ status: 'success', data: employee });
     } catch (error) {
@@ -357,6 +390,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const employeeData = req.body;
+      
+      // Проверка, является ли позиция категорией
+      if (employeeData.position_id) {
+        const position = await storage.getPosition(employeeData.position_id);
+        if (position && position.is_category === true) {
+          // Для категории нужен родительский position_id
+          if (!employeeData.category_parent_id) {
+            return res.status(400).json({
+              status: 'error',
+              message: 'При назначении сотрудника на должность-категорию необходимо указать category_parent_id'
+            });
+          }
+        } else {
+          // Если не категория, устанавливаем category_parent_id в null
+          employeeData.category_parent_id = null;
+        }
+      }
+      
       const updatedEmployee = await storage.updateEmployee(id, employeeData);
       
       if (!updatedEmployee) {
