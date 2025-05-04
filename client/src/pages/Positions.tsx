@@ -94,7 +94,7 @@ const positionFormSchema = z.object({
     .string()
     .min(2, "Название должно содержать минимум 2 символа")
     .max(100, "Название не должно превышать 100 символов"),
-  parent_position_id: z.number().nullable().optional(),
+  // Убираем поле parent_position_id, т.к. теперь устанавливаем родительские должности только внутри отделов
   // Убираем поле department_id, т.к. теперь будем связывать должности с отделами через таблицу position_department
 });
 
@@ -135,7 +135,6 @@ export default function Positions() {
     resolver: zodResolver(positionFormSchema),
     defaultValues: {
       name: "",
-      parent_position_id: null,
     },
   });
 
@@ -144,7 +143,6 @@ export default function Positions() {
     resolver: zodResolver(positionFormSchema),
     defaultValues: {
       name: "",
-      parent_position_id: null,
     },
   });
 
@@ -441,7 +439,6 @@ export default function Positions() {
     setSelectedPosition(position);
     editForm.reset({
       name: position.name,
-      parent_position_id: position.parent_position_id || null,
     });
     setIsEditDialogOpen(true);
   };
