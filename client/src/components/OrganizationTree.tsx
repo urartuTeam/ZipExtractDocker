@@ -998,7 +998,25 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
   };
 
-  // Функция для построения иерархии должностей на основе новой таблицы position_position
+  // Функция для получения данных о сортировке из sort_tree
+  const getSortOrderForPosition = (positionId: number, parentId: number | null) => {
+    // Если sortTreeData не загружены, вернем 0 как дефолтное значение сортировки
+    if (!sortTreeData || sortTreeData.length === 0) {
+      return 0;
+    }
+    
+    // Ищем запись сортировки для данной должности с указанным родителем
+    const sortItem = sortTreeData.find(item => 
+      item.type === 'position' && 
+      item.type_id === positionId && 
+      ((item.parent_id === null && parentId === null) || item.parent_id === parentId)
+    );
+    
+    // Возвращаем значение сортировки, если запись найдена, иначе 0
+    return sortItem ? sortItem.sort : 0;
+  };
+  
+  // Функция для построения иерархии должностей на основе новой таблицы position_position и sort_tree
   const buildPositionHierarchy = () => {
     if (positions.length === 0) {
       return [];
