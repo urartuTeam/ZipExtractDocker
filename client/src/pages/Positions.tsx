@@ -667,7 +667,7 @@ export default function Positions() {
                                   // В будущем здесь можно получать parent_position из position_position где department_id = dept.department_id
                                   return (
                                     <div
-                                      key={dept.position_link_id}
+                                      key={`${position.position_id}_${dept.department_id}_${dept.position_link_id || 0}`}
                                       className="p-2"
                                     >
                                       <div className="grid grid-cols-[1fr,1fr,auto] gap-2 items-center">
@@ -876,7 +876,7 @@ export default function Positions() {
                     <div className="border rounded-md divide-y">
                       {selectedPosition.departments.map((dept) => (
                         <div
-                          key={dept.position_link_id}
+                          key={`edit_${dept.position_link_id}_${dept.department_id}`}
                           className="flex items-center justify-between p-3"
                         >
                           <span className="text-sm">
@@ -1035,7 +1035,7 @@ export default function Positions() {
                 <div className="border rounded-md divide-y">
                   {selectedPosition.departments.map((dept) => (
                     <div
-                      key={dept.position_link_id}
+                      key={`dept_list_${dept.position_link_id}_${dept.department_id}`}
                       className="flex items-center justify-between p-3"
                     >
                       <div>
