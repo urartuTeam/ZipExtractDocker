@@ -83,7 +83,7 @@ export default function Home() {
       </div>
       
       {/* Основной контент */}
-      <div className="flex-1 p-4 bg-gray-100 overflow-auto">
+      <div className="flex-1 p-4 bg-gray-100 overflow-y-auto">
         {/* Только дерево организации */}
         <div className="bg-white rounded-md shadow-sm p-6 mb-8">
           {isLoading ? (
@@ -94,7 +94,7 @@ export default function Home() {
               <Skeleton className="h-8 w-1/2 ml-8" />
             </div>
           ) : (
-            <div className="w-full overflow-x-auto" style={{ minHeight: '700px' }}>
+            <div className="w-full overflow-x-auto" style={{ maxHeight: '60vh' }}>
               <div style={{ minWidth: 'max-content' }}>
                 <OrganizationTree
                   departmentsData={departments}
