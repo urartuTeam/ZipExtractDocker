@@ -582,7 +582,7 @@ export default function Employees() {
                   name="position_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Должность</FormLabel>
+                      <FormLabel>Должность/Категория</FormLabel>
                       <Select
                         onValueChange={(value) => {
                           handlePositionChange(value);
@@ -608,6 +608,9 @@ export default function Employees() {
                         </SelectContent>
                       </Select>
                       <FormMessage />
+                      <FormDescription>
+                        При выборе должности с пометкой "(Категория)" потребуется указать родительскую должность
+                      </FormDescription>
                     </FormItem>
                   )}
                 />
@@ -796,7 +799,7 @@ export default function Employees() {
                   name="position_id"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Должность</FormLabel>
+                      <FormLabel>Должность/Категория</FormLabel>
                       <Select
                         onValueChange={(value) => {
                           handleEditPositionChange(value);
@@ -822,6 +825,9 @@ export default function Employees() {
                         </SelectContent>
                       </Select>
                       <FormMessage />
+                      <FormDescription>
+                        При выборе должности с пометкой "(Категория)" потребуется указать родительскую должность
+                      </FormDescription>
                     </FormItem>
                   )}
                 />
