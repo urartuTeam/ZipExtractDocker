@@ -63,7 +63,9 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   const [showEditProjectDialog, setShowEditProjectDialog] = useState(false);
   const [showDeleteProjectDialog, setShowDeleteProjectDialog] = useState(false);
   const [showRemoveEmployeeDialog, setShowRemoveEmployeeDialog] = useState(false);
+  const [showEditRoleDialog, setShowEditRoleDialog] = useState(false);
   const [employeeToRemove, setEmployeeToRemove] = useState<number | null>(null);
+  const [employeeToEditRole, setEmployeeToEditRole] = useState<EmployeeProject | null>(null);
 
   // Запрос проекта
   const { data: projectResponse, isLoading: isLoadingProject } = useQuery<{status: string, data: Project}>({
@@ -83,16 +85,28 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   });
 
   // Форма добавления сотрудника
-  const addEmployeeForm = useForm<{ employeeId: string }>({
+  const addEmployeeForm = useForm<{ employeeId: string, role: string }>({
     defaultValues: {
       employeeId: "",
+      role: "Участник",
     },
     resolver: zodResolver(
       z.object({
-        employeeId: z.string().nonempty("Необходимо выбрать сотрудника")
+        employeeId: z.string().nonempty("Необходимо выбрать сотрудника"),
+        role: z.string().nonempty("Необходимо выбрать роль")
       })
     )
   });
+  
+  // Возможные роли в проекте
+  const projectRoles = [
+    { value: "Руководитель", label: "Руководитель проекта" },
+    { value: "Аналитик", label: "Бизнес-аналитик" },
+    { value: "Разработчик", label: "Разработчик" },
+    { value: "Тестировщик", label: "Тестировщик" },
+    { value: "Дизайнер", label: "Дизайнер" },
+    { value: "Участник", label: "Участник" }
+  ];
   
   // Использовать данные запроса
   const projectData = projectResponse?.data;
@@ -108,6 +122,18 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
       z.object({
         name: z.string().min(1, "Название проекта не может быть пустым"),
         description: z.string().optional(),
+      })
+    )
+  });
+  
+  // Форма редактирования роли сотрудника
+  const editRoleForm = useForm<{ role: string }>({
+    defaultValues: {
+      role: "",
+    },
+    resolver: zodResolver(
+      z.object({
+        role: z.string().nonempty("Необходимо выбрать роль"),
       })
     )
   });
@@ -128,11 +154,11 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
 
   // Мутация для добавления сотрудника в проект
   const addEmployeeToProject = useMutation({
-    mutationFn: async (values: { employeeId: string }) => {
+    mutationFn: async (values: { employeeId: string, role: string }) => {
       const res = await apiRequest("POST", "/api/employeeprojects", {
         employee_id: parseInt(values.employeeId),
         project_id: projectId,
-        role: "Участник"
+        role: values.role
       });
       
       if (!res.ok) {
@@ -242,6 +268,47 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
       });
     }
   });
+  
+  // Мутация для обновления роли сотрудника в проекте
+  const updateEmployeeRole = useMutation({
+    mutationFn: async (values: { employeeId: number, role: string }) => {
+      const res = await apiRequest("PUT", `/api/employeeprojects/${values.employeeId}/${projectId}`, {
+        role: values.role
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при обновлении роли сотрудника");
+      }
+      
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Роль обновлена",
+        description: "Роль сотрудника в проекте успешно обновлена",
+      });
+      // Принудительное обновление всех связанных запросов
+      queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects`] });
+      
+      // Задержка для завершения анимации закрытия диалога
+      setTimeout(() => {
+        // Еще раз обновляем данные, чтобы точно получить актуальную информацию
+        queryClient.refetchQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
+      }, 300);
+      
+      setShowEditRoleDialog(false);
+      setEmployeeToEditRole(null);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
 
   // Мутация для удаления проекта
   const deleteProject = useMutation({
@@ -309,12 +376,21 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   const isLoading = isLoadingProject || isLoadingProjectEmployees || isLoadingEmployees || isLoadingPositions || isLoadingDepartments;
 
   // Обработчики форм
-  const onSubmitAddEmployee = (values: { employeeId: string }) => {
+  const onSubmitAddEmployee = (values: { employeeId: string, role: string }) => {
     addEmployeeToProject.mutate(values);
   };
   
   const onSubmitEditProject = (values: { name: string, description: string }) => {
     updateProject.mutate(values);
+  };
+  
+  const onSubmitEditRole = (values: { role: string }) => {
+    if (employeeToEditRole?.employee_id) {
+      updateEmployeeRole.mutate({
+        employeeId: employeeToEditRole.employee_id,
+        role: values.role
+      });
+    }
   };
 
   const confirmRemoveEmployee = (employeeId: number) => {
@@ -322,6 +398,12 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
       setEmployeeToRemove(employeeId);
       setShowRemoveEmployeeDialog(true);
     }
+  };
+  
+  const openEditRoleDialog = (employeeProject: EmployeeProject) => {
+    setEmployeeToEditRole(employeeProject);
+    editRoleForm.reset({ role: employeeProject.role || "Участник" });
+    setShowEditRoleDialog(true);
   };
 
   const handleRemoveEmployee = () => {
@@ -471,13 +553,22 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
                       <TableCell>{ep.departmentName}</TableCell>
                       <TableCell>{ep.role || "Участник"}</TableCell>
                       <TableCell>
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => confirmRemoveEmployee(ep.employee_id || 0)}
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
+                        <div className="flex space-x-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => openEditRoleDialog(ep)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => confirmRemoveEmployee(ep.employee_id || 0)}
+                          >
+                            <Trash className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -525,6 +616,34 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
                             </SelectItem>
                           ))
                         )}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={addEmployeeForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Роль в проекте</FormLabel>
+                    <Select 
+                      value={field.value} 
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите роль" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {projectRoles.map((role) => (
+                          <SelectItem key={role.value} value={role.value}>
+                            {role.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -679,6 +798,66 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
               {removeEmployeeFromProject.isPending ? "Удаление..." : "Удалить из проекта"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Диалог редактирования роли сотрудника */}
+      <Dialog open={showEditRoleDialog} onOpenChange={setShowEditRoleDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Редактирование роли</DialogTitle>
+            <DialogDescription>
+              Изменение роли сотрудника {employeeToEditRole?.employeeDetails?.full_name} в проекте
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...editRoleForm}>
+            <form onSubmit={editRoleForm.handleSubmit(onSubmitEditRole)} className="space-y-4">
+              <FormField
+                control={editRoleForm.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Роль в проекте</FormLabel>
+                    <Select 
+                      value={field.value} 
+                      onValueChange={field.onChange}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите роль" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {projectRoles.map((role) => (
+                          <SelectItem key={role.value} value={role.value}>
+                            {role.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setShowEditRoleDialog(false)}
+                >
+                  Отмена
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={updateEmployeeRole.isPending}
+                >
+                  {updateEmployeeRole.isPending ? "Сохранение..." : "Сохранить изменения"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
