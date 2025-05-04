@@ -216,18 +216,27 @@ export default function UserProjectDetails({ params }: RouteComponentProps<{ id:
         </div>
         
         <div>
-          <Button variant="outline" size="sm" className="text-white border-white hover:bg-white/20" onClick={() => navigate('/projects')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Назад к проектам
+          <Button 
+            variant="outline" 
+            className="bg-white/10 border-white text-white hover:bg-white/20 hover:text-white"
+            onClick={() => navigate('/auth')}
+          >
+            Войти
           </Button>
         </div>
       </div>
       
       <div className="container mx-auto px-4 py-6 flex-1 overflow-y-auto bg-neutral-100">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold mb-2">{projectData.name}</h1>
             <p className="text-gray-500">Проект №{projectData.project_id}</p>
+          </div>
+          <div>
+            <Button variant="outline" onClick={() => navigate('/projects')}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Назад к проектам
+            </Button>
           </div>
         </div>
 
