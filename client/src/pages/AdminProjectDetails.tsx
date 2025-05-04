@@ -122,8 +122,13 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   console.log("Project Employees Response:", projectEmployeesResponse);
   
   // Правильное получение данных проекта из ответа API
-  // При запросе конкретного проекта API возвращает объект, а не массив
-  const projectData = projectResponse?.data;
+  // В нашем случае API возвращает массив объектов
+  // Находим нужный проект по ID
+  const projectData = projectResponse?.data ? 
+    (Array.isArray(projectResponse.data) 
+      ? projectResponse.data.find(project => project.project_id === Number(projectId))
+      : projectResponse.data)
+    : undefined;
   
   console.log("Обработанные данные проекта:", projectData);
   console.log("Employees в проекте:", projectEmployeesResponse?.data || []);
