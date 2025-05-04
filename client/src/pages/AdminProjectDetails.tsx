@@ -197,12 +197,13 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
       // Принудительное обновление всех связанных запросов
       queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/projects`, projectId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
       
       // Задержка для завершения анимации закрытия диалога
       setTimeout(() => {
         // Еще раз обновляем данные, чтобы точно получить актуальную информацию
         queryClient.refetchQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
+        queryClient.refetchQueries({ queryKey: [`/api/projects/${projectId}`] });
       }, 300);
       
       setShowAddEmployeeDialog(false);
@@ -237,12 +238,13 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
       // Принудительное обновление всех связанных запросов
       queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects`] });
-      queryClient.invalidateQueries({ queryKey: [`/api/projects`, projectId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
       
       // Задержка для завершения анимации закрытия диалога
       setTimeout(() => {
         // Еще раз обновляем данные, чтобы точно получить актуальную информацию
         queryClient.refetchQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
+        queryClient.refetchQueries({ queryKey: [`/api/projects/${projectId}`] });
       }, 300);
       
       setShowRemoveEmployeeDialog(false);
@@ -312,11 +314,13 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
       // Принудительное обновление всех связанных запросов
       queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
       queryClient.invalidateQueries({ queryKey: [`/api/employeeprojects`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/projects/${projectId}`] });
       
       // Задержка для завершения анимации закрытия диалога
       setTimeout(() => {
         // Еще раз обновляем данные, чтобы точно получить актуальную информацию
         queryClient.refetchQueries({ queryKey: [`/api/employeeprojects/project/${projectId}`] });
+        queryClient.refetchQueries({ queryKey: [`/api/projects/${projectId}`] });
       }, 300);
       
       setShowEditRoleDialog(false);
