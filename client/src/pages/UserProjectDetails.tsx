@@ -70,7 +70,7 @@ export default function UserProjectDetails({ params }: RouteComponentProps<{ id:
   const allDepartments = departmentsResponse?.data || [];
   
   // Получаем полную информацию о сотрудниках проекта
-  const projectEmployeesWithDetails = projectDetails.employees.map((ep: EmployeeProject) => {
+  const projectEmployeesWithDetails = (projectDetails.employees || []).map((ep: EmployeeProject) => {
     const employee = allEmployees.find(e => e.employee_id === ep.employee_id);
     const position = allPositions.find(p => p.position_id === employee?.position_id);
     const department = allDepartments.find(d => d.department_id === employee?.department_id);
