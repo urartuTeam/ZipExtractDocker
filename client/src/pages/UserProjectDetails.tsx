@@ -32,8 +32,12 @@ export default function UserProjectDetails({ params }: RouteComponentProps<{ id:
   
   // Запрос проекта
   const { data: projectResponse, isLoading: isLoadingProject } = useQuery<{status: string, data: Project}>({
-    queryKey: ['/api/projects', projectId],
-    enabled: !!projectId && !isNaN(projectId)
+    queryKey: [`/api/projects/${projectId}`],
+    enabled: !!projectId && !isNaN(projectId),
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    retry: 3,
+    staleTime: 1000 * 60, // 1 минута
   });
 
   // Запрос данных проекта и его сотрудников
@@ -62,7 +66,17 @@ export default function UserProjectDetails({ params }: RouteComponentProps<{ id:
   });
   
   // Использовать данные запроса
-  const projectData = projectResponse?.data;
+  // В нашем случае API возвращает массив объектов, нужно найти проект по ID
+  const projectData = projectResponse?.data ? 
+    (Array.isArray(projectResponse.data) 
+      ? projectResponse.data.find(project => project.project_id === Number(projectId))
+      : projectResponse.data)
+    : undefined;
+    
+  // Добавляем логи для отладки
+  console.log("Project Response Data:", projectResponse?.data);
+  console.log("Processed Project Data:", projectData);
+    
   const projectDetails = projectEmployeesResponse?.data || { title: '', description: '', employees: [] };
   
   const allEmployees = employeesResponse?.data || [];
@@ -160,6 +174,14 @@ export default function UserProjectDetails({ params }: RouteComponentProps<{ id:
             <div>
               <p className="text-sm font-medium text-gray-500">Описание:</p>
               <p className="text-base">{projectDetails.description || projectData.description || "Описание отсутствует"}</p>
+            </div>
+            
+            {/* Отладочная информация */}
+            <div className="mt-4 p-2 bg-gray-100 rounded">
+              <p className="text-xs text-gray-500">Информация для отладки:</p>
+              <pre className="text-xs overflow-auto max-h-32">
+                {JSON.stringify(projectData, null, 2)}
+              </pre>
             </div>
           </div>
         </CardContent>
