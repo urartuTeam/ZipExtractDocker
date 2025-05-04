@@ -81,6 +81,7 @@ interface Position {
   departments?: DepartmentLink[];
   parent_position_id?: number | null;
   department_id?: number | null;
+  is_category?: boolean;
 }
 
 interface Employee {
@@ -94,6 +95,7 @@ const positionFormSchema = z.object({
     .string()
     .min(2, "Название должно содержать минимум 2 символа")
     .max(100, "Название не должно превышать 100 символов"),
+  is_category: z.boolean().default(false),
   // Убираем поле parent_position_id, т.к. теперь устанавливаем родительские должности только внутри отделов
   // Убираем поле department_id, т.к. теперь будем связывать должности с отделами через таблицу position_department
 });
@@ -135,6 +137,7 @@ export default function Positions() {
     resolver: zodResolver(positionFormSchema),
     defaultValues: {
       name: "",
+      is_category: false,
     },
   });
 
@@ -143,6 +146,7 @@ export default function Positions() {
     resolver: zodResolver(positionFormSchema),
     defaultValues: {
       name: "",
+      is_category: false,
     },
   });
 
@@ -439,6 +443,7 @@ export default function Positions() {
     setSelectedPosition(position);
     editForm.reset({
       name: position.name,
+      is_category: position.is_category || false,
     });
     setIsEditDialogOpen(true);
   };
