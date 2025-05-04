@@ -157,9 +157,47 @@ export default function Vacancies() {
     const posMatches = new Set<number>();
     const searchTermLower = searchTerm.toLowerCase();
 
+    // Вспомогательная функция для более гибкого поиска
+    const isMatch = (text: string): boolean => {
+      if (!text) return false;
+      
+      // Нормализуем строку для лучшего поиска
+      const normalizedText = text.toLowerCase()
+        .replace(/ё/g, 'е') // Заменяем ё на е
+        .trim();
+      
+      const normalizedSearchTerm = searchTermLower
+        .replace(/ё/g, 'е')
+        .trim();
+      
+      // Прямое соответствие
+      if (normalizedText.includes(normalizedSearchTerm)) {
+        return true;
+      }
+      
+      // Поиск по отдельным словам
+      if (normalizedSearchTerm.includes(' ')) {
+        const searchWords = normalizedSearchTerm.split(' ').filter(w => w.length > 1);
+        return searchWords.every(word => normalizedText.includes(word));
+      }
+      
+      // Поиск по аббревиатурам
+      if (normalizedSearchTerm.length >= 2 && normalizedSearchTerm.length <= 5) {
+        const words = normalizedText.split(' ');
+        if (words.length >= 2) {
+          const acronym = words.map(w => w.charAt(0)).join('').toLowerCase();
+          if (acronym.includes(normalizedSearchTerm)) {
+            return true;
+          }
+        }
+      }
+      
+      return false;
+    };
+
     // Поиск отделов
     departments.forEach(dept => {
-      if (!dept.deleted && dept.name.toLowerCase().includes(searchTermLower)) {
+      if (!dept.deleted && isMatch(dept.name)) {
         deptMatches.add(dept.department_id);
 
         // Добавляем цепочку родителей
@@ -179,7 +217,7 @@ export default function Vacancies() {
 
     // Поиск должностей
     positions.forEach(pos => {
-      if (pos.name.toLowerCase().includes(searchTermLower)) {
+      if (isMatch(pos.name)) {
         posMatches.add(pos.position_id);
 
         // Добавляем отделы позиции
@@ -435,7 +473,7 @@ export default function Vacancies() {
 
     // Если поддерево развернуто, добавляем дочерние элементы
     if (ex) {
-      childPositions.forEach((child: any) => {
+      childPositions.forEach((child: Position & { children?: any[] }) => {
         rows.push(...renderPositionRow(child, deptId, lvl + 1, rowId));
       });
 
