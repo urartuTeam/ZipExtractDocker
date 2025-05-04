@@ -52,12 +52,14 @@ interface Employee {
   email: string | null;
   manager_id: number | null;
   department_id: number | null;
+  category_parent_id: number | null;
 }
 
 interface Position {
   position_id: number;
   name: string;
   department_id?: number | null;
+  is_category?: boolean;
 }
 
 interface Department {
@@ -81,6 +83,9 @@ const employeeFormSchema = z.object({
     val && val !== "null" ? Number(val) : null
   ),
   manager_id: z.string().nullable().transform(val => 
+    val && val !== "null" ? Number(val) : null
+  ),
+  category_parent_id: z.string().nullable().transform(val => 
     val && val !== "null" ? Number(val) : null
   ),
   email: z.string().email("Некорректный email").nullable().or(z.literal('')).transform(val => 
@@ -116,6 +121,7 @@ export default function Employees() {
       position_id: null as any,
       department_id: null as any,
       manager_id: null as any,
+      category_parent_id: null as any,
       email: "",
       phone: "",
     },
@@ -129,6 +135,7 @@ export default function Employees() {
       position_id: null as any,
       department_id: null as any,
       manager_id: null as any,
+      category_parent_id: null as any,
       email: "",
       phone: "",
     },
