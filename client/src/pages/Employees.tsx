@@ -323,11 +323,15 @@ export default function Employees() {
     setSelectedEmployee(employee);
     setSelectedDepartment(employee.department_id ? employee.department_id.toString() : "null");
     
+    const positionId = employee.position_id !== null ? employee.position_id.toString() : null as any;
+    setEditSelectedPosition(positionId);
+    
     editForm.reset({
       full_name: employee.full_name,
-      position_id: employee.position_id !== null ? employee.position_id.toString() : null as any,
+      position_id: positionId,
       department_id: employee.department_id !== null ? employee.department_id.toString() : null as any,
       manager_id: employee.manager_id !== null ? employee.manager_id.toString() : null as any,
+      category_parent_id: employee.category_parent_id !== null ? employee.category_parent_id.toString() : null as any,
       email: employee.email || "",
       phone: employee.phone || "",
     });
@@ -803,6 +807,49 @@ export default function Employees() {
                   )}
                 />
               </div>
+              
+              {/* Поле для выбора родительской должности (если выбрана категория) в форме редактирования */}
+              {isPositionCategory(editSelectedPosition) && (
+                <FormField
+                  control={editForm.control}
+                  name="category_parent_id"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Родительская должность</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value?.toString() || "null"}
+                        value={field.value?.toString() || "null"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Выберите родительскую должность" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="null">Не указана</SelectItem>
+                          {/* Фильтруем только не категории */}
+                          {positionsData?.data
+                            .filter(pos => !pos.is_category)
+                            .map((position) => (
+                              <SelectItem 
+                                key={position.position_id} 
+                                value={position.position_id.toString()}
+                              >
+                                {position.name}
+                              </SelectItem>
+                            ))
+                          }
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                      <FormDescription>
+                        Выберите родительскую должность для этой категории
+                      </FormDescription>
+                    </FormItem>
+                  )}
+                />
+              )}
               
               <FormField
                 control={editForm.control}
