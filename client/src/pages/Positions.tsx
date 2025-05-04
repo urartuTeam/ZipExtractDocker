@@ -259,7 +259,7 @@ export default function Positions() {
       department_id: number;
       vacancies: number;
     }) => {
-      const res = await apiRequest("POST", "/api/positiondepartments", {
+      const res = await apiRequest("POST", "/api/pd", {
         position_id,
         department_id,
         vacancies, // Количество вакансий
@@ -297,7 +297,7 @@ export default function Positions() {
   // Mutation для удаления связи должности с отделом
   const deletePositionDepartment = useMutation({
     mutationFn: async (id: number) => {
-      const res = await apiRequest("DELETE", `/api/positiondepartments/${id}`);
+      const res = await apiRequest("DELETE", `/api/pd/${id}`);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(
