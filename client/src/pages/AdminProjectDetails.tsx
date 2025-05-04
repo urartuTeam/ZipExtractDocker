@@ -68,9 +68,12 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   const [employeeToEditRole, setEmployeeToEditRole] = useState<EmployeeProject | null>(null);
 
   // Запрос проекта
-  const { data: projectResponse, isLoading: isLoadingProject } = useQuery<{status: string, data: Project}>({
+  const { data: projectResponse, isLoading: isLoadingProject, refetch: refetchProject } = useQuery<{status: string, data: Project}>({
     queryKey: ['/api/projects', projectId],
-    enabled: !!projectId && !isNaN(projectId)
+    enabled: !!projectId && !isNaN(projectId),
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    retry: 3
   });
 
   // Запрос сотрудников проекта
@@ -111,6 +114,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   // Использовать данные запроса
   console.log("Project Response:", projectResponse);
   console.log("Project Data:", projectResponse?.data);
+  // Правильное получение данных проекта из ответа API
   const projectData = projectResponse?.data;
   const projectEmployees = projectEmployeesResponse?.data || [];
   
@@ -476,7 +480,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
             <ArrowLeft className="mr-2 h-4 w-4" />
             Назад к проектам
           </Button>
-          <h1 className="text-2xl font-bold">{projectData.name}</h1>
+          <h1 className="text-2xl font-bold">{projectData?.name || "Проект"}</h1>
         </div>
         <div className="mt-3 sm:mt-0 flex space-x-2">
           <Button 
@@ -502,16 +506,37 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
             <CardTitle>Информация о проекте</CardTitle>
             <CardDescription>Основные сведения о проекте</CardDescription>
           </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => {
+              refetchProject();
+              toast({
+                title: "Обновление данных",
+                description: "Данные проекта обновляются...",
+              });
+            }}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Обновить данные
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div>
               <p className="text-sm font-medium text-gray-500">Название проекта:</p>
-              <p className="text-lg">{projectData.name}</p>
+              <p className="text-lg">{projectData?.name || "Название проекта"}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Описание:</p>
-              <p className="text-base">{projectData.description || "Описание отсутствует"}</p>
+              <p className="text-base">{projectData?.description || "Описание отсутствует"}</p>
+            </div>
+            {/* Добавляем отладочную информацию */}
+            <div className="mt-4 p-2 bg-gray-100 rounded">
+              <p className="text-xs text-gray-500">Информация для отладки:</p>
+              <pre className="text-xs overflow-auto max-h-32">
+                {JSON.stringify(projectData, null, 2)}
+              </pre>
             </div>
           </div>
         </CardContent>
@@ -590,7 +615,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
           <DialogHeader>
             <DialogTitle>Добавить сотрудника в проект</DialogTitle>
             <DialogDescription>
-              Выберите сотрудника для добавления в проект "{projectData.name}"
+              Выберите сотрудника для добавления в проект "{projectData?.name || "Проект"}"
             </DialogDescription>
           </DialogHeader>
           
@@ -750,7 +775,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
               Подтверждение удаления
             </DialogTitle>
             <DialogDescription>
-              Вы действительно хотите удалить проект "{projectData.name}"?
+              Вы действительно хотите удалить проект "{projectData?.name || "Проект"}"?
               Это действие нельзя будет отменить.
             </DialogDescription>
           </DialogHeader>
