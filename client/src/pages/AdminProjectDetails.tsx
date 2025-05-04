@@ -41,7 +41,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Project, EmployeeProject, Employee, Position, Department } from '@shared/schema';
-import { ArrowLeft, Users, Plus, Edit, Trash, AlertTriangle, Pencil } from 'lucide-react';
+import { ArrowLeft, Users, Plus, Edit, Trash, AlertTriangle, Pencil, RefreshCw } from 'lucide-react';
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { 
   Table, 
