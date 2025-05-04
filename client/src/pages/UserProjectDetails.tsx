@@ -40,14 +40,14 @@ export default function UserProjectDetails({ params }: RouteComponentProps<{ id:
     staleTime: 1000 * 60, // 1 минута
   });
 
-  // Запрос данных проекта и его сотрудников
-  const { data: projectEmployeesResponse, isLoading: isLoadingProjectEmployees } = useQuery<{status: string, data: {
-    title: string;
-    description: string;
-    employees: EmployeeProject[];
-  }}>({
+  // Запрос данных сотрудников проекта
+  const { data: projectEmployeesResponse, isLoading: isLoadingProjectEmployees } = useQuery<{status: string, data: EmployeeProject[]}>({
     queryKey: [`/api/employeeprojects/project/${projectId}`],
     enabled: !!projectId && !isNaN(projectId),
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
+    retry: 3,
+    staleTime: 1000 * 60, // 1 минута
   });
 
   // Запрос всех сотрудников
@@ -73,18 +73,14 @@ export default function UserProjectDetails({ params }: RouteComponentProps<{ id:
       : projectResponse.data)
     : undefined;
     
-  // Добавляем логи для отладки
-  console.log("Project Response Data:", projectResponse?.data);
-  console.log("Processed Project Data:", projectData);
-    
-  const projectDetails = projectEmployeesResponse?.data || { title: '', description: '', employees: [] };
+  const projectEmployees = projectEmployeesResponse?.data || [];
   
   const allEmployees = employeesResponse?.data || [];
   const allPositions = positionsResponse?.data || [];
   const allDepartments = departmentsResponse?.data || [];
   
   // Получаем полную информацию о сотрудниках проекта
-  const projectEmployeesWithDetails = (projectDetails.employees || []).map((ep: EmployeeProject) => {
+  const projectEmployeesWithDetails = (projectEmployees || []).map((ep: EmployeeProject) => {
     const employee = allEmployees.find(e => e.employee_id === ep.employee_id);
     const position = allPositions.find(p => p.position_id === employee?.position_id);
     const department = allDepartments.find(d => d.department_id === employee?.department_id);
@@ -157,7 +153,7 @@ export default function UserProjectDetails({ params }: RouteComponentProps<{ id:
           <ArrowLeft className="mr-2 h-4 w-4" />
           Назад к проектам
         </Button>
-        <h1 className="text-2xl font-bold">{projectDetails.title || projectData.name}</h1>
+        <h1 className="text-2xl font-bold">{projectData.name}</h1>
       </div>
 
       <Card className="mb-6">
@@ -169,19 +165,11 @@ export default function UserProjectDetails({ params }: RouteComponentProps<{ id:
           <div className="space-y-4">
             <div>
               <p className="text-sm font-medium text-gray-500">Название проекта:</p>
-              <p className="text-lg">{projectDetails.title || projectData.name}</p>
+              <p className="text-lg">{projectData.name}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Описание:</p>
-              <p className="text-base">{projectDetails.description || projectData.description || "Описание отсутствует"}</p>
-            </div>
-            
-            {/* Отладочная информация */}
-            <div className="mt-4 p-2 bg-gray-100 rounded">
-              <p className="text-xs text-gray-500">Информация для отладки:</p>
-              <pre className="text-xs overflow-auto max-h-32">
-                {JSON.stringify(projectData, null, 2)}
-              </pre>
+              <p className="text-base">{projectData.description || "Описание отсутствует"}</p>
             </div>
           </div>
         </CardContent>
