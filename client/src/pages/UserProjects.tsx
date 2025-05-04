@@ -57,21 +57,30 @@ export default function UserProjects() {
         </div>
         
         <div>
-          <Input
-            type="text"
-            placeholder="Поиск проектов..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="max-w-[300px] bg-white/10 border-white text-white placeholder:text-white/70"
-          />
+          <Button 
+            variant="outline" 
+            className="bg-white/10 border-white text-white hover:bg-white/20 hover:text-white"
+            onClick={() => navigate('/auth')}
+          >
+            Войти
+          </Button>
         </div>
       </div>
       
       <div className="container mx-auto px-4 py-6 flex-1 overflow-y-auto bg-neutral-100">
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold mb-2">Проекты</h1>
             <p className="text-gray-500">Всего проектов: {projects.length}</p>
+          </div>
+          <div>
+            <Input
+              type="text"
+              placeholder="Поиск проектов..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-[300px]"
+            />
           </div>
         </div>
 
