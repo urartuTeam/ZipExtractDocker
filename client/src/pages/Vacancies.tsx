@@ -122,27 +122,75 @@ export default function Vacancies() {
   const isMatch = useCallback((text: string, searchTermLower: string): boolean => {
     if (!text || !searchTermLower) return false;
     
-    // Нормализуем строку для лучшего поиска
-    const normalizedText = text.toLowerCase()
-      .replace(/ё/g, 'е') // замена ё на е
-      .trim();
-    
-    const normalizedSearchTerm = searchTermLower
-      .replace(/ё/g, 'е')
-      .trim();
-    
-    // Выполняем поиск отдельно для каждого слова
-    const words = normalizedText.split(/\s+/);
-    
-    // Проверяем, начинается ли какое-либо слово с искомой строки
-    for (const word of words) {
-      if (word.startsWith(normalizedSearchTerm)) {
+    try {
+      // Дебаг логирование для поиска проблемы
+      console.log(`Сравниваем: "${text}" с "${searchTermLower}"`);
+      
+      // Нормализуем строки для более точного поиска
+      const normalizedText = text.toLowerCase()
+        .normalize('NFD') // Нормализация символов
+        .replace(/[\u0300-\u036f]/g, '') // Удаляем диакритические знаки
+        .replace(/ё/g, 'е') // Замена ё на е
+        .trim();
+      
+      const normalizedSearchTerm = searchTermLower
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/ё/g, 'е')
+        .trim();
+      
+      console.log(`После нормализации: "${normalizedText}" с "${normalizedSearchTerm}"`);
+      
+      // Проверка на полное вхождение в строку
+      if (normalizedText.includes(normalizedSearchTerm)) {
+        console.log(`Полное совпадение: ${normalizedText} содержит ${normalizedSearchTerm}`);
         return true;
       }
+      
+      // Если поисковый запрос короткий (1-3 символа), ищем вхождение в начале слов
+      if (normalizedSearchTerm.length <= 3) {
+        // Разбиваем текст на слова
+        const words = normalizedText.split(/\s+/);
+        
+        // Проверяем начало каждого слова
+        for (const word of words) {
+          if (word.startsWith(normalizedSearchTerm)) {
+            console.log(`Слово ${word} начинается с ${normalizedSearchTerm}`);
+            return true;
+          }
+        }
+      }
+      
+      // Проверяем, является ли поисковый запрос первыми буквами слов (для аббревиатур)
+      if (normalizedSearchTerm.length >= 2 && normalizedSearchTerm.length <= 5) {
+        const words = normalizedText.split(/\s+/);
+        if (words.length >= 2) {
+          const acronym = words.map(w => w.charAt(0)).join('');
+          if (acronym.includes(normalizedSearchTerm)) {
+            console.log(`Аббревиатура ${acronym} содержит ${normalizedSearchTerm}`);
+            return true;
+          }
+        }
+      }
+      
+      // Проверка регулярным выражением с учетом кириллицы
+      try {
+        const regExp = new RegExp(normalizedSearchTerm.split('').join('\\s*'), 'i');
+        const result = regExp.test(normalizedText);
+        if (result) {
+          console.log(`RegExp совпадение: ${regExp} в ${normalizedText}`);
+          return true;
+        }
+      } catch (e) {
+        console.error("Ошибка в регулярном выражении:", e);
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Ошибка в функции поиска:", error);
+      // В случае ошибки возвращаем простое сравнение
+      return text.toLowerCase().includes(searchTermLower);
     }
-    
-    // Если не найдено совпадений по началу слов, то проверяем вхождение в любое место
-    return normalizedText.includes(normalizedSearchTerm);
   }, []);
 
   // Эффект для начального раскрытия дерева
