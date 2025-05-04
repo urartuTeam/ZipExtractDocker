@@ -114,8 +114,15 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   // Использовать данные запроса
   console.log("Project Response:", projectResponse);
   console.log("Project Data:", projectResponse?.data);
+  
   // Правильное получение данных проекта из ответа API
-  const projectData = projectResponse?.data;
+  // Проверяем, является ли data массивом и берем первый элемент, иначе используем data напрямую
+  const projectData = Array.isArray(projectResponse?.data) 
+    ? projectResponse?.data[0] 
+    : projectResponse?.data;
+  
+  console.log("Обработанные данные проекта:", projectData);
+  
   const projectEmployees = projectEmployeesResponse?.data || [];
   
   // Форма редактирования проекта
