@@ -50,10 +50,20 @@ export default function Home() {
     console.log("Данные positionsWithDepartmentsData инициализированы:", positionsWithDepartments.length);
   }
   
+  // Определение типа для записи department в должности
+  type PositionDepartment = {
+    department_id: number;
+    department_name: string;
+    deleted?: boolean;
+    vacancies?: number;
+    position_link_id: number;
+    sort: number;
+  };
+  
   // Подсчет количества вакансий
   const totalPositionsCount = positionsWithDepartments.reduce((total, position) => {
     // Проходим по всем отделам, к которым привязана должность
-    position.departments.forEach(dept => {
+    position.departments.forEach((dept: PositionDepartment) => {
       // Учитываем только не удаленные записи
       if (dept.deleted !== true) {
         total += dept.vacancies || 0;
@@ -181,7 +191,8 @@ export default function Home() {
                 </svg>
               </div>
               <div className="text-2xl font-bold">
-                <span className="text-green-600">Анализ</span>
+                <span className="text-[#a40000]">Всего: {totalPositionsCount}</span>{' '}
+                <span className="text-green-600">({vacantPositionsCount})</span>
               </div>
               <div className="text-sm text-gray-500">Отчет по вакансиям организации</div>
             </div>
