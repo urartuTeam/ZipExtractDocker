@@ -1,5 +1,5 @@
 import { 
-  users, departments, positions, employees, projects, employeeprojects, leaves, position_department, position_position, settings,
+  users, departments, positions, employees, projects, employeeprojects, leaves, position_department, position_position, settings, sort_tree,
   type User, type InsertUser, 
   type Department, type InsertDepartment,
   type Position, type InsertPosition,
@@ -9,7 +9,8 @@ import {
   type Project, type InsertProject,
   type EmployeeProject, type InsertEmployeeProject,
   type Leave, type InsertLeave,
-  type Setting, type InsertSetting
+  type Setting, type InsertSetting,
+  type SortTree, type InsertSortTree
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, inArray } from "drizzle-orm";
@@ -29,6 +30,13 @@ export interface IStorage {
   createDepartment(department: InsertDepartment): Promise<Department>;
   updateDepartment(id: number, department: Partial<InsertDepartment>): Promise<Department | undefined>;
   deleteDepartment(id: number): Promise<boolean>;
+  
+  // Сортировка элементов иерархии
+  getSortTree(): Promise<SortTree[]>;
+  getSortTreeItem(type: string, type_id: number, parent_id: number | null): Promise<SortTree | undefined>;
+  createSortTreeItem(item: InsertSortTree): Promise<SortTree>;
+  updateSortTreeItem(id: number, item: Partial<InsertSortTree>): Promise<SortTree | undefined>;
+  deleteSortTreeItem(id: number): Promise<boolean>;
 
   // Должности
   getPosition(id: number): Promise<Position | undefined>;
