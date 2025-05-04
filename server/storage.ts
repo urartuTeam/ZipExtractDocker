@@ -626,6 +626,58 @@ export class DatabaseStorage implements IStorage {
       return setting;
     }
   }
+  
+  // Методы для работы с сортировкой дерева
+  async getSortTree(): Promise<SortTree[]> {
+    return await db.select().from(sort_tree).orderBy(sort_tree.type, sort_tree.type_id, sort_tree.sort);
+  }
+  
+  async getSortTreeItem(type: string, type_id: number, parent_id: number | null): Promise<SortTree | undefined> {
+    let query;
+    
+    if (parent_id === null) {
+      query = and(
+        eq(sort_tree.type, type),
+        eq(sort_tree.type_id, type_id),
+        // eq(sort_tree.parent_id, null) - this is causing issues
+        eq(sort_tree.parent_id, undefined as any) // workaround
+      );
+    } else {
+      query = and(
+        eq(sort_tree.type, type),
+        eq(sort_tree.type_id, type_id),
+        eq(sort_tree.parent_id, parent_id)
+      );
+    }
+    
+    const [item] = await db.select().from(sort_tree).where(query);
+    return item || undefined;
+  }
+  
+  async createSortTreeItem(item: InsertSortTree): Promise<SortTree> {
+    const [sortItem] = await db
+      .insert(sort_tree)
+      .values(item)
+      .returning();
+    return sortItem;
+  }
+  
+  async updateSortTreeItem(id: number, item: Partial<InsertSortTree>): Promise<SortTree | undefined> {
+    const [sortItem] = await db
+      .update(sort_tree)
+      .set(item)
+      .where(eq(sort_tree.id, id))
+      .returning();
+    return sortItem || undefined;
+  }
+  
+  async deleteSortTreeItem(id: number): Promise<boolean> {
+    const [deleted] = await db
+      .delete(sort_tree)
+      .where(eq(sort_tree.id, id))
+      .returning({ id: sort_tree.id });
+    return !!deleted;
+  }
 }
 
 export const storage = new DatabaseStorage();

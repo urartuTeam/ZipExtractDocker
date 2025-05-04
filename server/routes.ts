@@ -15,6 +15,7 @@ import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { registerPositionEndpoints } from "./api/position_endpoints";
+import { registerSortTreeEndpoints } from "./api/sort_tree_endpoints";
 
 // Промежуточное ПО для проверки аутентификации
 function isAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -30,6 +31,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Регистрация специализированных эндпоинтов для должностей
   registerPositionEndpoints(app);
+  
+  // Регистрация эндпоинтов для работы с сортировкой дерева
+  registerSortTreeEndpoints(app);
   
   // API routes
   const apiRouter = app.route('/api');
