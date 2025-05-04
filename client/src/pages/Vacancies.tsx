@@ -120,7 +120,7 @@ export default function Vacancies() {
 
   // Функция для проверки соответствия текста поисковому запросу
   const isMatch = useCallback((text: string, searchTermLower: string): boolean => {
-    if (!text) return false;
+    if (!text || !searchTermLower) return false;
     
     // Нормализуем строку для лучшего поиска
     const normalizedText = text.toLowerCase()
@@ -131,7 +131,17 @@ export default function Vacancies() {
       .replace(/ё/g, 'е')
       .trim();
     
-    // Прямое соответствие
+    // Выполняем поиск отдельно для каждого слова
+    const words = normalizedText.split(/\s+/);
+    
+    // Проверяем, начинается ли какое-либо слово с искомой строки
+    for (const word of words) {
+      if (word.startsWith(normalizedSearchTerm)) {
+        return true;
+      }
+    }
+    
+    // Если не найдено совпадений по началу слов, то проверяем вхождение в любое место
     return normalizedText.includes(normalizedSearchTerm);
   }, []);
 
@@ -171,6 +181,8 @@ export default function Vacancies() {
   useEffect(() => {
     if (!departments.length || !positions.length) return;
 
+    // Даже если поисковый запрос пустой, мы все равно обрабатываем его,
+    // чтобы сбросить состояние
     if (!searchTerm.trim()) {
       setSearchMatches({
         departments: new Set<number>(),
