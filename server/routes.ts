@@ -677,6 +677,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Эндпоинты для настроек (Settings)
+  app.get('/api/settings', async (req: Request, res: Response) => {
+    try {
+      const settings = await storage.getAllSettings();
+      res.json({ status: 'success', data: settings });
+    } catch (error) {
+      console.error('Error fetching settings:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch settings' });
+    }
+  });
+
+  app.get('/api/settings/:key', async (req: Request, res: Response) => {
+    try {
+      const key = req.params.key;
+      const setting = await storage.getSetting(key);
+      
+      if (!setting) {
+        return res.status(404).json({ status: 'error', message: 'Setting not found' });
+      }
+      
+      res.json({ status: 'success', data: setting });
+    } catch (error) {
+      console.error('Error fetching setting:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch setting' });
+    }
+  });
+
+  app.post('/api/settings', async (req: Request, res: Response) => {
+    try {
+      const { key, value } = req.body;
+      
+      if (!key || typeof value === 'undefined') {
+        return res.status(400).json({ status: 'error', message: 'Key and value are required' });
+      }
+      
+      const setting = await storage.createOrUpdateSetting(key, value);
+      res.status(200).json({ status: 'success', data: setting });
+    } catch (error) {
+      console.error('Error updating setting:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to update setting' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
