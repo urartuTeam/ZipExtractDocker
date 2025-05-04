@@ -662,12 +662,12 @@ export default function Positions() {
                             {position.departments &&
                             position.departments.length > 0 ? (
                               <div className="border rounded-md divide-y">
-                                {position.departments.map((dept) => {
+                                {position.departments.map((dept, index) => {
                                   // Для каждого отдела найдем соответствующую родительскую должность
                                   // В будущем здесь можно получать parent_position из position_position где department_id = dept.department_id
                                   return (
                                     <div
-                                      key={`${position.position_id}_${dept.department_id}_${dept.position_link_id || 0}`}
+                                      key={`dept_${position.position_id}_${dept.department_id}_${dept.position_link_id || 0}_${index}_${Math.random().toString(36).substring(2, 9)}`}
                                       className="p-2"
                                     >
                                       <div className="grid grid-cols-[1fr,1fr,auto] gap-2 items-center">
@@ -874,9 +874,9 @@ export default function Positions() {
                   <div className="space-y-2">
                     <h3 className="text-sm font-medium">Привязанные отделы</h3>
                     <div className="border rounded-md divide-y">
-                      {selectedPosition.departments.map((dept) => (
+                      {selectedPosition.departments.map((dept, index) => (
                         <div
-                          key={`edit_${dept.position_link_id}_${dept.department_id}`}
+                          key={`edit_${dept.position_link_id}_${dept.department_id}_${index}_${Math.random().toString(36).substring(2, 9)}`}
                           className="flex items-center justify-between p-3"
                         >
                           <span className="text-sm">
@@ -1033,9 +1033,9 @@ export default function Positions() {
               {selectedPosition?.departments &&
               selectedPosition.departments.length > 0 ? (
                 <div className="border rounded-md divide-y">
-                  {selectedPosition.departments.map((dept) => (
+                  {selectedPosition.departments.map((dept, index) => (
                     <div
-                      key={`dept_list_${dept.position_link_id}_${dept.department_id}`}
+                      key={`dept_list_${dept.position_link_id}_${dept.department_id}_${index}_${Math.random().toString(36).substring(2, 9)}`}
                       className="flex items-center justify-between p-3"
                     >
                       <div>
