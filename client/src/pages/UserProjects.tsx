@@ -15,13 +15,15 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from "@/components/ui/input";
 import { Project } from '@shared/schema';
-import { Users } from 'lucide-react';
+import { Users, ArrowRight } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 // Основной компонент страницы проектов для обычных пользователей (карточки)
 export default function UserProjects() {
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
+  const { user } = useAuth();
   
   // Запрос на получение всех проектов
   const { data: projectsResponse, isLoading: isLoadingProjects } = useQuery<{status: string, data: Project[]}>({
@@ -56,18 +58,13 @@ export default function UserProjects() {
           Проекты
         </div>
         
-        <div>
-          <Button 
-            variant="outline" 
-            className="bg-white/10 border-white text-white hover:bg-white/20 hover:text-white"
-            onClick={() => navigate('/auth')}
-          >
-            Войти
-          </Button>
+        {/* Убираем кнопку войти из шапки */}
+        <div className="w-[100px]">
+          {/* Пустой div для центрирования заголовка "Проекты" */}
         </div>
       </div>
       
-      <div className="container mx-auto px-4 py-6 flex-1 overflow-y-auto bg-neutral-100">
+      <div className="container mx-auto px-4 py-6 flex-1 overflow-y-auto bg-neutral-100 flex flex-col">
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold mb-2">Проекты</h1>
@@ -84,55 +81,79 @@ export default function UserProjects() {
           </div>
         </div>
 
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, index) => (
-              <Card key={index} className="overflow-hidden">
-                <CardHeader className="pb-0">
-                  <Skeleton className="h-7 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2" />
-                </CardHeader>
-                <CardContent className="pt-6">
-                  <Skeleton className="h-20 w-full" />
-                </CardContent>
-                <CardFooter>
-                  <Skeleton className="h-10 w-full" />
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        ) : filteredProjects.length === 0 ? (
-          <div className="text-center p-12 border rounded-lg shadow-sm bg-white">
-            <h2 className="text-xl font-medium mb-2">Проекты не найдены</h2>
-            <p className="text-gray-500 mb-4">
-              {searchTerm 
-                ? `По запросу "${searchTerm}" ничего не найдено` 
-                : "В системе нет доступных проектов"}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProjects.map((project) => (
-              <Card key={project.project_id} className="overflow-hidden flex flex-col h-full">
-                <CardHeader className="pb-0">
-                  <CardTitle>{project.name}</CardTitle>
-                  <CardDescription>Проект №{project.project_id}</CardDescription>
-                </CardHeader>
-                <CardContent className="pt-6 flex-grow">
-                  <p className="line-clamp-3">{project.description || "Описание отсутствует"}</p>
-                </CardContent>
-                <CardFooter className="pt-0">
-                  <Button 
-                    className="w-full" 
-                    onClick={() => navigate(`/projects/${project.project_id}`)}
-                  >
-                    Просмотреть детали
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
+        <div className="flex-grow">
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, index) => (
+                <Card key={index} className="overflow-hidden">
+                  <CardHeader className="pb-0">
+                    <Skeleton className="h-7 w-3/4 mb-2" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </CardHeader>
+                  <CardContent className="pt-6">
+                    <Skeleton className="h-20 w-full" />
+                  </CardContent>
+                  <CardFooter>
+                    <Skeleton className="h-10 w-full" />
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          ) : filteredProjects.length === 0 ? (
+            <div className="text-center p-12 border rounded-lg shadow-sm bg-white">
+              <h2 className="text-xl font-medium mb-2">Проекты не найдены</h2>
+              <p className="text-gray-500 mb-4">
+                {searchTerm 
+                  ? `По запросу "${searchTerm}" ничего не найдено` 
+                  : "В системе нет доступных проектов"}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredProjects.map((project) => (
+                <Card key={project.project_id} className="overflow-hidden flex flex-col h-full">
+                  <CardHeader className="pb-0">
+                    <CardTitle>{project.name}</CardTitle>
+                    <CardDescription>Проект №{project.project_id}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-6 flex-grow">
+                    <p className="line-clamp-3">{project.description || "Описание отсутствует"}</p>
+                  </CardContent>
+                  <CardFooter className="pt-0">
+                    <Button 
+                      className="w-full" 
+                      onClick={() => navigate(`/projects/${project.project_id}`)}
+                    >
+                      Просмотреть детали
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+        
+        {/* Нижняя часть с кнопками входа/управления */}
+        <div className="mt-auto pt-4 border-t border-gray-200 flex justify-end">
+          {user ? (
+            <Button
+              variant="outline"
+              className="bg-[#a40000] text-white border-[#a40000] hover:bg-[#b30000] hover:text-white"
+              onClick={() => navigate('/admin/projects')}
+            >
+              Управление
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          ) : (
+            <Button 
+              variant="outline" 
+              className="bg-[#a40000] text-white border-[#a40000] hover:bg-[#b30000] hover:text-white"
+              onClick={() => navigate('/auth')}
+            >
+              Войти
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

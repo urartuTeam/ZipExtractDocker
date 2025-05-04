@@ -64,14 +64,11 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
   
-  // На страницах проектов для обычных пользователей не показываем боковое меню, но оставляем header
+  // На страницах проектов для обычных пользователей не показываем ни боковое меню, ни header - макет страницы включает свой header
   if (location === '/projects' || location.startsWith('/projects/')) {
     return (
       <div className="h-screen flex flex-col overflow-hidden">
-        <Header toggleSidebar={toggleSidebar} activeTab={location} />
-        <main className="flex-1 overflow-y-auto bg-neutral-100 p-6">
-          {children}
-        </main>
+        {children}
       </div>
     );
   }
