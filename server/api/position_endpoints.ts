@@ -265,7 +265,21 @@ export function registerPositionEndpoints(app: Express) {
   // Создать новую связь position_position
   app.post('/api/positionpositions', async (req: Request, res: Response) => {
     try {
-      const positionPositionData = insertPositionPositionSchema.parse(req.body);
+      console.log('Получен запрос на создание связи position_position:', JSON.stringify(req.body));
+      
+      // Проверяем данные через Zod схему
+      let positionPositionData;
+      try {
+        positionPositionData = insertPositionPositionSchema.parse(req.body);
+        console.log('Данные после валидации:', JSON.stringify(positionPositionData));
+      } catch (validationError) {
+        console.error('Ошибка валидации данных:', validationError);
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Ошибка валидации данных для связи должностей', 
+          details: validationError 
+        });
+      }
       
       // Проверяем, существуют ли должности
       if (positionPositionData.position_id === undefined) {
@@ -282,6 +296,7 @@ export function registerPositionEndpoints(app: Express) {
         });
       }
       
+      // Получаем информацию о должности
       const position = await storage.getPosition(positionPositionData.position_id);
       if (!position) {
         return res.status(404).json({ 
@@ -289,6 +304,8 @@ export function registerPositionEndpoints(app: Express) {
           message: 'Должность не найдена' 
         });
       }
+      
+      console.log('Найдена должность:', JSON.stringify(position));
       
       if (positionPositionData.parent_position_id === undefined) {
         return res.status(400).json({ 
@@ -306,6 +323,7 @@ export function registerPositionEndpoints(app: Express) {
         });
       }
       
+      // Получаем информацию о родительской должности
       const parentPosition = await storage.getPosition(parentPositionId);
       if (!parentPosition) {
         return res.status(404).json({ 
@@ -313,6 +331,8 @@ export function registerPositionEndpoints(app: Express) {
           message: 'Родительская должность не найдена' 
         });
       }
+      
+      console.log('Найдена родительская должность:', JSON.stringify(parentPosition));
       
       // Проверяем, существует ли отдел
       if (positionPositionData.department_id === undefined) {
@@ -331,6 +351,7 @@ export function registerPositionEndpoints(app: Express) {
         });
       }
       
+      // Получаем информацию об отделе
       const department = await storage.getDepartment(departmentId);
       if (!department) {
         return res.status(404).json({ 
@@ -338,6 +359,8 @@ export function registerPositionEndpoints(app: Express) {
           message: 'Отдел не найден' 
         });
       }
+      
+      console.log('Найден отдел:', JSON.stringify(department));
       
       // Проверяем, чтобы не было циклических ссылок
       if (positionPositionData.position_id === positionPositionData.parent_position_id) {
@@ -347,14 +370,47 @@ export function registerPositionEndpoints(app: Express) {
         });
       }
       
+      // Специальная обработка для категорийных должностей
+      if (position.is_category) {
+        console.log('Создаём связь для категорийной должности');
+      }
+      
+      // Проверяем, не существует ли уже такая связь
+      const existingPositionPositions = await storage.getAllPositionPositions();
+      const alreadyExists = existingPositionPositions.some(pp => 
+        pp.position_id === positionPositionData.position_id && 
+        pp.parent_position_id === positionPositionData.parent_position_id &&
+        pp.department_id === positionPositionData.department_id &&
+        !pp.deleted
+      );
+      
+      if (alreadyExists) {
+        return res.status(409).json({ 
+          status: 'error', 
+          message: 'Такая связь между должностями уже существует' 
+        });
+      }
+      
+      console.log('Создаём связь position_position с данными:', JSON.stringify(positionPositionData));
+      
       // Создаем связь
       const positionPosition = await storage.createPositionPosition(positionPositionData);
+      console.log('Связь успешно создана:', JSON.stringify(positionPosition));
+      
       res.status(201).json({ status: 'success', data: positionPosition });
     } catch (error) {
       console.error('Ошибка при создании связи position_position:', error);
+      
+      // Более информативное сообщение об ошибке
+      let errorMessage = 'Ошибка сервера при создании связи position_position';
+      if (error instanceof Error) {
+        errorMessage += `: ${error.message}`;
+        console.error('Стек ошибки:', error.stack);
+      }
+      
       res.status(500).json({ 
         status: 'error', 
-        message: 'Ошибка сервера при создании связи position_position' 
+        message: errorMessage 
       });
     }
   });

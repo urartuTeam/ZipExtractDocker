@@ -234,9 +234,16 @@ export const insertPositionDepartmentSchema = createInsertSchema(position_depart
   position_link_id: true,
 });
 
-export const insertPositionPositionSchema = createInsertSchema(position_position).omit({
-  position_relation_id: true,
-});
+export const insertPositionPositionSchema = createInsertSchema(position_position)
+  .omit({
+    position_relation_id: true,
+  })
+  .extend({
+    // Добавляем расширение схемы для корректной обработки категорийных должностей
+    position_id: z.number(),
+    parent_position_id: z.number(),
+    department_id: z.number()
+  });
 
 export const insertEmployeeSchema = createInsertSchema(employees).omit({
   employee_id: true,
