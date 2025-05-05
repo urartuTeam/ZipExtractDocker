@@ -16,6 +16,6 @@ SELECT setval(pg_get_serial_sequence('"'"'public.projects'"'"', '"'"'project_id'
 SELECT setval(pg_get_serial_sequence('"'"'public.settings'"'"', '"'"'id'"'"'), COALESCE(MAX(id), 1)) FROM public.settings;
 SELECT setval(pg_get_serial_sequence('"'"'public.sort_tree'"'"', '"'"'sort_id'"'"'), COALESCE(MAX(sort_id), 1)) FROM public.sort_tree;
 SELECT setval(pg_get_serial_sequence('"'"'public.users'"'"', '"'"'id'"'"'), COALESCE(MAX(id), 1)) FROM public.users;
-' >> full_database_dump_inserts.sql
+' >> full_database_dump.sql
 
 echo "Последовательности сброшены и добавлены в файл."
