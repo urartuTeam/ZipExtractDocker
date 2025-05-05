@@ -372,7 +372,8 @@ export function registerPositionEndpoints(app: Express) {
       
       // Специальная обработка для категорийных должностей
       if (position.is_category) {
-        console.log('Создаём связь для категорийной должности');
+        console.log('Создаём связь для категорийной должности:', 
+          `ID категории: ${position.position_id}, Имя: ${position.name}, Родительская должность: ${parentPositionId}`);
       }
       
       // Проверяем, не существует ли уже такая связь

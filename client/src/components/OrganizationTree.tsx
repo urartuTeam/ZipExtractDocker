@@ -1067,12 +1067,15 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       // Находим сотрудников на этой должности
       const positionEmployees = employees.filter((emp) => {
         if (isCategory) {
-          // Для категорийных должностей учитываем поле category_parent_id
+          // Для категорийных должностей строго проверяем поле category_parent_id
+          // Сотрудник с категорийной должностью должен отображаться только под той родительской должностью, 
+          // к которой категория была прикреплена (category_parent_id)
           return emp.position_id === position.position_id && 
-                 (emp.category_parent_id === undefined || 
-                  emp.category_parent_id === null || 
-                  emp.category_parent_id === position.position_id || // Если категория сама является "родителем"
-                  emp.category_parent_id === position.parent_position_id); // Если категория имеет родителя
+                 emp.category_parent_id !== undefined && 
+                 emp.category_parent_id !== null && 
+                 (hierarchyRelations.some(rel => 
+                   rel.position_id === position.position_id && 
+                   rel.parent_position_id === emp.category_parent_id));
         } else {
           // Для обычных должностей фильтруем только по position_id
           return emp.position_id === position.position_id;
