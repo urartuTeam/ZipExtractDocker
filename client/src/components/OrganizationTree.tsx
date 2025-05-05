@@ -32,7 +32,8 @@ type Employee = {
   full_name: string;
   position_id: number | null;
   department_id: number | null;
-  manager_id: number | null; // Добавляем поле manager_id для отслеживания подчиненности
+  manager_id: number | null; // Поле manager_id для отслеживания подчиненности
+  category_parent_id: number | null; // Поле category_parent_id для связи с родительской должностью категории
 };
 
 // Тип для построения дерева отделов
@@ -782,11 +783,28 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       return null;
     }
 
+    // Проверяем, является ли должность категорией
+    const isCategory = positionNode.is_category === true;
+
     // Ищем всех сотрудников на этой должности в этом отделе
+    // Для обычных должностей используем стандартную фильтрацию
+    // Для категорийных должностей учитываем поле category_parent_id
     const positionEmployees = employees.filter(
-      (e) =>
-        e.position_id === positionNode.position_id &&
-        e.department_id === departmentId,
+      (e) => {
+        if (isCategory) {
+          // Для категорийных должностей проверяем не только позицию и отдел, 
+          // но и привязку к конкретной родительской должности через category_parent_id
+          return e.position_id === positionNode.position_id && 
+                e.department_id === departmentId &&
+                (e.category_parent_id === undefined || // Если поле не используется
+                 e.category_parent_id === null || // Если поле не заполнено
+                 e.category_parent_id === positionNode.parent_position_id); // Если заполнено и совпадает
+        } else {
+          // Для обычных должностей проверяем только позицию и отдел
+          return e.position_id === positionNode.position_id && 
+                e.department_id === departmentId;
+        }
+      }
     );
 
     // Создаем узел для должности
@@ -1043,9 +1061,22 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           (p) => p.position_id === position.position_id,
         ) || position;
 
+      // Проверяем, является ли должность категорией
+      const isCategory = position.is_category === true;
+      
       // Находим сотрудников на этой должности
       const positionEmployees = employees.filter((emp) => {
-        return emp.position_id === position.position_id;
+        if (isCategory) {
+          // Для категорийных должностей учитываем поле category_parent_id
+          return emp.position_id === position.position_id && 
+                 (emp.category_parent_id === undefined || 
+                  emp.category_parent_id === null || 
+                  emp.category_parent_id === position.position_id || // Если категория сама является "родителем"
+                  emp.category_parent_id === position.parent_position_id); // Если категория имеет родителя
+        } else {
+          // Для обычных должностей фильтруем только по position_id
+          return emp.position_id === position.position_id;
+        }
       });
 
       // Если position.departments нет, а в positionWithDepts есть, используем его
