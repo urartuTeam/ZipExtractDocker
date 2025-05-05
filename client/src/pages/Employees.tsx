@@ -147,6 +147,7 @@ export default function Employees() {
   // Mutation для создания нового сотрудника
   const createEmployee = useMutation({
     mutationFn: async (values: EmployeeFormValues) => {
+      console.log('Создание сотрудника с данными:', JSON.stringify(values, null, 2));
       const res = await apiRequest("POST", "/api/employees", values);
       if (!res.ok) {
         const errorData = await res.json();
@@ -175,6 +176,7 @@ export default function Employees() {
   // Mutation для обновления сотрудника
   const updateEmployee = useMutation({
     mutationFn: async ({ id, values }: { id: number, values: EmployeeFormValues }) => {
+      console.log('Обновление сотрудника с ID', id, 'данные:', JSON.stringify(values, null, 2));
       const res = await apiRequest("PUT", `/api/employees/${id}`, values);
       if (!res.ok) {
         const errorData = await res.json();
