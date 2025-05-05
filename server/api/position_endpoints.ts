@@ -374,6 +374,11 @@ export function registerPositionEndpoints(app: Express) {
       if (position.is_category) {
         console.log('Создаём связь для категорийной должности:', 
           `ID категории: ${position.position_id}, Имя: ${position.name}, Родительская должность: ${parentPositionId}`);
+        
+        // Проверяем, не является ли родительская должность "Главный разработчик", если выбрана "Старший разработчик"
+        if (parentPosition.name === "Главный разработчик" && positionPositionData.position_id === 84) {
+          console.log("⚠️ ВНИМАНИЕ: Попытка прикрепить категорию 2 к Главному разработчику, когда должна быть к Старшему разработчику");
+        }
       }
       
       // Проверяем, не существует ли уже такая связь
@@ -394,6 +399,31 @@ export function registerPositionEndpoints(app: Express) {
       
       console.log('Создаём связь position_position с данными:', JSON.stringify(positionPositionData));
       
+      // Проверка для отладки конкретных проблем
+      // При попытке прикрепить 2 категорию к Старшему разработчику, она почему-то прикрепляется к Главному разработчику
+      if (position.is_category && position.position_id === 84) {
+        console.log("====== ДЕТАЛИ СОЗДАНИЯ СВЯЗИ ДЛЯ 2 КАТЕГОРИИ =======");
+        console.log("ID категории:", position.position_id);
+        console.log("Имя категории:", position.name);
+        console.log("ID родительской должности:", parentPositionId);
+        console.log("Имя родительской должности:", parentPosition.name);
+        console.log("ID отдела:", positionPositionData.department_id);
+        
+        // Проверяем связи в другую сторону
+        const chiefDeveloperPosition = await storage.getPosition(69); // предположим, что ID 69 - это "Главный разработчик"
+        const seniorDeveloperPosition = await storage.getPosition(70); // предположим, что ID 70 - это "Старший разработчик"
+        
+        if (chiefDeveloperPosition) {
+          console.log("Главный разработчик найден:", chiefDeveloperPosition.name, "(ID:", chiefDeveloperPosition.position_id, ")");
+        }
+        
+        if (seniorDeveloperPosition) {
+          console.log("Старший разработчик найден:", seniorDeveloperPosition.name, "(ID:", seniorDeveloperPosition.position_id, ")");
+        }
+        
+        console.log("================================================");
+      }
+
       // Создаем связь
       const positionPosition = await storage.createPositionPosition(positionPositionData);
       console.log('Связь успешно создана:', JSON.stringify(positionPosition));

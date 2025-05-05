@@ -1045,6 +1045,32 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           `Должность "${position.name}" (ID: ${position.position_id}) имеет родительскую должность с ID: ${position.parent_position_id}`,
         );
       }
+      
+      if (position.is_category) {
+        console.log(
+          `КАТЕГОРИЯ: "${position.name}" (ID: ${position.position_id})`,
+        );
+        
+        // Найдем все связи для этой категории
+        const categoryRelations = hierarchyRelations.filter(
+          rel => rel.position_id === position.position_id
+        );
+        
+        if (categoryRelations.length > 0) {
+          console.log(`Найдено ${categoryRelations.length} родительских должностей для категории "${position.name}":`, 
+            categoryRelations.map(rel => {
+              const parentPos = positions.find(p => p.position_id === rel.parent_position_id);
+              return {
+                parent_id: rel.parent_position_id,
+                parent_name: parentPos ? parentPos.name : 'Неизвестно',
+                department_id: rel.department_id
+              };
+            })
+          );
+        } else {
+          console.log(`Категория "${position.name}" не имеет родительских должностей`);
+        }
+      }
     });
 
     // В функциях нельзя использовать хуки, поэтому используем positionsWithDepartments
@@ -1116,7 +1142,10 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       const parentNode = positionNodes[parentId];
       // Находим узел текущей должности
       const currentNode = positionNodes[childId];
-
+      
+      // Проверяем, является ли дочерняя должность категорией
+      const isChildCategory = positions.find(p => p.position_id === childId)?.is_category === true;
+      
       if (parentNode && currentNode) {
         // Добавляем текущую должность как подчиненную к родительской
         // Проверяем, не добавлен ли уже этот узел
@@ -1130,7 +1159,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           // Помечаем, что это дочерняя должность
           childPositions.add(childId);
           console.log(
-            `Создана связь: "${currentNode.position.name}" (ID: ${childId}) подчиняется "${parentNode.position.name}" (ID: ${parentId}) в отделе ${deptId}`,
+            `Создана связь: "${currentNode.position.name}"${isChildCategory ? " (КАТЕГОРИЯ)" : ""} (ID: ${childId}) подчиняется "${parentNode.position.name}" (ID: ${parentId}) в отделе ${deptId}`,
           );
         }
       } else {
