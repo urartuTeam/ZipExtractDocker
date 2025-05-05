@@ -1,34 +1,29 @@
 #!/bin/bash
 
-# Скрипт для инициализации базы данных
-# Выполняет последовательность SQL-файлов для настройки базы данных
+# Скрипт для инициализации базы данных PostgreSQL
+# Использование: ./init_database.sh [имя_базы] [имя_пользователя] [пароль]
 
-echo "Начинаем инициализацию базы данных..."
+# Значения по умолчанию
+DB_NAME=${1:-"hr_system"}
+DB_USER=${2:-"postgres"}
+DB_PASS=${3:-"postgres"}
 
-# Метод 1: Создаем таблицы и структуру базы данных с нуля по отдельным файлам
-if [ "$1" = "step" ]; then
-  echo "Выполнение пошаговой инициализации базы данных..."
-  
-  # Создаем таблицы и структуру базы данных
-  echo "1. Создание структуры базы данных..."
-  psql "$DATABASE_URL" -f database_init.sql
+# Создание базы данных и пользователя
+echo "Создание базы данных $DB_NAME и пользователя $DB_USER..."
 
-  # Вставляем начальные данные
-  echo "2. Вставка начальных данных..."
-  psql "$DATABASE_URL" -f database_insert_data.sql
+# Создаем пользователя и базу данных
+psql -U postgres <<EOF
+DROP DATABASE IF EXISTS $DB_NAME;
+DROP USER IF EXISTS $DB_USER;
+CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';
+CREATE DATABASE $DB_NAME OWNER $DB_USER;
+GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
+EOF
 
-  # Добавляем механизм soft delete
-  echo "3. Настройка механизма soft delete..."
-  psql "$DATABASE_URL" -f add_soft_delete.sql
+echo "База данных и пользователь созданы."
 
-  # Исправляем последовательности
-  echo "4. Обновление последовательностей..."
-  psql "$DATABASE_URL" -f fix_sequences.sql
+# Импорт данных из SQL-файла
+echo "Импорт данных из full_database_dump_inserts.sql..."
+psql -U $DB_USER -d $DB_NAME -f full_database_dump_inserts.sql
 
-# Метод 2: Загружаем полный дамп базы из единого файла
-else
-  echo "Выполнение быстрой инициализации базы данных из полного дампа..."
-  psql "$DATABASE_URL" -f full_database_dump_clean.sql
-fi
-
-echo "Инициализация базы данных завершена успешно!"
+echo "Инициализация базы данных завершена."
