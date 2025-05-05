@@ -1,29 +1,24 @@
 #!/bin/bash
 
-# Скрипт для инициализации базы данных PostgreSQL
-# Использование: ./init_database.sh [имя_базы] [имя_пользователя] [пароль]
+# Проверка переменных окружения
+if [ -z "$DATABASE_URL" ]; then
+  echo "Ошибка: переменная DATABASE_URL не установлена"
+  exit 1
+fi
 
-# Значения по умолчанию
-DB_NAME=${1:-"hr_system"}
-DB_USER=${2:-"postgres"}
-DB_PASS=${3:-"postgres"}
+echo "Инициализация базы данных..."
+echo "Удаление существующих таблиц (если есть)..."
 
-# Создание базы данных и пользователя
-echo "Создание базы данных $DB_NAME и пользователя $DB_USER..."
+# Удаление существующих таблиц (если есть)
+psql $DATABASE_URL << SQL
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+GRANT ALL ON SCHEMA public TO public;
+SQL
 
-# Создаем пользователя и базу данных
-psql -U postgres <<EOF
-DROP DATABASE IF EXISTS $DB_NAME;
-DROP USER IF EXISTS $DB_USER;
-CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';
-CREATE DATABASE $DB_NAME OWNER $DB_USER;
-GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
-EOF
+echo "Восстановление структуры и данных из файла..."
 
-echo "База данных и пользователь созданы."
+# Импорт структуры и данных
+psql $DATABASE_URL < full_database_dump.sql
 
-# Импорт данных из SQL-файла
-echo "Импорт данных из full_database_dump_inserts.sql..."
-psql -U $DB_USER -d $DB_NAME -f full_database_dump_inserts.sql
-
-echo "Инициализация базы данных завершена."
+echo "База данных успешно инициализирована!"
