@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import UnifiedPositionCard from "./UnifiedPositionCard";
 import DisplaySettings from "./DisplaySettings";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Building } from "lucide-react";
 import { Department, Position, Employee, DepartmentNode, PositionHierarchyNode, PositionWithEmployees, DepartmentAsPosition } from "@shared/types";
 
 // Расширяем интерфейс Window глобально
@@ -15,10 +15,21 @@ declare global {
 
 // Карточка отдела
 const DepartmentCard = ({ department }: { department: DepartmentNode }) => {
+  const isOrganization = department.is_organization;
+  
   return (
-    <div className="department-card" style={{ minWidth: "300px" }}>
+    <div 
+      className={`department-card ${isOrganization ? 'organizationClass' : 'departmentClass'}`} 
+      style={{ minWidth: "300px" }}
+    >
       <div className="department-title">
-        {department.name} <span className="department-label">Отдел</span>
+        {department.name} 
+        {!isOrganization && <span className="department-label">Отдел</span>}
+        {isOrganization && (
+          <div className="flex items-center ml-2">
+            <Building className="h-4 w-4 mr-1" />
+          </div>
+        )}
       </div>
     </div>
   );
