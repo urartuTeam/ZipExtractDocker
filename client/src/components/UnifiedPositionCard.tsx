@@ -1,4 +1,5 @@
 import React from "react";
+import { Building } from "lucide-react";
 
 // Импортируем типы
 type Position = {
@@ -21,6 +22,7 @@ type Department = {
   name: string;
   parent_department_id: number | null;
   parent_position_id: number | null;
+  is_organization?: boolean;
 };
 
 // Типы узлов в иерархии должностей
@@ -29,6 +31,7 @@ type PositionHierarchyNode = {
   employees: Employee[]; // Массив сотрудников на этой должности
   subordinates: PositionHierarchyNode[];
   childDepartments?: Department[]; // Добавляем поле для хранения подчиненных отделов
+  department?: Department; // Информация об отделе, если это карточка отдела
 };
 
 // Компонент для унифицированного отображения карточки позиции/отдела
@@ -44,10 +47,13 @@ const UnifiedPositionCard = ({
   showVacancies?: boolean;
 }) => {
   const isDepartment = node.position.name.includes("(отдел)");
+  const isOrganization = node.department?.is_organization;
 
   // Определяем класс на основе типа узла и положения в дереве
-  const cardClass = isDepartment
-    ? "departmentClass" // Класс для отделов
+  let cardClass = isDepartment
+    ? isOrganization 
+      ? "organizationClass" // Класс для организаций
+      : "departmentClass" // Класс для отделов
     : isTopLevel
       ? "topTopPositionClass" // Класс для должностей верхнего уровня
       : "positionClass"; // Класс для обычных должностей
@@ -100,9 +106,18 @@ const UnifiedPositionCard = ({
       {/* Для всех карточек добавляем разделитель */}
       <div className="position-divider"></div>
 
-      {/* Для отделов показываем слово "Отдел", для должностей - сотрудников или вакансию */}
+      {/* Для отделов показываем слово "Отдел" или "Организация", для должностей - сотрудников или вакансию */}
       {isDepartment ? (
-        <div className="department-type">Отдел</div>
+        <div className="department-type">
+          {isOrganization ? (
+            <div className="flex items-center">
+              <Building className="h-4 w-4 mr-1" />
+              <span>Организация</span>
+            </div>
+          ) : (
+            "Отдел"
+          )}
+        </div>
       ) : (
         <>
           {node.employees && node.employees.length > 0 ? (
