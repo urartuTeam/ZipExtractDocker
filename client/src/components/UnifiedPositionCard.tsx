@@ -1,5 +1,10 @@
 import React from "react";
-import { Position, Employee, Department, PositionHierarchyNode } from "@shared/types";
+import {
+  Position,
+  Employee,
+  Department,
+  PositionHierarchyNode,
+} from "@shared/types";
 
 // Компонент для унифицированного отображения карточки позиции/отдела
 const UnifiedPositionCard = ({
@@ -18,7 +23,7 @@ const UnifiedPositionCard = ({
 
   // Определяем класс на основе типа узла и положения в дереве
   let cardClass = isDepartment
-    ? isOrganization 
+    ? isOrganization
       ? "organizationClass" // Класс для организаций
       : "departmentClass" // Класс для отделов
     : isTopLevel
@@ -35,18 +40,23 @@ const UnifiedPositionCard = ({
     return (
       <div
         className={`position-card ${cardClass} department-card`}
-        onClick={() => onPositionClick && onPositionClick(node.position.position_id)}
+        onClick={() =>
+          onPositionClick && onPositionClick(node.position.position_id)
+        }
         style={{
           cursor: onPositionClick ? "pointer" : "default",
           position: "relative",
           display: "flex",
           alignItems: "center",
           justifyContent: "flex-start",
-          padding: "15px"
+          padding: "15px",
+          width: "100%",
         }}
       >
         <img src={`/organization${node.department?.department_id || ""}.png`} alt="Организация" className="mr-4" />
-        <span>{node.department?.name || node.position.name.replace(" (отдел)", "")}</span>
+        <span>
+          {node.department?.name || node.position.name.replace(" (отдел)", "")}
+        </span>
       </div>
     );
   }
@@ -97,9 +107,7 @@ const UnifiedPositionCard = ({
 
       {/* Для отделов показываем слово "Отдел", для должностей - сотрудников или вакансию */}
       {isDepartment ? (
-        <div className="department-type">
-          Отдел
-        </div>
+        <div className="department-type">Отдел</div>
       ) : (
         <>
           {node.employees && node.employees.length > 0 ? (
@@ -107,7 +115,9 @@ const UnifiedPositionCard = ({
               {node.employees.map((employee, index) => (
                 <div key={employee.employee_id} className="employee-name">
                   {employee.full_name}
-                  {index < node.employees.length - 1 && <div className="employee-divider"></div>}
+                  {index < node.employees.length - 1 && (
+                    <div className="employee-divider"></div>
+                  )}
                 </div>
               ))}
             </div>

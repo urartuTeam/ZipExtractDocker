@@ -23,7 +23,7 @@ const DepartmentCard = ({ department }: { department: DepartmentNode }) => {
       <div 
         className="department-card organizationClass"
         style={{ 
-          minWidth: "300px",
+          width: '100%',
           display: "flex",
           alignItems: "center",
           justifyContent: "flex-start",
