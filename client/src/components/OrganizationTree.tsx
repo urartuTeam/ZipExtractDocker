@@ -23,11 +23,20 @@ const DepartmentCard = ({ department }: { department: DepartmentNode }) => {
       style={{ minWidth: "300px" }}
     >
       <div className="department-title">
-        {department.name} 
-        {!isOrganization && <span className="department-label">Отдел</span>}
+        {!isOrganization && (
+          <>
+            {department.name} 
+            <span className="department-label">Отдел</span>
+          </>
+        )}
         {isOrganization && (
-          <div className="flex items-center ml-2">
-            <Building className="h-4 w-4 mr-1" />
+          <div className="flex items-center">
+            <img 
+              src="/organization.png" 
+              alt="Организация" 
+              className="h-5 w-5 mr-2" 
+            />
+            <span>{department.name}</span>
           </div>
         )}
       </div>
