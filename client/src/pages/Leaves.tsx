@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -300,448 +300,451 @@ export default function Leaves() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Отпуска</h1>
-        <Button onClick={() => setIsAddDialogOpen(true)}>Добавить отпуск</Button>
-      </div>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center mb-6 mt-5">
+          <h1 className="text-2xl font-bold">Отпуска</h1>
+          <div className="flex items-center space-x-2">
+            <div className="relative">
+              <Input
+                  placeholder="Поиск по сотруднику или типу отпуска..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-lg w-[300px]"  // или max-w-lg для еще большей ширины
+              />
 
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Поиск по сотруднику или типу отпуска..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
+            </div>
+            <Button onClick={() => setIsAddDialogOpen(true)}>Добавить отпуск</Button>
+          </div>
+        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Список отпусков</CardTitle>
-          <CardDescription>
-            Всего отпусков: {leavesData?.data.length || 0}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="text-lg text-gray-500">Загрузка данных...</div>
-            </div>
-          ) : error ? (
-            <div className="text-red-500">
-              Ошибка при загрузке данных. Пожалуйста, попробуйте позже.
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[80px]">ID</TableHead>
-                    <TableHead>Сотрудник</TableHead>
-                    <TableHead>Тип</TableHead>
-                    <TableHead>Дата начала</TableHead>
-                    <TableHead>Дата окончания</TableHead>
-                    <TableHead>Статус</TableHead>
-                    <TableHead className="w-[150px]">Действия</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredLeaves.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="text-center h-24">
-                        Отпуска не найдены
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredLeaves.map((leave) => {
-                      const status = getLeaveStatus(leave.start_date, leave.end_date);
-                      
-                      return (
-                        <TableRow key={leave.leave_id}>
-                          <TableCell>{leave.leave_id}</TableCell>
-                          <TableCell className="font-medium">{getEmployeeName(leave.employee_id)}</TableCell>
-                          <TableCell>{leave.type}</TableCell>
-                          <TableCell>{formatDate(leave.start_date)}</TableCell>
-                          <TableCell>{formatDate(leave.end_date)}</TableCell>
-                          <TableCell>
-                            <Badge variant={status.variant}>{status.label}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => handleEdit(leave)}
-                              >
-                                Изменить
-                              </Button>
-                              <Button 
-                                variant="destructive" 
-                                size="sm" 
-                                onClick={() => handleDelete(leave)}
-                              >
-                                Удалить
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Список отпусков</CardTitle>
+            <CardDescription>
+              Всего отпусков: {leavesData?.data.length || 0}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="text-lg text-gray-500">Загрузка данных...</div>
+                </div>
+            ) : error ? (
+                <div className="text-red-500">
+                  Ошибка при загрузке данных. Пожалуйста, попробуйте позже.
+                </div>
+            ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">ID</TableHead>
+                        <TableHead>Сотрудник</TableHead>
+                        <TableHead>Тип</TableHead>
+                        <TableHead>Дата начала</TableHead>
+                        <TableHead>Дата окончания</TableHead>
+                        <TableHead>Статус</TableHead>
+                        <TableHead className="w-[150px]">Действия</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredLeaves.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center h-24">
+                              Отпуска не найдены
+                            </TableCell>
+                          </TableRow>
+                      ) : (
+                          filteredLeaves.map((leave) => {
+                            const status = getLeaveStatus(leave.start_date, leave.end_date);
 
-      {/* Диалог добавления отпуска */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Добавить новый отпуск</DialogTitle>
-            <DialogDescription>
-              Введите информацию о новом отпуске
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="employee_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Сотрудник</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value.toString()}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите сотрудника" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {employeesData?.data.map((employee) => (
-                          <SelectItem 
-                            key={employee.employee_id} 
-                            value={employee.employee_id.toString()}
+                            return (
+                                <TableRow key={leave.leave_id}>
+                                  <TableCell>{leave.leave_id}</TableCell>
+                                  <TableCell className="font-medium">{getEmployeeName(leave.employee_id)}</TableCell>
+                                  <TableCell>{leave.type}</TableCell>
+                                  <TableCell>{formatDate(leave.start_date)}</TableCell>
+                                  <TableCell>{formatDate(leave.end_date)}</TableCell>
+                                  <TableCell>
+                                    <Badge variant={status.variant}>{status.label}</Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex space-x-2">
+                                      <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleEdit(leave)}
+                                      >
+                                        Изменить
+                                      </Button>
+                                      <Button
+                                          variant="destructive"
+                                          size="sm"
+                                          onClick={() => handleDelete(leave)}
+                                      >
+                                        Удалить
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                            );
+                          })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Диалог добавления отпуска */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Добавить новый отпуск</DialogTitle>
+              <DialogDescription>
+                Введите информацию о новом отпуске
+              </DialogDescription>
+            </DialogHeader>
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                    control={form.control}
+                    name="employee_id"
+                    render={({field}) => (
+                        <FormItem>
+                          <FormLabel>Сотрудник</FormLabel>
+                          <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value.toString()}
                           >
-                            {employee.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Тип отпуска</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите тип отпуска" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Ежегодный">Ежегодный</SelectItem>
-                        <SelectItem value="По болезни">По болезни</SelectItem>
-                        <SelectItem value="По уходу за ребенком">По уходу за ребенком</SelectItem>
-                        <SelectItem value="Без сохранения оплаты">Без сохранения оплаты</SelectItem>
-                        <SelectItem value="Учебный">Учебный</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="start_date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Дата начала</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                            >
-                              {field.value ? (
-                                format(field.value, "dd MMMM yyyy", { locale: ru })
-                              ) : (
-                                <span>Выберите дату</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Выберите сотрудника"/>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {employeesData?.data.map((employee) => (
+                                  <SelectItem
+                                      key={employee.employee_id}
+                                      value={employee.employee_id.toString()}
+                                  >
+                                    {employee.full_name}
+                                  </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage/>
+                        </FormItem>
+                    )}
                 />
-                
-                <FormField
-                  control={form.control}
-                  name="end_date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Дата окончания</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                            >
-                              {field.value ? (
-                                format(field.value, "dd MMMM yyyy", { locale: ru })
-                              ) : (
-                                <span>Оставить пустым для бессрочного</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            initialFocus
-                            disabled={(date) => {
-                              const startDate = form.getValues("start_date");
-                              return startDate ? date < startDate : false;
-                            }}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  type="submit" 
-                  disabled={createLeave.isPending}
-                >
-                  {createLeave.isPending ? "Добавление..." : "Добавить отпуск"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
 
-      {/* Диалог редактирования отпуска */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Редактировать отпуск</DialogTitle>
-            <DialogDescription>
-              Измените информацию об отпуске
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
-              <FormField
-                control={editForm.control}
-                name="employee_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Сотрудник</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value.toString()}
-                      value={field.value.toString()}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите сотрудника" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {employeesData?.data.map((employee) => (
-                          <SelectItem 
-                            key={employee.employee_id} 
-                            value={employee.employee_id.toString()}
+                <FormField
+                    control={form.control}
+                    name="type"
+                    render={({field}) => (
+                        <FormItem>
+                          <FormLabel>Тип отпуска</FormLabel>
+                          <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
                           >
-                            {employee.full_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={editForm.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Тип отпуска</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите тип отпуска" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Ежегодный">Ежегодный</SelectItem>
-                        <SelectItem value="По болезни">По болезни</SelectItem>
-                        <SelectItem value="По уходу за ребенком">По уходу за ребенком</SelectItem>
-                        <SelectItem value="Без сохранения оплаты">Без сохранения оплаты</SelectItem>
-                        <SelectItem value="Учебный">Учебный</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={editForm.control}
-                  name="start_date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Дата начала</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                            >
-                              {field.value ? (
-                                format(field.value, "dd MMMM yyyy", { locale: ru })
-                              ) : (
-                                <span>Выберите дату</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Выберите тип отпуска"/>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Ежегодный">Ежегодный</SelectItem>
+                              <SelectItem value="По болезни">По болезни</SelectItem>
+                              <SelectItem value="По уходу за ребенком">По уходу за ребенком</SelectItem>
+                              <SelectItem value="Без сохранения оплаты">Без сохранения оплаты</SelectItem>
+                              <SelectItem value="Учебный">Учебный</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage/>
+                        </FormItem>
+                    )}
                 />
-                
-                <FormField
-                  control={editForm.control}
-                  name="end_date"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Дата окончания</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
-                            >
-                              {field.value ? (
-                                format(field.value, "dd MMMM yyyy", { locale: ru })
-                              ) : (
-                                <span>Оставить пустым для бессрочного</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value || undefined}
-                            onSelect={field.onChange}
-                            initialFocus
-                            disabled={(date) => {
-                              const startDate = editForm.getValues("start_date");
-                              return startDate ? date < startDate : false;
-                            }}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  type="submit" 
-                  disabled={updateLeave.isPending}
-                >
-                  {updateLeave.isPending ? "Сохранение..." : "Сохранить изменения"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
 
-      {/* Диалог подтверждения удаления */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Вы собираетесь удалить отпуск сотрудника "{selectedLeave ? getEmployeeName(selectedLeave.employee_id) : ''}". 
-              Это действие нельзя отменить.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              {deleteLeave.isPending ? "Удаление..." : "Удалить"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                      control={form.control}
+                      name="start_date"
+                      render={({field}) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Дата начала</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                      variant={"outline"}
+                                      className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                                  >
+                                    {field.value ? (
+                                        format(field.value, "dd MMMM yyyy", {locale: ru})
+                                    ) : (
+                                        <span>Выберите дату</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50"/>
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage/>
+                          </FormItem>
+                      )}
+                  />
+
+                  <FormField
+                      control={form.control}
+                      name="end_date"
+                      render={({field}) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Дата окончания</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                      variant={"outline"}
+                                      className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                                  >
+                                    {field.value ? (
+                                        format(field.value, "dd MMMM yyyy", {locale: ru})
+                                    ) : (
+                                        <span>Оставить пустым для бессрочного</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50"/>
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={field.value || undefined}
+                                    onSelect={field.onChange}
+                                    initialFocus
+                                    disabled={(date) => {
+                                      const startDate = form.getValues("start_date");
+                                      return startDate ? date < startDate : false;
+                                    }}
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage/>
+                          </FormItem>
+                      )}
+                  />
+                </div>
+
+                <DialogFooter>
+                  <Button
+                      type="submit"
+                      disabled={createLeave.isPending}
+                  >
+                    {createLeave.isPending ? "Добавление..." : "Добавить отпуск"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Диалог редактирования отпуска */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Редактировать отпуск</DialogTitle>
+              <DialogDescription>
+                Измените информацию об отпуске
+              </DialogDescription>
+            </DialogHeader>
+
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+                <FormField
+                    control={editForm.control}
+                    name="employee_id"
+                    render={({field}) => (
+                        <FormItem>
+                          <FormLabel>Сотрудник</FormLabel>
+                          <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value.toString()}
+                              value={field.value.toString()}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Выберите сотрудника"/>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {employeesData?.data.map((employee) => (
+                                  <SelectItem
+                                      key={employee.employee_id}
+                                      value={employee.employee_id.toString()}
+                                  >
+                                    {employee.full_name}
+                                  </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage/>
+                        </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={editForm.control}
+                    name="type"
+                    render={({field}) => (
+                        <FormItem>
+                          <FormLabel>Тип отпуска</FormLabel>
+                          <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                              value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Выберите тип отпуска"/>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Ежегодный">Ежегодный</SelectItem>
+                              <SelectItem value="По болезни">По болезни</SelectItem>
+                              <SelectItem value="По уходу за ребенком">По уходу за ребенком</SelectItem>
+                              <SelectItem value="Без сохранения оплаты">Без сохранения оплаты</SelectItem>
+                              <SelectItem value="Учебный">Учебный</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage/>
+                        </FormItem>
+                    )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                      control={editForm.control}
+                      name="start_date"
+                      render={({field}) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Дата начала</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                      variant={"outline"}
+                                      className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                                  >
+                                    {field.value ? (
+                                        format(field.value, "dd MMMM yyyy", {locale: ru})
+                                    ) : (
+                                        <span>Выберите дату</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50"/>
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage/>
+                          </FormItem>
+                      )}
+                  />
+
+                  <FormField
+                      control={editForm.control}
+                      name="end_date"
+                      render={({field}) => (
+                          <FormItem className="flex flex-col">
+                            <FormLabel>Дата окончания</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                      variant={"outline"}
+                                      className={`w-full pl-3 text-left font-normal ${!field.value && "text-muted-foreground"}`}
+                                  >
+                                    {field.value ? (
+                                        format(field.value, "dd MMMM yyyy", {locale: ru})
+                                    ) : (
+                                        <span>Оставить пустым для бессрочного</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50"/>
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={field.value || undefined}
+                                    onSelect={field.onChange}
+                                    initialFocus
+                                    disabled={(date) => {
+                                      const startDate = editForm.getValues("start_date");
+                                      return startDate ? date < startDate : false;
+                                    }}
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage/>
+                          </FormItem>
+                      )}
+                  />
+                </div>
+
+                <DialogFooter>
+                  <Button
+                      type="submit"
+                      disabled={updateLeave.isPending}
+                  >
+                    {updateLeave.isPending ? "Сохранение..." : "Сохранить изменения"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Диалог подтверждения удаления */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Вы собираетесь удалить отпуск сотрудника
+                "{selectedLeave ? getEmployeeName(selectedLeave.employee_id) : ''}".
+                Это действие нельзя отменить.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Отмена</AlertDialogCancel>
+              <AlertDialogAction
+                  onClick={confirmDelete}
+                  className="bg-red-500 hover:bg-red-600"
+              >
+                {deleteLeave.isPending ? "Удаление..." : "Удалить"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
   );
 }

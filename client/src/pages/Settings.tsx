@@ -201,11 +201,8 @@ export default function Settings() {
                     <SelectValue placeholder="Выберите количество уровней" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">1 уровень</SelectItem>
                     <SelectItem value="2">2 уровня (рекомендуется)</SelectItem>
                     <SelectItem value="3">3 уровня</SelectItem>
-                    <SelectItem value="4">4 уровня</SelectItem>
-                    <SelectItem value="5">5 уровней</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-sm text-muted-foreground mt-1">

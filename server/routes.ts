@@ -1,10 +1,10 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { 
-  insertUserSchema, 
-  insertDepartmentSchema, 
-  insertPositionSchema, 
+import {
+  insertUserSchema,
+  insertDepartmentSchema,
+  insertPositionSchema,
   insertPositionDepartmentSchema,
   insertEmployeeSchema,
   insertProjectSchema,
@@ -28,13 +28,13 @@ function isAuthenticated(req: Request, res: Response, next: NextFunction) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Настройка авторизации
   setupAuth(app);
-  
+
   // Регистрация специализированных эндпоинтов для должностей
   registerPositionEndpoints(app);
-  
+
   // Регистрация эндпоинтов для работы с сортировкой дерева
   registerSortTreeEndpoints(app);
-  
+
   // API routes
   const apiRouter = app.route('/api');
 
@@ -71,7 +71,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/users', async (req: Request, res: Response) => {
     try {
       const userData = insertUserSchema.parse(req.body);
-      
+
       // Check if username already exists
       const existingUser = await storage.getUserByUsername(userData.username);
       if (existingUser) {
@@ -85,7 +85,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validationError = fromZodError(error);
         return res.status(400).json({ status: 'error', message: validationError.message });
       }
-      
+
       console.error('Error creating user:', error);
       res.status(500).json({ status: 'error', message: 'Failed to create user' });
     }
@@ -100,7 +100,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const userData = req.body;
       const updatedUser = await storage.updateUser(id, userData);
-      
+
       if (!updatedUser) {
         return res.status(404).json({ status: 'error', message: 'User not found' });
       }
@@ -171,7 +171,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validationError = fromZodError(error);
         return res.status(400).json({ status: 'error', message: validationError.message });
       }
-      
+
       console.error('Error creating department:', error);
       res.status(500).json({ status: 'error', message: 'Failed to create department' });
     }
@@ -186,7 +186,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const departmentData = req.body;
       const updatedDepartment = await storage.updateDepartment(id, departmentData);
-      
+
       if (!updatedDepartment) {
         return res.status(404).json({ status: 'error', message: 'Department not found' });
       }
@@ -227,7 +227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ status: 'error', message: 'Failed to fetch positions' });
     }
   });
-  
+
   app.get('/api/positions/categories', async (req: Request, res: Response) => {
     try {
       // Получаем только должности, которые являются категориями
@@ -272,7 +272,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validationError = fromZodError(error);
         return res.status(400).json({ status: 'error', message: validationError.message });
       }
-      
+
       console.error('Error creating position:', error);
       res.status(500).json({ status: 'error', message: 'Failed to create position' });
     }
@@ -287,7 +287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const positionData = req.body;
       const updatedPosition = await storage.updatePosition(id, positionData);
-      
+
       if (!updatedPosition) {
         return res.status(404).json({ status: 'error', message: 'Position not found' });
       }
@@ -351,7 +351,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/employees', async (req: Request, res: Response) => {
     try {
       const employeeData = insertEmployeeSchema.parse(req.body);
-      
+
       // Проверка, является ли позиция категорией
       if (employeeData.position_id) {
         const position = await storage.getPosition(employeeData.position_id);
@@ -368,7 +368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           employeeData.category_parent_id = null;
         }
       }
-      
+
       const employee = await storage.createEmployee(employeeData);
       res.status(201).json({ status: 'success', data: employee });
     } catch (error) {
@@ -376,7 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validationError = fromZodError(error);
         return res.status(400).json({ status: 'error', message: validationError.message });
       }
-      
+
       console.error('Error creating employee:', error);
       res.status(500).json({ status: 'error', message: 'Failed to create employee' });
     }
@@ -390,7 +390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const employeeData = req.body;
-      
+
       // Проверка, является ли позиция категорией
       if (employeeData.position_id) {
         const position = await storage.getPosition(employeeData.position_id);
@@ -407,9 +407,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           employeeData.category_parent_id = null;
         }
       }
-      
+
       const updatedEmployee = await storage.updateEmployee(id, employeeData);
-      
+
       if (!updatedEmployee) {
         return res.status(404).json({ status: 'error', message: 'Employee not found' });
       }
@@ -480,7 +480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validationError = fromZodError(error);
         return res.status(400).json({ status: 'error', message: validationError.message });
       }
-      
+
       console.error('Error creating project:', error);
       res.status(500).json({ status: 'error', message: 'Failed to create project' });
     }
@@ -495,7 +495,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const projectData = req.body;
       const updatedProject = await storage.updateProject(id, projectData);
-      
+
       if (!updatedProject) {
         return res.status(404).json({ status: 'error', message: 'Project not found' });
       }
@@ -577,7 +577,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validationError = fromZodError(error);
         return res.status(400).json({ status: 'error', message: validationError.message });
       }
-      
+
       console.error('Error creating employee project:', error);
       res.status(500).json({ status: 'error', message: 'Failed to create employee project' });
     }
@@ -587,14 +587,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const employeeId = parseInt(req.params.employeeId);
       const projectId = parseInt(req.params.projectId);
-      
+
       if (isNaN(employeeId) || isNaN(projectId)) {
         return res.status(400).json({ status: 'error', message: 'Invalid employee or project ID' });
       }
 
       const employeeProjectData = req.body;
       const updatedEmployeeProject = await storage.updateEmployeeProject(employeeId, projectId, employeeProjectData);
-      
+
       if (!updatedEmployeeProject) {
         return res.status(404).json({ status: 'error', message: 'Employee project not found' });
       }
@@ -610,7 +610,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const employeeId = parseInt(req.params.employeeId);
       const projectId = parseInt(req.params.projectId);
-      
+
       if (isNaN(employeeId) || isNaN(projectId)) {
         return res.status(400).json({ status: 'error', message: 'Invalid employee or project ID' });
       }
@@ -682,7 +682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const validationError = fromZodError(error);
         return res.status(400).json({ status: 'error', message: validationError.message });
       }
-      
+
       console.error('Error creating leave:', error);
       res.status(500).json({ status: 'error', message: 'Failed to create leave' });
     }
@@ -697,7 +697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const leaveData = req.body;
       const updatedLeave = await storage.updateLeave(id, leaveData);
-      
+
       if (!updatedLeave) {
         return res.status(404).json({ status: 'error', message: 'Leave not found' });
       }
@@ -743,11 +743,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const key = req.params.key;
       const setting = await storage.getSetting(key);
-      
+
       if (!setting) {
         return res.status(404).json({ status: 'error', message: 'Setting not found' });
       }
-      
+
       res.json({ status: 'success', data: setting });
     } catch (error) {
       console.error('Error fetching setting:', error);
@@ -758,11 +758,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/settings', async (req: Request, res: Response) => {
     try {
       const { key, value } = req.body;
-      
+
       if (!key || typeof value === 'undefined') {
         return res.status(400).json({ status: 'error', message: 'Key and value are required' });
       }
-      
+
       const setting = await storage.createOrUpdateSetting(key, value);
       res.status(200).json({ status: 'success', data: setting });
     } catch (error) {

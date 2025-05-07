@@ -131,7 +131,7 @@ export default function AdminProjects() {
 
   return (
     <div className="container mx-auto">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6 mt-5">
         <h1 className="text-2xl font-bold">Управление проектами</h1>
         <div className="flex items-center space-x-2">
           <div className="relative">

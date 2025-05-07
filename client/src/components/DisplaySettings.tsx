@@ -36,7 +36,6 @@ const DisplaySettings: React.FC<DisplaySettingsProps> = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Настройки дерева</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="p-3">
           <div className="flex items-center space-x-2">
@@ -54,8 +53,8 @@ const DisplaySettings: React.FC<DisplaySettingsProps> = ({
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="p-3">
           <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="show-vacancies" 
+            <Checkbox
+              id="show-vacancies"
               checked={showVacancies}
               onCheckedChange={(checked) => {
                 onShowVacanciesChange(checked === true);

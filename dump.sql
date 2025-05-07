@@ -22,24 +22,24 @@ SET row_security = off;
 
 CREATE FUNCTION public.set_deleted_timestamp() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-
-BEGIN
-
-    IF NEW.deleted = TRUE AND OLD.deleted = FALSE THEN
-
-        NEW.deleted_at = NOW();
-
-    ELSIF NEW.deleted = FALSE THEN
-
-        NEW.deleted_at = NULL;
-
-    END IF;
-
-    RETURN NEW;
-
-END;
-
+    AS $$
+
+BEGIN
+
+    IF NEW.deleted = TRUE AND OLD.deleted = FALSE THEN
+
+        NEW.deleted_at = NOW();
+
+    ELSIF NEW.deleted = FALSE THEN
+
+        NEW.deleted_at = NULL;
+
+    END IF;
+
+    RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -768,8 +768,8 @@ COPY public.departments (department_id, name, parent_department_id, parent_posit
 29	Отдел координации аналитики ПО Аналитики и Мониторинга	\N	51	f	\N
 30	Отдел координации разработки	\N	52	f	\N
 31	Отдел инженерного обеспечения	\N	52	f	\N
-32	Отдел инженерного тестирования	\N	52	f	\N
 33	Отдел координации деятельности	\N	53	f	\N
+32	Отдел тестирования	\N	52	f	\N
 \.
 
 
@@ -778,6 +778,168 @@ COPY public.departments (department_id, name, parent_department_id, parent_posit
 --
 
 COPY public.employeeprojects (employee_id, project_id, role, deleted, deleted_at) FROM stdin;
+82	7	Участник	f	\N
+83	7	Участник	f	\N
+91	7	Участник	t	2025-05-05 06:51:06.012317
+84	7	Участник	t	2025-05-05 06:51:12.268273
+85	7	Участник	t	2025-05-05 06:51:14.770815
+88	7	Участник	f	\N
+90	7	Участник	f	\N
+128	7	Участник	f	\N
+127	7	Участник	f	\N
+86	7	Участник	f	\N
+87	7	Участник	f	\N
+101	7	Участник	f	\N
+116	7	Участник	f	\N
+118	7	Участник	f	\N
+100	7	Участник	f	\N
+117	7	Участник	f	\N
+119	7	Участник	f	\N
+108	7	Участник	f	\N
+96	7	Участник	f	\N
+110	7	Участник	f	\N
+113	7	Участник	f	\N
+114	7	Участник	f	\N
+73	8	Участник	f	\N
+74	8	Участник	f	\N
+82	8	Участник	f	\N
+83	8	Участник	f	\N
+85	8	Участник	f	\N
+89	8	Участник	f	\N
+114	8	Участник	f	\N
+93	8	Участник	f	\N
+120	8	Участник	f	\N
+112	8	Участник	f	\N
+109	8	Участник	f	\N
+107	8	Участник	f	\N
+65	9	Участник	f	\N
+69	9	Участник	f	\N
+70	9	Участник	f	\N
+81	9	Участник	f	\N
+73	9	Участник	f	\N
+74	9	Участник	f	\N
+76	9	Участник	f	\N
+77	9	Участник	f	\N
+130	9	Участник	f	\N
+82	9	Участник	f	\N
+83	9	Участник	f	\N
+85	9	Участник	f	\N
+89	9	Участник	f	\N
+101	9	Участник	f	\N
+24	9	Участник	f	\N
+108	9	Участник	f	\N
+96	9	Участник	f	\N
+110	9	Участник	f	\N
+113	9	Участник	f	\N
+114	9	Участник	f	\N
+95	9	Участник	f	\N
+105	9	Участник	f	\N
+94	9	Участник	f	\N
+121	9	Участник	f	\N
+99	9	Участник	f	\N
+82	10	Участник	f	\N
+87	10	Участник	f	\N
+101	10	Участник	f	\N
+116	10	Участник	f	\N
+118	10	Участник	f	\N
+100	10	Участник	f	\N
+117	10	Участник	f	\N
+119	10	Участник	f	\N
+108	10	Участник	f	\N
+96	10	Участник	f	\N
+110	10	Участник	f	\N
+113	10	Участник	f	\N
+114	10	Участник	f	\N
+95	11	Участник	f	\N
+111	11	Участник	f	\N
+115	11	Участник	f	\N
+82	12	Участник	f	\N
+83	12	Участник	f	\N
+128	12	Участник	f	\N
+127	12	Участник	f	\N
+86	12	Участник	f	\N
+87	12	Участник	f	\N
+95	12	Участник	f	\N
+111	12	Участник	f	\N
+115	12	Участник	f	\N
+34	12	Участник	f	\N
+46	12	Участник	f	\N
+82	13	Участник	f	\N
+83	13	Участник	f	\N
+85	13	Участник	f	\N
+91	13	Участник	f	\N
+89	13	Участник	f	\N
+90	13	Участник	f	\N
+128	13	Участник	f	\N
+127	13	Участник	f	\N
+92	13	Участник	f	\N
+114	13	Участник	f	\N
+95	13	Участник	f	\N
+105	13	Участник	f	\N
+94	13	Участник	f	\N
+121	13	Участник	f	\N
+99	13	Участник	f	\N
+106	14	Участник	f	\N
+78	15	Участник	f	\N
+79	15	Участник	f	\N
+80	15	Участник	f	\N
+93	15	Участник	f	\N
+120	15	Участник	f	\N
+112	15	Участник	f	\N
+109	15	Участник	f	\N
+107	15	Участник	f	\N
+78	16	Участник	f	\N
+79	16	Участник	f	\N
+80	16	Участник	f	\N
+93	16	Участник	f	\N
+120	16	Участник	f	\N
+112	16	Участник	f	\N
+109	16	Участник	f	\N
+107	16	Участник	f	\N
+73	17	Участник	f	\N
+74	17	Участник	f	\N
+76	17	Участник	f	\N
+82	17	Участник	f	\N
+83	17	Участник	f	\N
+85	17	Участник	f	\N
+89	17	Участник	f	\N
+74	18	Участник	f	\N
+77	18	Участник	f	\N
+80	18	Участник	f	\N
+65	19	Участник	f	\N
+69	19	Участник	f	\N
+70	19	Участник	f	\N
+81	19	Участник	f	\N
+82	19	Участник	f	\N
+83	19	Участник	f	\N
+84	19	Участник	f	\N
+82	20	Участник	f	\N
+83	20	Участник	f	\N
+85	20	Участник	f	\N
+91	20	Участник	f	\N
+89	20	Участник	f	\N
+128	20	Участник	f	\N
+127	20	Участник	f	\N
+82	21	Участник	f	\N
+83	21	Участник	f	\N
+85	21	Участник	f	\N
+89	21	Участник	f	\N
+90	21	Участник	f	\N
+128	21	Участник	f	\N
+127	21	Участник	f	\N
+86	21	Участник	f	\N
+82	22	Участник	f	\N
+83	22	Участник	f	\N
+85	22	Участник	f	\N
+89	22	Участник	f	\N
+128	22	Участник	f	\N
+127	22	Участник	f	\N
+86	22	Участник	f	\N
+82	23	Участник	f	\N
+83	23	Участник	f	\N
+85	23	Участник	f	\N
+89	23	Участник	f	\N
+92	23	Участник	f	\N
 \.
 
 
@@ -834,7 +996,7 @@ COPY public.employees (employee_id, full_name, position_id, phone, email, manage
 60	Зиндеева Елена Леонидовна	60	\N	\N	57	33	f	\N	\N
 64	Косягин Дмитрий Сергеевич	66	\N	\N	\N	32	f	\N	\N
 65	Вишневский Павел Александрович	69	\N	\N	\N	25	f	\N	\N
-66	Колпашников Константин  Михайлович	70	\N	\N	\N	25	f	\N	\N
+66	Колпашников Константин Михайлович	70	\N	\N	\N	25	f	\N	\N
 67	Луканин Александр Валерьевич	70	\N	\N	\N	25	f	\N	\N
 68	Якушев Григорий Витальевич	71	\N	\N	\N	25	f	\N	\N
 69	Пьяных Евгений Николаевич	72	\N	\N	\N	25	f	\N	\N
@@ -869,11 +1031,11 @@ COPY public.employees (employee_id, full_name, position_id, phone, email, manage
 96	Пономарев Ярослав Валериевич	93	\N	\N	\N	30	f	\N	\N
 97	Кораблев Денис Алексеевич	85	\N	\N	\N	30	t	2025-05-05 01:17:33.471029	81
 103	Кораблев Денис Алексеевич	93	\N	\N	\N	30	f	\N	\N
-98	Шабельников Андрей  Владиленович	85	\N	\N	\N	30	t	2025-05-05 01:17:49.590375	81
+98	Шабельников Андрей Владиленович	85	\N	\N	\N	30	t	2025-05-05 01:17:49.590375	81
 104	Шабельников Андрей Владиленович	93	\N	\N	\N	30	f	\N	\N
 99	Чалоян Бемал Андраникович	94	\N	\N	\N	30	f	\N	\N
 100	Гайсуев Ислам Русланович	94	\N	\N	\N	30	f	\N	\N
-101	Измайлов Станислав   Юрьевич	95	\N	\N	\N	30	f	\N	\N
+101	Измайлов Станислав Юрьевич	95	\N	\N	\N	30	f	\N	\N
 106	Шилик Павел Олегович	105	\N	\N	\N	30	f	\N	\N
 107	Магафуров Айрат Раилевич	105	\N	\N	\N	30	f	\N	\N
 108	Боровков Егор Николаевич	105	\N	\N	\N	30	f	\N	\N
@@ -891,6 +1053,14 @@ COPY public.employees (employee_id, full_name, position_id, phone, email, manage
 120	Щербаков Ярослав Юрьевич	98	\N	\N	\N	30	f	\N	\N
 121	Салахутдинов Марат Рамилевич	98	\N	\N	\N	30	f	\N	\N
 122	Зайцева Наталья Владимировна	103	\N	\N	\N	30	f	\N	\N
+123	Сухов Николай Николаевич	106	\N	\N	\N	31	f	\N	\N
+124	Байков Михаил Сергеевич	114	\N	\N	\N	31	f	\N	\N
+125	Леденев Сергей Александрович	118	\N	\N	\N	31	f	\N	\N
+126	Пак Валерия Викторовна	119	\N	\N	\N	31	f	\N	\N
+127	Пинчук Екатерина Сергеевна	119	\N	\N	\N	31	f	\N	\N
+128	Халикова Элеонора Шахруховна	120	\N	\N	\N	31	f	\N	\N
+129	Аркадьева Олеся Александровна	120	\N	\N	\N	31	f	\N	\N
+130	Филимонов Алексей Алексеевич	75	\N	\N	73	26	f	\N	\N
 \.
 
 
@@ -982,23 +1152,38 @@ COPY public.position_department (position_link_id, position_id, department_id, s
 135	79	30	0	f	\N	0	0	1
 136	82	30	0	f	\N	0	0	1
 137	83	30	0	f	\N	0	0	1
-134	80	30	0	f	\N	0	0	11
-160	94	30	0	f	\N	0	0	1
-161	95	30	0	f	\N	0	0	1
-162	96	30	0	f	\N	0	0	1
-163	97	30	0	f	\N	0	0	1
-164	98	30	0	f	\N	0	0	1
 165	99	30	0	f	\N	0	0	1
-166	93	30	0	f	\N	0	0	1
-167	91	30	0	f	\N	0	0	1
-168	92	30	0	f	\N	0	0	1
-169	90	30	0	f	\N	0	0	1
 170	104	30	0	f	\N	0	0	1
 171	103	30	0	f	\N	0	0	1
-172	100	30	0	f	\N	0	0	1
 173	102	30	0	f	\N	0	0	1
 174	101	30	0	f	\N	0	0	1
-175	105	30	0	f	\N	0	0	1
+180	110	31	0	f	\N	0	0	2
+134	80	30	0	f	\N	0	0	11
+160	94	30	0	f	\N	0	0	4
+161	95	30	0	f	\N	0	0	2
+162	96	30	0	f	\N	0	0	7
+163	97	30	0	f	\N	0	0	3
+164	98	30	0	f	\N	0	0	2
+172	100	30	0	f	\N	0	0	2
+169	90	30	0	f	\N	0	0	12
+168	92	30	0	f	\N	0	0	3
+167	91	30	0	f	\N	0	0	11
+166	93	30	0	f	\N	0	0	4
+175	105	30	0	f	\N	0	0	6
+176	106	31	0	f	\N	0	0	1
+177	107	31	0	f	\N	0	0	1
+178	108	31	0	f	\N	0	0	1
+179	109	31	0	f	\N	0	0	1
+181	111	31	0	f	\N	0	0	3
+182	112	31	0	f	\N	0	0	4
+183	113	31	0	f	\N	0	0	1
+184	114	31	0	f	\N	0	0	3
+185	115	31	0	f	\N	0	0	3
+186	116	31	0	f	\N	0	0	4
+187	117	31	0	f	\N	0	0	5
+188	118	31	0	f	\N	0	0	1
+189	119	31	0	f	\N	0	0	3
+190	120	31	0	f	\N	0	0	2
 \.
 
 
@@ -1078,6 +1263,20 @@ COPY public.position_position (position_relation_id, position_id, parent_positio
 100	102	54	30	\N	2025-05-05 01:15:01.475243+00	2025-05-05 01:15:01.475243+00	f	\N
 101	101	54	30	\N	2025-05-05 01:15:08.732347+00	2025-05-05 01:15:08.732347+00	f	\N
 102	105	54	30	\N	2025-05-05 01:20:37.449776+00	2025-05-05 01:20:37.449776+00	f	\N
+103	107	106	31	\N	2025-05-05 06:35:05.333506+00	2025-05-05 06:35:05.333506+00	f	\N
+104	108	107	31	\N	2025-05-05 06:35:15.39495+00	2025-05-05 06:35:15.39495+00	f	\N
+105	109	107	31	\N	2025-05-05 06:35:26.740697+00	2025-05-05 06:35:26.740697+00	f	\N
+106	110	107	31	\N	2025-05-05 06:35:40.533908+00	2025-05-05 06:35:40.533908+00	f	\N
+107	111	107	31	\N	2025-05-05 06:35:51.717673+00	2025-05-05 06:35:51.717673+00	f	\N
+108	112	107	31	\N	2025-05-05 06:36:04.276304+00	2025-05-05 06:36:04.276304+00	f	\N
+109	113	107	31	\N	2025-05-05 06:36:17.451825+00	2025-05-05 06:36:17.451825+00	f	\N
+110	114	107	31	\N	2025-05-05 06:36:30.610733+00	2025-05-05 06:36:30.610733+00	f	\N
+111	115	107	31	\N	2025-05-05 06:36:47.091124+00	2025-05-05 06:36:47.091124+00	f	\N
+112	116	107	31	\N	2025-05-05 06:36:58.363919+00	2025-05-05 06:36:58.363919+00	f	\N
+113	117	107	31	\N	2025-05-05 06:37:13.955864+00	2025-05-05 06:37:13.955864+00	f	\N
+114	118	107	31	\N	2025-05-05 06:37:28.745988+00	2025-05-05 06:37:28.745988+00	f	\N
+115	119	107	31	\N	2025-05-05 06:37:43.98634+00	2025-05-05 06:37:43.98634+00	f	\N
+116	120	107	31	\N	2025-05-05 06:37:57.571035+00	2025-05-05 06:37:57.571035+00	f	\N
 \.
 
 
@@ -1142,6 +1341,25 @@ COPY public.positions (position_id, name, staff_units, current_count, vacancies,
 91	Главный разработчик II категории	0	0	0	0	f	\N	f
 93	Старший разработчик II категории	0	0	0	0	f	\N	f
 105	Разработчик I категории	0	0	0	0	f	\N	f
+106	Руководитель проектов по эксплуатации информационных систем	0	0	0	0	f	\N	f
+107	Начальник отдела - Руководитель блока	0	0	0	0	f	\N	f
+108	Ведущий специалист информационной безопасности	0	0	0	0	f	\N	f
+109	Специалист информационной безопасности	0	0	0	0	f	\N	f
+110	Архитектор	0	0	0	0	f	\N	f
+111	Системный администратор	0	0	0	0	f	\N	f
+112	Технический писатель	0	0	0	0	f	\N	f
+113	Системный инженер I категории	0	0	0	0	f	\N	f
+114	Системный инженер II категории	0	0	0	0	f	\N	f
+115	Системный инженер III категории	0	0	0	0	f	\N	f
+116	Системный инженер IV категории	0	0	0	0	f	\N	f
+117	Ведущий дизайнер интерфейсов	0	0	0	0	f	\N	f
+118	Специалист технической поддержки	0	0	0	0	f	\N	f
+119	Дизайнер интерфейсов	0	0	0	0	f	\N	f
+120	Дизайнер	0	0	0	0	f	\N	f
+121	Руководитель отдела тестирования	0	0	0	0	f	\N	f
+124	Тестировщик	0	0	0	0	t	2025-05-05 06:43:19.79533	f
+122	Главный тестировщик	0	0	0	0	t	2025-05-05 06:43:23.137931	f
+123	Ведущий тестировщик	0	0	0	0	t	2025-05-05 06:43:26.18248	f
 \.
 
 
@@ -1150,6 +1368,23 @@ COPY public.positions (position_id, name, staff_units, current_count, vacancies,
 --
 
 COPY public.projects (project_id, name, description, department_id, deleted, deleted_at) FROM stdin;
+7	ИАС УГД		\N	f	\N
+8	ЕИС МГЗ		\N	f	\N
+11	СтройМос		\N	f	\N
+12	СтроимПросто		\N	f	\N
+13	Строймониторинг		\N	f	\N
+14	SuperSet		\N	f	\N
+15	АИС РЕОН		\N	f	\N
+16	АИС РСМ		\N	f	\N
+17	СУИД		\N	f	\N
+18	BS		\N	f	\N
+19	KPI		\N	f	\N
+20	Рейтинг ОИВ		\N	f	\N
+21	Производственные программы		\N	f	\N
+22	ДБ Аналитика 	ДБ Аналитика (Сенина)	\N	f	\N
+23	EXON		\N	f	\N
+9	СУПД АКЦЕНТ		\N	f	\N
+10	ИАС ОГД		\N	f	\N
 \.
 
 
@@ -1192,6 +1427,15 @@ COPY public.sort_tree (id, sort, type, type_id, parent_id) FROM stdin;
 25	2	position	40	21
 26	1	position	41	23
 27	0	position	45	23
+29	0	position	80	30
+30	1	position	83	30
+31	2	position	90	30
+32	3	position	91	30
+34	5	position	93	30
+35	6	position	94	30
+33	4	position	92	30
+28	8	position	105	30
+36	7	position	95	30
 \.
 
 
@@ -1222,7 +1466,7 @@ SELECT pg_catalog.setval('public.departments_department_id_seq', 33, true);
 -- Name: employees_employee_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.employees_employee_id_seq', 122, true);
+SELECT pg_catalog.setval('public.employees_employee_id_seq', 130, true);
 
 
 --
@@ -1236,28 +1480,28 @@ SELECT pg_catalog.setval('public.leaves_leave_id_seq', 1, false);
 -- Name: position_department_position_link_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.position_department_position_link_id_seq', 175, true);
+SELECT pg_catalog.setval('public.position_department_position_link_id_seq', 190, true);
 
 
 --
 -- Name: position_position_position_relation_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.position_position_position_relation_id_seq', 102, true);
+SELECT pg_catalog.setval('public.position_position_position_relation_id_seq', 116, true);
 
 
 --
 -- Name: positions_position_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.positions_position_id_seq', 105, true);
+SELECT pg_catalog.setval('public.positions_position_id_seq', 124, true);
 
 
 --
 -- Name: projects_project_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.projects_project_id_seq', 7, false);
+SELECT pg_catalog.setval('public.projects_project_id_seq', 23, true);
 
 
 --
@@ -1271,7 +1515,7 @@ SELECT pg_catalog.setval('public.settings_id_seq', 2, false);
 -- Name: sort_tree_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.sort_tree_id_seq', 27, true);
+SELECT pg_catalog.setval('public.sort_tree_id_seq', 36, true);
 
 
 --
@@ -1517,43 +1761,11 @@ ALTER TABLE ONLY public.employees
 
 
 --
--- Name: employees employees_position_id_positions_position_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.employees
-    ADD CONSTRAINT employees_position_id_positions_position_id_fk FOREIGN KEY (position_id) REFERENCES public.positions(position_id);
-
-
---
--- Name: employees fk_category_parent; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.employees
-    ADD CONSTRAINT fk_category_parent FOREIGN KEY (category_parent_id) REFERENCES public.positions(position_id);
-
-
---
 -- Name: position_position fk_department; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.position_position
     ADD CONSTRAINT fk_department FOREIGN KEY (department_id) REFERENCES public.departments(department_id);
-
-
---
--- Name: position_position fk_parent_position; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.position_position
-    ADD CONSTRAINT fk_parent_position FOREIGN KEY (parent_position_id) REFERENCES public.positions(position_id);
-
-
---
--- Name: position_position fk_position; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.position_position
-    ADD CONSTRAINT fk_position FOREIGN KEY (position_id) REFERENCES public.positions(position_id);
 
 
 --
@@ -1570,14 +1782,6 @@ ALTER TABLE ONLY public.leaves
 
 ALTER TABLE ONLY public.position_department
     ADD CONSTRAINT position_department_department_id_departments_department_id_fk FOREIGN KEY (department_id) REFERENCES public.departments(department_id);
-
-
---
--- Name: position_department position_department_position_id_positions_position_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.position_department
-    ADD CONSTRAINT position_department_position_id_positions_position_id_fk FOREIGN KEY (position_id) REFERENCES public.positions(position_id);
 
 
 --

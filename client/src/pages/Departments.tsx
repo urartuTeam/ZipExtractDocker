@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDataRefresh } from "@/hooks/use-data-refresh";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -43,6 +43,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { apiRequest } from "@/lib/queryClient";
+import {Plus} from "lucide-react";
 
 interface Department {
   department_id: number;
@@ -265,388 +266,389 @@ export default function Departments() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Отделы</h1>
-        <Button onClick={() => setIsAddDialogOpen(true)}>Добавить отдел</Button>
-      </div>
-
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Поиск отделов..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Список отделов</CardTitle>
-          <CardDescription>
-            Всего отделов: {departmentsData?.data.length || 0}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center items-center h-64">
-              <div className="text-lg text-gray-500">Загрузка данных...</div>
+      <div className="space-y-6">
+        <div className="flex justify-between items-center mb-6 mt-5">
+          <h1 className="text-2xl font-bold">Отделы</h1>
+          <div className="flex items-center space-x-2">
+            <div className="relative">
+              <Input
+                  placeholder="Поиск отделов..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="max-w-sm"
+              />
             </div>
-          ) : error ? (
-            <div className="text-red-500">
-              Ошибка при загрузке данных. Пожалуйста, попробуйте позже.
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[80px]">ID</TableHead>
-                    <TableHead>Название</TableHead>
-                    <TableHead>Родительская должность</TableHead>
-                    <TableHead>Родительский отдел</TableHead>
-                    <TableHead className="w-[150px]">Действия</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredDepartments.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center h-24">
-                        Отделы не найдены
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredDepartments.map((department) => {
-                      // Найдем имя родительской должности
-                      const parentPosition = department.parent_position_id 
-                        ? positionsData?.data.find(p => p.position_id === department.parent_position_id)
-                        : null;
-                      
-                      // Найдем имя родительского отдела
-                      const parentDepartment = department.parent_department_id 
-                        ? departmentsData?.data.find(d => d.department_id === department.parent_department_id)
-                        : null;
+            <Button onClick={() => setIsAddDialogOpen(true)}>Добавить отдел</Button>
+          </div>
+        </div>
 
-                      // Проверка зависимостей для предупреждения
-                      const hasEmployees = hasDependentEmployees(department.department_id);
-                      const hasChildDepartments = hasDependentDepartments(department.department_id);
+        <Card>
+          <CardHeader>
+            <CardTitle>Список отделов</CardTitle>
+            <CardDescription>
+              Всего отделов: {departmentsData?.data.length || 0}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+                <div className="flex justify-center items-center h-64">
+                  <div className="text-lg text-gray-500">Загрузка данных...</div>
+                </div>
+            ) : error ? (
+                <div className="text-red-500">
+                  Ошибка при загрузке данных. Пожалуйста, попробуйте позже.
+                </div>
+            ) : (
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[80px]">ID</TableHead>
+                        <TableHead>Название</TableHead>
+                        <TableHead>Родительская должность</TableHead>
+                        <TableHead>Родительский отдел</TableHead>
+                        <TableHead className="w-[150px]">Действия</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredDepartments.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center h-24">
+                              Отделы не найдены
+                            </TableCell>
+                          </TableRow>
+                      ) : (
+                          filteredDepartments.map((department) => {
+                            // Найдем имя родительской должности
+                            const parentPosition = department.parent_position_id
+                                ? positionsData?.data.find(p => p.position_id === department.parent_position_id)
+                                : null;
 
-                      return (
-                        <TableRow key={department.department_id}>
-                          <TableCell>{department.department_id}</TableCell>
-                          <TableCell className="font-medium">{department.name}</TableCell>
-                          <TableCell>
-                            {parentPosition ? parentPosition.name : '—'}
-                          </TableCell>
-                          <TableCell>
-                            {parentDepartment ? parentDepartment.name : '—'}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => handleEdit(department)}
-                              >
-                                Изменить
-                              </Button>
-                              <Button 
-                                variant="destructive" 
-                                size="sm" 
-                                onClick={() => handleDelete(department)}
-                                title={
-                                  hasEmployees && hasChildDepartments 
-                                    ? "В отделе имеются сотрудники и дочерние отделы" 
-                                    : hasEmployees 
-                                    ? "В отделе имеются сотрудники" 
-                                    : hasChildDepartments 
-                                    ? "В отделе имеются дочерние отделы" 
-                                    : ""
+                            // Найдем имя родительского отдела
+                            const parentDepartment = department.parent_department_id
+                                ? departmentsData?.data.find(d => d.department_id === department.parent_department_id)
+                                : null;
+
+                            // Проверка зависимостей для предупреждения
+                            const hasEmployees = hasDependentEmployees(department.department_id);
+                            const hasChildDepartments = hasDependentDepartments(department.department_id);
+
+                            return (
+                                <TableRow key={department.department_id}>
+                                  <TableCell>{department.department_id}</TableCell>
+                                  <TableCell className="font-medium">{department.name}</TableCell>
+                                  <TableCell>
+                                    {parentPosition ? parentPosition.name : '—'}
+                                  </TableCell>
+                                  <TableCell>
+                                    {parentDepartment ? parentDepartment.name : '—'}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex space-x-2">
+                                      <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() => handleEdit(department)}
+                                      >
+                                        Изменить
+                                      </Button>
+                                      <Button
+                                          variant="destructive"
+                                          size="sm"
+                                          onClick={() => handleDelete(department)}
+                                          title={
+                                            hasEmployees && hasChildDepartments
+                                                ? "В отделе имеются сотрудники и дочерние отделы"
+                                                : hasEmployees
+                                                    ? "В отделе имеются сотрудники"
+                                                    : hasChildDepartments
+                                                        ? "В отделе имеются дочерние отделы"
+                                                        : ""
+                                          }
+                                      >
+                                        Удалить
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                            );
+                          })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Диалог добавления отдела */}
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Добавить новый отдел</DialogTitle>
+              <DialogDescription>
+                Введите информацию о новом отделе
+              </DialogDescription>
+            </DialogHeader>
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({field}) => (
+                        <FormItem>
+                          <FormLabel>Название отдела</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Введите название отдела" {...field} />
+                          </FormControl>
+                          <FormMessage/>
+                        </FormItem>
+                    )}
+                />
+
+                <div className="space-y-2 mb-4">
+                  <h3 className="text-sm font-medium text-red-500">
+                    Выберите один из вариантов подчинения (не оба одновременно):
+                  </h3>
+                </div>
+
+                <FormField
+                    control={form.control}
+                    name="parent_position_id"
+                    render={({field}) => (
+                        <FormItem>
+                          <FormLabel>Родительская должность</FormLabel>
+                          <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                // Если выбрана должность, сбрасываем отдел
+                                if (value !== "null") {
+                                  form.setValue("parent_department_id", null);
                                 }
-                              >
-                                Удалить
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Диалог добавления отдела */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Добавить новый отдел</DialogTitle>
-            <DialogDescription>
-              Введите информацию о новом отделе
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Название отдела</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Введите название отдела" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="space-y-2 mb-4">
-                <h3 className="text-sm font-medium text-red-500">
-                  Выберите один из вариантов подчинения (не оба одновременно):
-                </h3>
-              </div>
-              
-              <FormField
-                control={form.control}
-                name="parent_position_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Родительская должность</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Если выбрана должность, сбрасываем отдел
-                        if (value !== "null") {
-                          form.setValue("parent_department_id", null);
-                        }
-                      }}
-                      defaultValue={field.value?.toString() || "null"}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите родительскую должность" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">Не выбрано</SelectItem>
-                        {positionsData?.data.map((pos) => (
-                          <SelectItem 
-                            key={pos.position_id} 
-                            value={pos.position_id.toString()}
+                              }}
+                              defaultValue={field.value?.toString() || "null"}
                           >
-                            {pos.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="parent_department_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Родительский отдел</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Если выбран отдел, сбрасываем должность
-                        if (value !== "null") {
-                          form.setValue("parent_position_id", null);
-                        }
-                      }}
-                      defaultValue={field.value?.toString() || "null"}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите родительский отдел" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">Не выбрано</SelectItem>
-                        {departmentsData?.data.map((dept) => (
-                          <SelectItem 
-                            key={dept.department_id} 
-                            value={dept.department_id.toString()}
-                            disabled={dept.department_id === selectedDepartment?.department_id} // Нельзя выбрать себя как родителя
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Выберите родительскую должность"/>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="null">Не выбрано</SelectItem>
+                              {positionsData?.data.map((pos) => (
+                                  <SelectItem
+                                      key={pos.position_id}
+                                      value={pos.position_id.toString()}
+                                  >
+                                    {pos.name}
+                                  </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage/>
+                        </FormItem>
+                    )}
+                />
+
+                <FormField
+                    control={form.control}
+                    name="parent_department_id"
+                    render={({field}) => (
+                        <FormItem>
+                          <FormLabel>Родительский отдел</FormLabel>
+                          <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                // Если выбран отдел, сбрасываем должность
+                                if (value !== "null") {
+                                  form.setValue("parent_position_id", null);
+                                }
+                              }}
+                              defaultValue={field.value?.toString() || "null"}
                           >
-                            {dept.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <DialogFooter>
-                <Button 
-                  type="submit" 
-                  disabled={createDepartment.isPending}
-                >
-                  {createDepartment.isPending ? "Создание..." : "Создать отдел"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Выберите родительский отдел"/>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="null">Не выбрано</SelectItem>
+                              {departmentsData?.data.map((dept) => (
+                                  <SelectItem
+                                      key={dept.department_id}
+                                      value={dept.department_id.toString()}
+                                      disabled={dept.department_id === selectedDepartment?.department_id} // Нельзя выбрать себя как родителя
+                                  >
+                                    {dept.name}
+                                  </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage/>
+                        </FormItem>
+                    )}
+                />
 
-      {/* Диалог редактирования отдела */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Редактировать отдел</DialogTitle>
-            <DialogDescription>
-              Измените информацию об отделе
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
-              <FormField
-                control={editForm.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Название отдела</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Введите название отдела" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <div className="space-y-2 mb-4">
-                <h3 className="text-sm font-medium text-red-500">
-                  Выберите один из вариантов подчинения (не оба одновременно):
-                </h3>
-              </div>
-              
-              <FormField
-                control={editForm.control}
-                name="parent_position_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Родительская должность</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Если выбрана должность, сбрасываем отдел
-                        if (value !== "null") {
-                          editForm.setValue("parent_department_id", null);
-                        }
-                      }}
-                      defaultValue={field.value?.toString() || "null"}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите родительскую должность" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">Не выбрано</SelectItem>
-                        {positionsData?.data.map((pos) => (
-                          <SelectItem 
-                            key={pos.position_id} 
-                            value={pos.position_id.toString()}
+                <DialogFooter>
+                  <Button
+                      type="submit"
+                      disabled={createDepartment.isPending}
+                  >
+                    {createDepartment.isPending ? "Создание..." : "Создать отдел"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Диалог редактирования отдела */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Редактировать отдел</DialogTitle>
+              <DialogDescription>
+                Измените информацию об отделе
+              </DialogDescription>
+            </DialogHeader>
+
+            <Form {...editForm}>
+              <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+                <FormField
+                    control={editForm.control}
+                    name="name"
+                    render={({field}) => (
+                        <FormItem>
+                          <FormLabel>Название отдела</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Введите название отдела" {...field} />
+                          </FormControl>
+                          <FormMessage/>
+                        </FormItem>
+                    )}
+                />
+
+                <div className="space-y-2 mb-4">
+                  <h3 className="text-sm font-medium text-red-500">
+                    Выберите один из вариантов подчинения (не оба одновременно):
+                  </h3>
+                </div>
+
+                <FormField
+                    control={editForm.control}
+                    name="parent_position_id"
+                    render={({field}) => (
+                        <FormItem>
+                          <FormLabel>Родительская должность</FormLabel>
+                          <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                // Если выбрана должность, сбрасываем отдел
+                                if (value !== "null") {
+                                  editForm.setValue("parent_department_id", null);
+                                }
+                              }}
+                              defaultValue={field.value?.toString() || "null"}
                           >
-                            {pos.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={editForm.control}
-                name="parent_department_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Родительский отдел</FormLabel>
-                    <Select
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        // Если выбран отдел, сбрасываем должность
-                        if (value !== "null") {
-                          editForm.setValue("parent_position_id", null);
-                        }
-                      }}
-                      defaultValue={field.value?.toString() || "null"}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите родительский отдел" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="null">Не выбрано</SelectItem>
-                        {departmentsData?.data
-                          .filter(dept => dept.department_id !== selectedDepartment?.department_id) // Фильтруем, чтобы не отображать текущий отдел
-                          .map((dept) => (
-                            <SelectItem 
-                              key={dept.department_id}
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Выберите родительскую должность"/>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="null">Не выбрано</SelectItem>
+                              {positionsData?.data.map((pos) => (
+                                  <SelectItem
+                                      key={pos.position_id}
+                                      value={pos.position_id.toString()}
+                                  >
+                                    {pos.name}
+                                  </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage/>
+                        </FormItem>
+                    )}
+                />
 
-                              value={dept.department_id.toString()}
-                            >
-                              {dept.name}
-                            </SelectItem>
-                          ))
-                        }
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <DialogFooter>
-                <Button 
-                  type="submit" 
-                  disabled={updateDepartment.isPending}
-                >
-                  {updateDepartment.isPending ? "Сохранение..." : "Сохранить изменения"}
-                </Button>
-              </DialogFooter>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
+                <FormField
+                    control={editForm.control}
+                    name="parent_department_id"
+                    render={({field}) => (
+                        <FormItem>
+                          <FormLabel>Родительский отдел</FormLabel>
+                          <Select
+                              onValueChange={(value) => {
+                                field.onChange(value);
+                                // Если выбран отдел, сбрасываем должность
+                                if (value !== "null") {
+                                  editForm.setValue("parent_position_id", null);
+                                }
+                              }}
+                              defaultValue={field.value?.toString() || "null"}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Выберите родительский отдел"/>
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="null">Не выбрано</SelectItem>
+                              {departmentsData?.data
+                                  .filter(dept => dept.department_id !== selectedDepartment?.department_id) // Фильтруем, чтобы не отображать текущий отдел
+                                  .map((dept) => (
+                                      <SelectItem
+                                          key={dept.department_id}
 
-      {/* Диалог подтверждения удаления */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Вы собираетесь удалить отдел "{selectedDepartment?.name}". 
-              Это действие нельзя отменить.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Отмена</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={confirmDelete}
-              className="bg-red-500 hover:bg-red-600"
-            >
-              {deleteDepartment.isPending ? "Удаление..." : "Удалить"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
+                                          value={dept.department_id.toString()}
+                                      >
+                                        {dept.name}
+                                      </SelectItem>
+                                  ))
+                              }
+                            </SelectContent>
+                          </Select>
+                          <FormMessage/>
+                        </FormItem>
+                    )}
+                />
+
+                <DialogFooter>
+                  <Button
+                      type="submit"
+                      disabled={updateDepartment.isPending}
+                  >
+                    {updateDepartment.isPending ? "Сохранение..." : "Сохранить изменения"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Диалог подтверждения удаления */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Вы уверены?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Вы собираетесь удалить отдел "{selectedDepartment?.name}".
+                Это действие нельзя отменить.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Отмена</AlertDialogCancel>
+              <AlertDialogAction
+                  onClick={confirmDelete}
+                  className="bg-red-500 hover:bg-red-600"
+              >
+                {deleteDepartment.isPending ? "Удаление..." : "Удалить"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
   );
 }

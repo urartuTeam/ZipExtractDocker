@@ -886,7 +886,7 @@ export default function OrganizationStructure() {
     
     // Получаем информацию о вакансиях для данной позиции в отделе
     const { staffUnits, vacancies, currentCount } = getPositionDepartmentInfo(p.position_id, deptId);
-    
+
     // При перетаскивании нам нужно знать, существует ли запись сортировки
     const sortRecordExists = !dragEnabled || !parentDeptId || checkSortTreeItemExists('position', p.position_id, parentDeptId);
     
@@ -911,12 +911,6 @@ export default function OrganizationStructure() {
       }
     };
     
-    const displayText = emps.length === 0 
-      ? `${p.name} (Вакантная)` 
-      : hasMultipleEmployees 
-        ? `${p.name}` 
-        : `${p.name} (${emps[0].full_name})`;
-    
     // Определяем классы для карточки должности в зависимости от режима перетаскивания
     const posCardClasses = `relative flex items-center p-2 rounded-md ${
       dragEnabled ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer hover:bg-gray-50'
@@ -924,42 +918,60 @@ export default function OrganizationStructure() {
 
     // Контент элемента должности
     const posContent = (
-      <div
-        className={posCardClasses}
-        style={{ paddingLeft: `${lvl * 16 + 8}px` }}
-        onClick={dragEnabled ? undefined : () => togglePos(key)}
-      >
-        {ex ? (
-          <ChevronDown className="h-4 w-4 mr-2 text-neutral-500" />
-        ) : (
-          <ChevronRight className="h-4 w-4 mr-2 text-neutral-500" />
-        )}
-        <Users className="h-5 w-5 mr-2 text-blue-500" />
-        <span>{displayText}</span>
-        
-        {/* Показываем только количество вакансий в правом верхнем углу */}
-        {vacancies > 0 && (
-          <div className="absolute top-0 right-0 m-1 px-1.5 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded">
-            вакансий: {vacancies}
-          </div>
-        )}
-        
-        {dragEnabled && (
-          <MoveVertical className="h-4 w-4 ml-auto text-neutral-500" />
-        )}
-      </div>
+        <div
+            className={posCardClasses}
+
+            onClick={dragEnabled ? undefined : () => togglePos(key)}
+        >
+          {ex ? (
+              <ChevronDown className="h-4 w-4 mr-2 text-neutral-500"/>
+          ) : (
+              <ChevronRight className="h-4 w-4 mr-2 text-neutral-500"/>
+          )}
+          {vacancies > 1 ? (
+              <Users className="h-5 w-5 mr-2 text-blue-500"/>
+          ) : vacancies === 1 ? (
+              <User className="h-4 w-4 mr-1 text-green-600"/>
+          ) : null}
+          <span>
+            {emps.length === 0 ? (
+                <>
+                  {p.name}
+                  <span className="ml-2 text-neutral-500 text-sm">(Вакантная)</span>
+                </>
+            ) : hasMultipleEmployees ? (
+                p.name
+            ) : (
+                <>
+                  {p.name} (<User className="h-4 w-4 mr-1 inline text-green-600"/>{emps[0].full_name})
+                </>
+            )}
+          </span>
+
+
+          {vacancies - currentCount > 0 && (
+              <div
+                  className="absolute top-0 right-0 m-1 px-1.5 py-0.5 bg-green-100 text-green-800 text-xs font-semibold rounded">
+                вакансий: {vacancies - currentCount}
+              </div>
+          )}
+
+          {dragEnabled && (
+              <MoveVertical className="h-4 w-4 ml-auto text-neutral-500"/>
+          )}
+        </div>
     );
-    
+    // staffUnits, vacancies, currentCount
     const childrenContent = ex && (
-      <div className="ml-6 border-l-2 pl-4 mt-1">
-        {/* Если несколько сотрудников, отображаем их как дочерние элементы */}
-        {hasMultipleEmployees && (
-          <div className="mb-2">
-            <div className="border-l border-l-gray-200 ml-1">
+        <div className="ml-6 border-l-2 pl-2 mt-1">
+          {/* Если несколько сотрудников, отображаем их как дочерние элементы */}
+          {hasMultipleEmployees && (
+              <div className="mb-2">
+                <div className="border-l-gray-200 ml-1">
               {emps.map(emp => (
                 <div 
                   key={emp.employee_id} 
-                  className="flex items-center p-1 pl-4 hover:bg-gray-50 rounded-r"
+                  className="flex items-center p-1 pl-2 hover:bg-gray-50 rounded-r"
                 >
                   <User className="h-4 w-4 mr-2 text-green-600" />
                   <span className="text-sm">{emp.full_name}</span>
@@ -1099,7 +1111,7 @@ export default function OrganizationStructure() {
     );
     
     const childrenContent = ex && (
-      <div className="ml-6 border-l-2 pl-4 py-2">
+      <div className="ml-6 border-l-2 pl-2 py-2">
         {/* Если есть должности в отделе, рендерим их через Droppable */}
         {deptPositions.length > 0 ? (
           dragEnabled ? (
@@ -1135,7 +1147,7 @@ export default function OrganizationStructure() {
             sortedDeptPositions.map((p) => renderPos(p, d.department_id, lvl, d.department_id))
           )
         ) : (
-          <div className="italic text-neutral-500 pl-7 mt-1">
+          <div className="italic text-neutral-500 pl-4 mt-1">
             Нет должностей в этом отделе
           </div>
         )}

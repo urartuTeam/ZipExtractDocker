@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: npm run dev
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL
+      - SESSION_SECRET
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+      - WDS_SOCKET_PORT=5000
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    command: >
+      bash -c "
+      chown -R 999:999 /var/lib/postgresql/data &&
+      chmod -R 750 /var/lib/postgresql/data &&
+      exec docker-entrypoint.sh postgres
+      "
+
+  # Nginx (обратный прокси)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"  # Внешний порт 80 → внутренний 80 (Nginx)
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
