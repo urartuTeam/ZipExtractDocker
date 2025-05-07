@@ -47,7 +47,7 @@ function Router() {
                 path="/organization"
                 component={OrganizationStructure}
             />
-            <ProtectedRoute path="/admin/organizations" component={Organizations} />
+            <ProtectedRoute path="/organizations" component={Organizations} />
             <ProtectedRoute path="/settings" component={Settings} />
             <Route path="/vacancies" component={Vacancies} />
             <Route path="/vacancies/:id" component={Vacancies} />

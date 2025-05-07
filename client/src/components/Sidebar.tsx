@@ -65,7 +65,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
       )
     },
     {
-      path: '/admin/organizations',
+      path: '/organizations',
       label: 'Организации',
       icon: (
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
