@@ -1,5 +1,4 @@
 import React from "react";
-import { Building } from "lucide-react";
 import { Position, Employee, Department, PositionHierarchyNode } from "@shared/types";
 
 // Компонент для унифицированного отображения карточки позиции/отдела
@@ -31,6 +30,28 @@ const UnifiedPositionCard = ({
   const topIndicator = node.position.position_id % 10; // Берем последнюю цифру ID
   const bottomIndicator = node.subordinates.length; // Количество подчиненных
 
+  // Если это организация, создаем упрощенную карточку
+  if (isDepartment && isOrganization) {
+    return (
+      <div
+        className={`position-card ${cardClass} department-card`}
+        onClick={() => onPositionClick && onPositionClick(node.position.position_id)}
+        style={{
+          cursor: onPositionClick ? "pointer" : "default",
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          padding: "15px"
+        }}
+      >
+        <img src={`/organization${node.department?.department_id || ""}.png`} alt="Организация" className="mr-4" />
+        <span>{node.department?.name || node.position.name.replace(" (отдел)", "")}</span>
+      </div>
+    );
+  }
+
+  // Стандартный рендер для других типов карточек
   return (
     <div
       className={`position-card ${cardClass} ${isDepartment ? "department-card" : ""}`}
@@ -74,21 +95,10 @@ const UnifiedPositionCard = ({
       {/* Для всех карточек добавляем разделитель */}
       <div className="position-divider"></div>
 
-      {/* Для отделов показываем слово "Отдел" или "Организация", для должностей - сотрудников или вакансию */}
+      {/* Для отделов показываем слово "Отдел", для должностей - сотрудников или вакансию */}
       {isDepartment ? (
         <div className="department-type">
-          {isOrganization ? (
-            <div className="flex items-center">
-              <img 
-                src="/organization.png" 
-                alt="Организация" 
-                className="h-5 w-5 mr-2" 
-              />
-              <span>{node.department?.name || "Организация"}</span>
-            </div>
-          ) : (
-            "Отдел"
-          )}
+          Отдел
         </div>
       ) : (
         <>

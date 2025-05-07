@@ -17,28 +17,38 @@ declare global {
 const DepartmentCard = ({ department }: { department: DepartmentNode }) => {
   const isOrganization = department.is_organization;
   
+  // Для организаций создаем упрощенную карточку с двумя элементами
+  if (isOrganization) {
+    return (
+      <div 
+        className="department-card organizationClass"
+        style={{ 
+          minWidth: "300px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "flex-start",
+          padding: "15px"
+        }}
+      >
+        <img 
+          src={`/organization${department.department_id || ""}.png`}
+          alt="Организация" 
+          className="mr-4" 
+        />
+        <span>{department.name}</span>
+      </div>
+    );
+  }
+  
+  // Стандартная карточка для отделов
   return (
     <div 
-      className={`department-card ${isOrganization ? 'organizationClass' : 'departmentClass'}`} 
+      className="department-card departmentClass" 
       style={{ minWidth: "300px" }}
     >
       <div className="department-title">
-        {!isOrganization && (
-          <>
-            {department.name} 
-            <span className="department-label">Отдел</span>
-          </>
-        )}
-        {isOrganization && (
-          <div className="flex items-center">
-            <img 
-              src="/organization.png" 
-              alt="Организация" 
-              className="h-5 w-5 mr-2" 
-            />
-            <span>{department.name}</span>
-          </div>
-        )}
+        {department.name} 
+        <span className="department-label">Отдел</span>
       </div>
     </div>
   );
