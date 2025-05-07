@@ -47,6 +47,7 @@ export const departments = pgTable("departments", {
   name: text("name").notNull(),
   parent_department_id: integer("parent_department_id"),
   parent_position_id: integer("parent_position_id"),
+  is_organization: boolean("is_organization").default(false),
   deleted: boolean("deleted").default(false),
   deleted_at: timestamp("deleted_at"),
 });

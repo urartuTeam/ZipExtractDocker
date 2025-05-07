@@ -31,6 +31,10 @@ export interface IStorage {
   updateDepartment(id: number, department: Partial<InsertDepartment>): Promise<Department | undefined>;
   deleteDepartment(id: number): Promise<boolean>;
 
+  // Организации (отделы, помеченные как организации)
+  getAllOrganizations(): Promise<Department[]>;
+  setOrganizationStatus(departmentId: number, isOrganization: boolean): Promise<Department | undefined>;
+
   // Сортировка элементов иерархии
   getSortTree(): Promise<SortTree[]>;
   getSortTreeItem(type: string, type_id: number, parent_id: number | null): Promise<SortTree | undefined>;
