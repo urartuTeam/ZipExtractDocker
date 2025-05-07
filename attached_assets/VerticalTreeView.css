@@ -1,0 +1,293 @@
+.vertical-tree-container {
+  padding: 20px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+  overflow-x: auto;
+}
+
+.tree-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #333;
+  text-align: center;
+}
+
+.tree-content {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  align-items: center;
+  min-width: 800px;
+}
+
+/* Стили для отделов */
+.department-root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.department-card {
+  width: 240px;
+  padding: 12px;
+  border-radius: 8px;
+  background-color: #f0f5ff;
+  border: 2px solid #2563eb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+  z-index: 2;
+  margin-bottom: 20px;
+}
+
+.department-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(37, 99, 235, 0.25);
+}
+
+.department-title {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #1e3a8a;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.department-type {
+  font-size: 0.8rem;
+  color: #4b5563;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 500;
+}
+
+/* Стили для должностей */
+.positions-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 30px;
+  width: 100%;
+  position: relative;
+}
+
+.position-row {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  position: relative;
+}
+
+.position-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 40px;
+  position: relative;
+}
+
+.position-card {
+  width: 220px;
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #f0fdf4;
+  border: 2px solid #22c55e;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(34, 197, 94, 0.15);
+  transition: transform 0.2s, box-shadow 0.2s;
+  z-index: 2;
+}
+
+.position-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 12px rgba(34, 197, 94, 0.25);
+}
+
+.position-title {
+  font-weight: bold;
+  font-size: 1rem;
+  color: #166534;
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.position-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.1), transparent);
+  width: 100%;
+  margin: 6px 0;
+}
+
+.employee-name {
+  font-size: 0.9rem;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.position-vacant {
+  font-size: 0.9rem;
+  color: #9ca3af;
+  font-style: italic;
+  padding-left: 4px;
+}
+
+/* Соединительные линии */
+.vertical-line {
+  position: absolute;
+  width: 2px;
+  background: linear-gradient(to bottom, #2563eb, #22c55e);
+  z-index: 1;
+}
+
+.horizontal-line {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(to right, #2563eb, #22c55e);
+  z-index: 1;
+}
+
+/* Стили для дочерних позиций и отделов */
+.children-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  margin-top: 20px;
+  width: 100%;
+  position: relative;
+}
+
+.unified-children-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+  width: 100%;
+  position: relative;
+}
+
+.child-row {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  position: relative;
+  width: 100%;
+}
+
+/* Стили для дочерних отделов */
+.child-department-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  width: 100%;
+  margin-top: 30px;
+}
+
+/* Стили для отделов, отображаемых на одном уровне с должностями */
+.department-as-child {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  margin: 0 15px;
+}
+
+/* Стили для расположения элементов в одной строке */
+.position-row {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  position: relative;
+  flex-wrap: wrap; /* Разрешаем перенос на новую строку при необходимости */
+}
+
+/* Индикаторы количества */
+.count-badge {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: white;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
+
+/* Анимации для расширения/сворачивания */
+.expanded-indicator {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 3;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s;
+}
+
+.expanded-indicator:hover {
+  transform: translateX(-50%) scale(1.1);
+}
+
+.expanded-indicator svg {
+  width: 14px;
+  height: 14px;
+  color: #6b7280;
+}
+
+/* Дополнительные стили для разных уровней иерархии */
+.level-1 .position-card {
+  background-color: #f0fdf4;
+  border-color: #22c55e;
+}
+
+.level-2 .position-card {
+  background-color: #f0f7ff;
+  border-color: #3b82f6;
+}
+
+.level-3 .position-card {
+  background-color: #faf5ff;
+  border-color: #8b5cf6;
+}
+
+/* Адаптация для мобильных устройств */
+@media (max-width: 768px) {
+  .vertical-tree-container {
+    padding: 10px;
+  }
+  
+  .department-card, .position-card {
+    width: 180px;
+    padding: 10px;
+  }
+  
+  .position-row {
+    gap: 20px;
+  }
+}
