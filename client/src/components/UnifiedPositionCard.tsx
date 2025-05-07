@@ -50,10 +50,10 @@ const UnifiedPositionCard = ({
           alignItems: "center",
           justifyContent: "flex-start",
           padding: "15px",
-          width: "100%",
+          width: "350px",
         }}
       >
-        <img src={`/organization${node.department?.department_id || ""}.png`} alt="Организация" className="mr-4" />
+        <img src={`/organization21.png`} alt="Организация" className="mr-4" />
         <span>
           {node.department?.name || node.position.name.replace(" (отдел)", "")}
         </span>

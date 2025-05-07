@@ -4,7 +4,15 @@ import UnifiedPositionCard from "./UnifiedPositionCard";
 import DisplaySettings from "./DisplaySettings";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Building } from "lucide-react";
-import { Department, Position, Employee, DepartmentNode, PositionHierarchyNode, PositionWithEmployees, DepartmentAsPosition } from "@shared/types";
+import {
+  Department,
+  Position,
+  Employee,
+  DepartmentNode,
+  PositionHierarchyNode,
+  PositionWithEmployees,
+  DepartmentAsPosition,
+} from "@shared/types";
 
 // Расширяем интерфейс Window глобально
 declare global {
@@ -16,38 +24,38 @@ declare global {
 // Карточка отдела
 const DepartmentCard = ({ department }: { department: DepartmentNode }) => {
   const isOrganization = department.is_organization;
-  
+
   // Для организаций создаем упрощенную карточку с двумя элементами
   if (isOrganization) {
     return (
-      <div 
+      <div
         className="department-card organizationClass"
-        style={{ 
-          width: '100%',
+        style={{
+          width: "400px",
           display: "flex",
           alignItems: "center",
           justifyContent: "flex-start",
-          padding: "15px"
+          padding: "15px",
         }}
       >
-        <img 
+        <img
           src={`/organization${department.department_id || ""}.png`}
-          alt="Организация" 
-          className="mr-4" 
+          alt="Организация"
+          className="mr-4"
         />
         <span>{department.name}</span>
       </div>
     );
   }
-  
+
   // Стандартная карточка для отделов
   return (
-    <div 
-      className="department-card departmentClass" 
+    <div
+      className="department-card departmentClass"
       style={{ minWidth: "300px" }}
     >
       <div className="department-title">
-        {department.name} 
+        {department.name}
         <span className="department-label">Отдел</span>
       </div>
     </div>
@@ -270,9 +278,10 @@ const DepartmentWithChildren = ({
     <div
       className="department-node"
       style={{
-        width: `${department.width}%`,
+        width: department.is_organization ? "400px" : `${department.width}%`,
         minWidth: "300px",
         margin: "0 auto",
+        flex: "0 0 auto"
       }}
     >
       <DepartmentCard department={department} />
@@ -291,7 +300,12 @@ const DepartmentWithChildren = ({
       {/* Если есть дочерние отделы, рекурсивно отображаем их */}
       {department.children.length > 0 && (
         <div className="department-children">
-          <div className="child-departments">
+          <div className="child-departments" style={{ 
+            display: 'flex', 
+            flexWrap: 'wrap', 
+            justifyContent: 'center',
+            gap: '20px'
+          }}>
             {department.children.map((childDept) => (
               <DepartmentWithChildren
                 key={childDept.department_id}
@@ -1012,7 +1026,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     );
     console.log("Должности с отделами:", positionsWithDepartments.length);
 
-    // Загружаем данные о связях должностей из positionHierarchyResponse,
+    // Загружаем данные о связях должностей ��з positionHierarchyResponse,
     // который загружается на уровне компонента через хук useQuery
     // Важно: этот запрос уже выполнен на уровне компонента
     const hierarchyRelations =
@@ -1025,30 +1039,35 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           `Должность "${position.name}" (ID: ${position.position_id}) имеет родительскую должность с ID: ${position.parent_position_id}`,
         );
       }
-      
+
       if (position.is_category) {
         console.log(
           `КАТЕГОРИЯ: "${position.name}" (ID: ${position.position_id})`,
         );
-        
+
         // Найдем все связи для этой категории
         const categoryRelations = hierarchyRelations.filter(
-          rel => rel.position_id === position.position_id
+          (rel) => rel.position_id === position.position_id,
         );
-        
+
         if (categoryRelations.length > 0) {
-          console.log(`Найдено ${categoryRelations.length} родительских должностей для категории "${position.name}":`, 
-            categoryRelations.map(rel => {
-              const parentPos = positions.find(p => p.position_id === rel.parent_position_id);
+          console.log(
+            `Найдено ${categoryRelations.length} родительских должностей для категории "${position.name}":`,
+            categoryRelations.map((rel) => {
+              const parentPos = positions.find(
+                (p) => p.position_id === rel.parent_position_id,
+              );
               return {
                 parent_id: rel.parent_position_id,
-                parent_name: parentPos ? parentPos.name : 'Неизвестно',
-                department_id: rel.department_id
+                parent_name: parentPos ? parentPos.name : "Неизвестно",
+                department_id: rel.department_id,
               };
-            })
+            }),
           );
         } else {
-          console.log(`Категория "${position.name}" не имеет родительских должностей`);
+          console.log(
+            `Категория "${position.name}" не имеет родительских должностей`,
+          );
         }
       }
     });
