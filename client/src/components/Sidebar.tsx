@@ -65,6 +65,15 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
       )
     },
     {
+      path: '/admin/organizations',
+      label: 'Организации',
+      icon: (
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      )
+    },
+    {
       path: '/positions',
       label: 'Должности',
       icon: (
@@ -135,16 +144,25 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
       </div>
       <nav className="mt-5 px-3 flex-grow">
         <div className="space-y-1">
-          {navItems.map((item) => (
-            <NavItem 
-              key={item.path}
-              path={item.path}
-              icon={item.icon}
-              label={item.label}
-              isActive={location === item.path}
-              onClick={() => navigate(item.path)}
-            />
-          ))}
+          {navItems
+            .filter(item => {
+              // Отображаем пункты меню с префиксом /admin/ только для администраторов
+              if (item.path.startsWith('/admin/') && !isAdmin) {
+                return false;
+              }
+              return true;
+            })
+            .map((item) => (
+              <NavItem 
+                key={item.path}
+                path={item.path}
+                icon={item.icon}
+                label={item.label}
+                isActive={location === item.path}
+                onClick={() => navigate(item.path)}
+              />
+            ))
+          }
         </div>
       </nav>
       

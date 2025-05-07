@@ -19,6 +19,7 @@ import Leaves from "./pages/Leaves";
 import AuthPage from "./pages/AuthPage";
 import Settings from "./pages/Settings";
 import OrganizationStructure from "./pages/OrganizationStructure";
+import Organizations from "./pages/Organizations";
 import Vacancies from "./pages/Vacancies";
 import { useLocation } from "wouter";
 import { AuthProvider } from "@/hooks/use-auth";
@@ -46,6 +47,7 @@ function Router() {
                 path="/organization"
                 component={OrganizationStructure}
             />
+            <ProtectedRoute path="/admin/organizations" component={Organizations} />
             <ProtectedRoute path="/settings" component={Settings} />
             <Route path="/vacancies" component={Vacancies} />
             <Route path="/vacancies/:id" component={Vacancies} />
