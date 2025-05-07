@@ -1,38 +1,6 @@
 import React from "react";
 import { Building } from "lucide-react";
-
-// Импортируем типы
-type Position = {
-  position_id: number;
-  name: string;
-  parent_position_id?: number | null;
-  department_id?: number | null;
-};
-
-type Employee = {
-  employee_id: number;
-  full_name: string;
-  position_id: number | null;
-  department_id: number | null;
-  manager_id: number | null;
-};
-
-type Department = {
-  department_id: number;
-  name: string;
-  parent_department_id: number | null;
-  parent_position_id: number | null;
-  is_organization?: boolean;
-};
-
-// Типы узлов в иерархии должностей
-type PositionHierarchyNode = {
-  position: Position;
-  employees: Employee[]; // Массив сотрудников на этой должности
-  subordinates: PositionHierarchyNode[];
-  childDepartments?: Department[]; // Добавляем поле для хранения подчиненных отделов
-  department?: Department; // Информация об отделе, если это карточка отдела
-};
+import { Position, Employee, Department, PositionHierarchyNode } from "@shared/types";
 
 // Компонент для унифицированного отображения карточки позиции/отдела
 const UnifiedPositionCard = ({

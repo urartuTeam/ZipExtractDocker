@@ -328,6 +328,7 @@ type PositionHierarchyNode = {
   employees: Employee[]; // Массив сотрудников на этой должности
   subordinates: PositionHierarchyNode[];
   childDepartments: Department[]; // Дочерние отделы, связанные с этой должностью
+  department?: Department; // Информация об отделе, если это карточка отдела
 };
 
 // Убираем вспомогательный компонент, так как теперь он импортирован из отдельного файла
@@ -1582,6 +1583,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
             employees: [], // У отдела нет сотрудников
             subordinates: [],
             childDepartments: [], // Нет дочерних отделов у этого узла
+            department: department, // Добавляем информацию об отделе, включая is_organization
           };
 
           deptPositions.forEach((posNode) => {
