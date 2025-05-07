@@ -1,18 +1,36 @@
 #!/bin/bash
 
-# Скрипт для восстановления дампа базы данных
-# Использование: ./restore_dump.sh [имя_базы] [имя_пользователя]
+# Проверка переменных окружения
+if [ -z "$DATABASE_URL" ]; then
+  echo "Ошибка: переменная DATABASE_URL не установлена"
+  exit 1
+fi
 
-# Значения по умолчанию
-DB_NAME=${1:-"hr_system"}
-DB_USER=${2:-"postgres"}
+if [ -z "$1" ]; then
+  echo "Использование: $0 <путь_к_дампу.sql>"
+  exit 1
+fi
 
-echo "Восстановление базы данных $DB_NAME из файла full_database_dump_inserts.sql..."
+DUMP_FILE="$1"
 
-# Очистка базы данных перед восстановлением
-psql -U $DB_USER -d $DB_NAME -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public; GRANT ALL ON SCHEMA public TO $DB_USER; GRANT ALL ON SCHEMA public TO public;"
+if [ ! -f "$DUMP_FILE" ]; then
+  echo "Ошибка: Файл дампа '$DUMP_FILE' не найден"
+  exit 1
+fi
 
-# Импорт данных из SQL-файла
-psql -U $DB_USER -d $DB_NAME -f full_database_dump_inserts.sql
+echo "Восстановление базы данных из файла: $DUMP_FILE"
+echo "Удаление существующих таблиц..."
 
-echo "Восстановление базы данных завершено."
+# Удаление существующих таблиц
+psql $DATABASE_URL << SQL
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+GRANT ALL ON SCHEMA public TO public;
+SQL
+
+echo "Восстановление структуры и данных из дампа..."
+
+# Импорт данных из файла
+psql $DATABASE_URL < "$DUMP_FILE"
+
+echo "База данных успешно восстановлена из файла: $DUMP_FILE"
