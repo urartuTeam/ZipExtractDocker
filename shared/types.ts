@@ -30,6 +30,19 @@ export type Employee = {
   deleted_at?: string | null;
 };
 
+// Тип для построения позиций с сотрудниками
+export type PositionWithEmployees = Position & {
+  employees: Employee[];
+};
+
+// Тип для представления отдела как должности (для структуры дерева)
+export type DepartmentAsPosition = {
+  position_id: number; // Используем уникальный ID, например department_id * 1000
+  name: string;
+  isDepartment: true;
+  department_id: number;
+};
+
 // Тип для построения дерева отделов
 export type DepartmentNode = Department & {
   positions: Position[];

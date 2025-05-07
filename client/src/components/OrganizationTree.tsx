@@ -4,6 +4,7 @@ import UnifiedPositionCard from "./UnifiedPositionCard";
 import DisplaySettings from "./DisplaySettings";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
+import { Department, Position, Employee, DepartmentNode, PositionHierarchyNode, PositionWithEmployees, DepartmentAsPosition } from "@shared/types";
 
 // Расширяем интерфейс Window глобально
 declare global {
@@ -11,51 +12,6 @@ declare global {
     positionsWithDepartmentsData: any[];
   }
 }
-
-// Типы данных для организационной структуры
-type Department = {
-  department_id: number;
-  name: string;
-  parent_department_id: number | null;
-  parent_position_id: number | null;
-};
-
-type Position = {
-  position_id: number;
-  name: string;
-  parent_position_id?: number | null;
-  department_id?: number | null;
-};
-
-type Employee = {
-  employee_id: number;
-  full_name: string;
-  position_id: number | null;
-  department_id: number | null;
-  manager_id: number | null; // Поле manager_id для отслеживания подчиненности
-  category_parent_id: number | null; // Поле category_parent_id для связи с родительской должностью категории
-};
-
-// Тип для построения дерева отделов
-type DepartmentNode = Department & {
-  positions: Position[];
-  children: DepartmentNode[];
-  width: number; // ширина в процентах
-  childCount: number; // общее количество дочерних элементов
-};
-
-// Тип для построения позиций с сотрудниками
-type PositionWithEmployees = Position & {
-  employees: Employee[];
-};
-
-// Специальный тип для представления отдела в иерархии должностей
-type DepartmentAsPosition = {
-  position_id: number; // Используем уникальный ID, например department_id * 1000
-  name: string;
-  isDepartment: true;
-  department_id: number;
-};
 
 // Карточка отдела
 const DepartmentCard = ({ department }: { department: DepartmentNode }) => {
@@ -320,15 +276,6 @@ const DepartmentWithChildren = ({
       )}
     </div>
   );
-};
-
-// Тип для построения иерархии позиций
-type PositionHierarchyNode = {
-  position: Position;
-  employees: Employee[]; // Массив сотрудников на этой должности
-  subordinates: PositionHierarchyNode[];
-  childDepartments: Department[]; // Дочерние отделы, связанные с этой должностью
-  department?: Department; // Информация об отделе, если это карточка отдела
 };
 
 // Убираем вспомогательный компонент, так как теперь он импортирован из отдельного файла
