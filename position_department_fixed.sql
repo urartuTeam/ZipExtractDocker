@@ -1,0 +1,10 @@
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort, deleted, deleted_at, staff_units, current_count, vacancies) VALUES (52, 40, 21, 0, false, NULL, 0, 0, 1);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort, deleted, deleted_at, staff_units, current_count, vacancies) VALUES (54, 42, 21, 0, false, NULL, 1, 0, 1);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort, deleted, deleted_at, staff_units, current_count, vacancies) VALUES (55, 43, 21, 0, false, NULL, 0, 0, 1);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort, deleted, deleted_at, staff_units, current_count, vacancies) VALUES (56, 44, 23, 0, false, NULL, 0, 0, 1);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort, deleted, deleted_at, staff_units, current_count, vacancies) VALUES (57, 44, 24, 0, false, NULL, 0, 0, 1);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort, deleted, deleted_at, staff_units, current_count, vacancies) VALUES (60, 46, 23, 0, false, NULL, 0, 0, 1);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort, deleted, deleted_at, staff_units, current_count, vacancies) VALUES (61, 46, 24, 0, false, NULL, 0, 0, 1);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort, deleted, deleted_at, staff_units, current_count, vacancies) VALUES (58, 45, 23, 0, false, NULL, 0, 0, 2);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort, deleted, deleted_at, staff_units, current_count, vacancies) VALUES (59, 45, 24, 0, false, NULL, 0, 0, 2);
+INSERT INTO public.position_department (position_link_id, position_id, department_id, sort, deleted, deleted_at, staff_units, current_count, vacancies) VALUES (64, 47, 23, 0, false, NULL, 0, 0, 3);
