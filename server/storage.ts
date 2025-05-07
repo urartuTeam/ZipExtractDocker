@@ -696,6 +696,25 @@ export class DatabaseStorage implements IStorage {
         .returning({ id: sort_tree.id });
     return !!deleted;
   }
+
+  // Методы для работы с организациями
+  async getAllOrganizations(): Promise<Department[]> {
+    return await db.select().from(departments).where(
+      and(
+        eq(departments.deleted, false),
+        eq(departments.is_organization, true)
+      )
+    ).orderBy(departments.name);
+  }
+
+  async setOrganizationStatus(departmentId: number, isOrganization: boolean): Promise<Department | undefined> {
+    const [department] = await db
+      .update(departments)
+      .set({ is_organization: isOrganization })
+      .where(eq(departments.department_id, departmentId))
+      .returning();
+    return department || undefined;
+  }
 }
 
 export const storage = new DatabaseStorage();

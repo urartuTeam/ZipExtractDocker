@@ -217,6 +217,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Organizations endpoints
+  app.get('/api/organizations', async (req: Request, res: Response) => {
+    try {
+      const organizations = await storage.getAllOrganizations();
+      res.json({ status: 'success', data: organizations });
+    } catch (error) {
+      console.error('Error fetching organizations:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch organizations' });
+    }
+  });
+
+  app.post('/api/organizations/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid department ID' });
+      }
+
+      const department = await storage.getDepartment(id);
+      if (!department) {
+        return res.status(404).json({ status: 'error', message: 'Department not found' });
+      }
+
+      const updatedDepartment = await storage.setOrganizationStatus(id, true);
+      res.json({ status: 'success', data: updatedDepartment });
+    } catch (error) {
+      console.error('Error setting organization status:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to set organization status' });
+    }
+  });
+
+  app.delete('/api/organizations/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid department ID' });
+      }
+
+      const department = await storage.getDepartment(id);
+      if (!department) {
+        return res.status(404).json({ status: 'error', message: 'Department not found' });
+      }
+
+      const updatedDepartment = await storage.setOrganizationStatus(id, false);
+      res.json({ status: 'success', data: updatedDepartment });
+    } catch (error) {
+      console.error('Error removing organization status:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to remove organization status' });
+    }
+  });
+
   // Должности (Positions) endpoints
   app.get('/api/positions', async (req: Request, res: Response) => {
     try {
