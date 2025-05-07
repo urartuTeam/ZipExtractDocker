@@ -1621,6 +1621,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
                 employees: [], // У отдела нет сотрудников
                 subordinates: [],
                 childDepartments: [], // У дочернего отдела пока нет отделов
+                department: childDept, // Добавляем информацию об отделе, включая is_organization
               };
 
               // Общая обработка для всех отделов - строим полную иерархию должностей
