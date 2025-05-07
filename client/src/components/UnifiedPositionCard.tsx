@@ -79,8 +79,12 @@ const UnifiedPositionCard = ({
         <div className="department-type">
           {isOrganization ? (
             <div className="flex items-center">
-              <Building className="h-4 w-4 mr-1" />
-              <span>Организация</span>
+              <img 
+                src="/organization.png" 
+                alt="Организация" 
+                className="h-5 w-5 mr-2" 
+              />
+              <span>{node.department?.name || "Организация"}</span>
             </div>
           ) : (
             "Отдел"
