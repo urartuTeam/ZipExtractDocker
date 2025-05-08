@@ -9,8 +9,11 @@ import {
   insertEmployeeSchema,
   insertProjectSchema,
   insertEmployeeProjectSchema,
-  insertLeaveSchema
+  insertLeaveSchema,
+  departments
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
@@ -243,7 +246,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Organizations endpoints
   app.get('/api/organizations', async (req: Request, res: Response) => {
     try {
-      const organizations = await storage.getAllOrganizations();
+      // Используем прямой запрос к базе для получения отделов с флагом is_organization
+      const organizations = await db.select().from(departments).where(eq(departments.is_organization, true));
       res.json({ status: 'success', data: organizations });
     } catch (error) {
       console.error('Error fetching organizations:', error);
@@ -313,16 +317,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // API для получения списка организаций (отделы с is_organization=true)
-  app.get('/api/organizations', async (req: Request, res: Response) => {
-    try {
-      const organizations = await db.select().from(departments).where(eq(departments.is_organization, true));
-      res.status(200).json({ status: 'success', data: organizations });
-    } catch (error) {
-      console.error('Ошибка при получении списка организаций:', error);
-      res.status(500).json({ status: 'error', message: 'Ошибка при получении списка организаций' });
-    }
-  });
+
 
   app.get('/api/positions/:id', async (req: Request, res: Response) => {
     try {
