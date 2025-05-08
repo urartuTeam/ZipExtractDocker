@@ -281,7 +281,7 @@ const DepartmentWithChildren = ({
         width: department.is_organization ? "400px" : `${department.width}%`,
         minWidth: "300px",
         margin: "0 auto",
-        flex: "0 0 auto"
+        flex: "0 0 auto",
       }}
     >
       <DepartmentCard department={department} />
@@ -300,12 +300,15 @@ const DepartmentWithChildren = ({
       {/* Если есть дочерние отделы, рекурсивно отображаем их */}
       {department.children.length > 0 && (
         <div className="department-children">
-          <div className="child-departments" style={{ 
-            display: 'flex', 
-            flexWrap: 'wrap', 
-            justifyContent: 'center',
-            gap: '20px'
-          }}>
+          <div
+            className="child-departments"
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: "20px",
+            }}
+          >
             {department.children.map((childDept) => (
               <DepartmentWithChildren
                 key={childDept.department_id}
@@ -377,8 +380,9 @@ const PositionTree = ({
           branchWidth = childWidth;
           branch.style.width = `${childWidth}px`;
         } else {
-          branchWidth = 240;
-          branch.style.width = "240px";
+          const isOrganization = branch.dataset.isOrganization === "true";
+          branchWidth = isOrganization ? 350 : 240;
+          branch.style.width = `${branchWidth}px`;
         }
 
         totalWidth += branchWidth + 20;
@@ -390,7 +394,9 @@ const PositionTree = ({
         const last = branches[branches.length - 1]?.offsetWidth || 0;
         const totalLine = totalWidth - (first + last) / 2 - 20;
         line.style.width = `${totalLine}px`;
-        line.style.left = `${first / 2 + 10}px`;
+        console.log("-------------------");
+        console.log(first);
+        // line.style.left = `${first / 2 + 10}px`;
       }
 
       return totalWidth;
@@ -412,7 +418,7 @@ const PositionTree = ({
     recalc();
     window.addEventListener("resize", recalc);
     return () => window.removeEventListener("resize", recalc);
-  }, [nodes, showThreeLevels]); // Добавили зависимость от showThreeLevels
+  }, [nodes, showThreeLevels]);
 
   return (
     <div className="tree-node">
@@ -650,7 +656,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Состояние для хранения истории навигации по дереву
   const [navigationHistory, setNavigationHistory] = useState<number[]>([]);
 
-  // Состояния для настроек отображения
+  // Соo�тояния для настроек отображения
   const [showThreeLevels, setShowThreeLevels] = useState<boolean>(false);
   const [showVacancies, setShowVacancies] = useState<boolean>(false);
 
@@ -1195,7 +1201,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         // Находим узел должности
         const positionNode = positionNodes[pos.position_id];
         if (positionNode) {
-          // Для каждого отдела, связанного с должностью
+          // Для каждого отдела, свя)�анного с должностью
           pos.departments.forEach((dept: any) => {
             // Находим соответствующий отдел
             const department = departments.find(
@@ -1723,7 +1729,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       }
     });
 
-    // Проверяем, что все связи position_positions корректно применены
+    // Проверя&�м, что все связи position_positions корректно применены
     // Используем данные от уже существующего запроса
     // Если данные о связях есть и есть корневые ноды
     if (positionPositionsData && rootNodes.length > 0) {
