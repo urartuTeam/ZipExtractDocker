@@ -542,6 +542,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!project) {
         return res.status(404).json({ status: 'error', message: 'Project not found' });
       }
+      
+      // Отладочный вывод для проверки полей проекта
+      console.log("Полный объект проекта из БД:", project);
+      console.log("Поля проекта:", Object.keys(project));
+      console.log("id_organization:", project.id_organization);
 
       res.json({ status: 'success', data: project });
     } catch (error) {
