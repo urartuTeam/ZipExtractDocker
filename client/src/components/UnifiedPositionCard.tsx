@@ -53,7 +53,15 @@ const UnifiedPositionCard = ({
           width: "100%",
         }}
       >
-        <img src={`/organization21.png`} alt="Организация" className="mr-4" />
+        {node.department?.logo_path ? (
+          <img 
+            src={node.department?.logo_path} 
+            alt={`Логотип ${node.department?.name}`} 
+            className="mr-4 w-8 h-8 object-contain" 
+          />
+        ) : (
+          <img src={`/organization21.png`} alt="Организация" className="mr-4" />
+        )}
         <span>
           {node.department?.name || node.position.name.replace(" (отдел)", "")}
         </span>

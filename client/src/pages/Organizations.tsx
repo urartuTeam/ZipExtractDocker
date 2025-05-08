@@ -24,9 +24,20 @@ import { queryClient, apiRequest } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import { Department } from '@shared/schema';
 
+interface OrganizationLogoResponse {
+  status: string;
+  data: {
+    department_id: number;
+    logo_path: string | null;
+  };
+}
+
 export default function Organizations() {
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [logoDialogOpen, setLogoDialogOpen] = useState(false);
+  const [selectedOrganization, setSelectedOrganization] = useState<Department | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Загрузка списка организаций
   const { data: organizations, isLoading: organizationsLoading } = useQuery<{status: string, data: Department[]}>({
@@ -83,6 +94,80 @@ export default function Organizations() {
       });
     }
   });
+  
+  // Получение информации о логотипе организации
+  const { refetch: refetchOrganizationLogo } = useQuery<OrganizationLogoResponse>({
+    queryKey: ['/api/upload/organization-logo', selectedOrganization?.department_id],
+    enabled: !!selectedOrganization,
+    refetchOnWindowFocus: false,
+  });
+  
+  // Загрузка логотипа
+  const uploadLogoMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      const departmentId = selectedOrganization?.department_id;
+      const response = await fetch(`/api/upload/organization-logo/${departmentId}`, {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Ошибка загрузки логотипа');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Логотип загружен',
+        description: 'Логотип организации успешно обновлен',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/organizations'] });
+      setLogoDialogOpen(false);
+      if (selectedOrganization) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/upload/organization-logo', selectedOrganization.department_id] 
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Ошибка загрузки',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
+  
+  // Удаление логотипа
+  const deleteLogoMutation = useMutation({
+    mutationFn: async () => {
+      const departmentId = selectedOrganization?.department_id;
+      const response = await apiRequest('DELETE', `/api/upload/organization-logo/${departmentId}`, {});
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: 'Логотип удален',
+        description: 'Логотип организации успешно удален',
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/organizations'] });
+      setLogoDialogOpen(false);
+      if (selectedOrganization) {
+        queryClient.invalidateQueries({ 
+          queryKey: ['/api/upload/organization-logo', selectedOrganization.department_id] 
+        });
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Ошибка удаления',
+        description: error.message,
+        variant: 'destructive',
+      });
+    }
+  });
 
   // Фильтрация отделов, которые еще не являются организациями
   const availableDepartments = departments?.data.filter(
@@ -100,6 +185,31 @@ export default function Organizations() {
   const handleRemoveOrganization = (departmentId: number) => {
     if (confirm('Вы уверены, что хотите удалить эту организацию?')) {
       removeOrganizationMutation.mutate(departmentId);
+    }
+  };
+  
+  const handleOpenLogoDialog = (organization: Department) => {
+    setSelectedOrganization(organization);
+    setLogoDialogOpen(true);
+  };
+  
+  const handleFileSelect = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedOrganization) return;
+    
+    const formData = new FormData();
+    formData.append('logo', file);
+    
+    uploadLogoMutation.mutate(formData);
+  };
+  
+  const handleDeleteLogo = () => {
+    if (confirm('Вы уверены, что хотите удалить логотип организации?')) {
+      deleteLogoMutation.mutate();
     }
   };
 
@@ -173,11 +283,27 @@ export default function Organizations() {
             <Card key={org.department_id} className="overflow-hidden">
               <CardContent className="p-0">
                 <div className="bg-primary p-4 text-white flex items-center">
-                  <Building className="w-6 h-6 mr-3" />
+                  {org.logo_path ? (
+                    <img 
+                      src={org.logo_path} 
+                      alt={`Логотип ${org.name}`} 
+                      className="w-8 h-8 mr-3 object-contain"
+                    />
+                  ) : (
+                    <Building className="w-6 h-6 mr-3" />
+                  )}
                   <h3 className="text-lg font-semibold">{org.name}</h3>
                 </div>
                 <div className="p-4">
-                  <div className="mt-4 flex justify-end">
+                  <div className="mt-4 flex justify-between">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleOpenLogoDialog(org)}
+                    >
+                      <Image className="w-4 h-4 mr-2" />
+                      {org.logo_path ? 'Изменить логотип' : 'Добавить логотип'}
+                    </Button>
                     <Button 
                       variant="destructive" 
                       size="sm"
@@ -196,6 +322,60 @@ export default function Organizations() {
             Список организаций пуст. Добавьте организацию, нажав на кнопку "Добавить организацию".
           </div>
         )}
+        
+        {/* Диалог для загрузки логотипа */}
+        <Dialog open={logoDialogOpen} onOpenChange={setLogoDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Логотип организации</DialogTitle>
+              <DialogDescription>
+                Загрузите логотип для организации "{selectedOrganization?.name}"
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {selectedOrganization?.logo_path && (
+                <div className="p-4 border rounded-md flex flex-col items-center">
+                  <img 
+                    src={selectedOrganization.logo_path} 
+                    alt={`Логотип ${selectedOrganization.name}`} 
+                    className="max-h-40 object-contain mb-4"
+                  />
+                  <Button 
+                    variant="destructive" 
+                    size="sm"
+                    onClick={handleDeleteLogo}
+                    disabled={deleteLogoMutation.isPending}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {deleteLogoMutation.isPending ? 'Удаление...' : 'Удалить логотип'}
+                  </Button>
+                </div>
+              )}
+              
+              <div className="flex flex-col items-center">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/jpeg,image/png,image/gif,image/svg+xml"
+                  onChange={handleFileChange}
+                />
+                <Button 
+                  onClick={handleFileSelect}
+                  disabled={uploadLogoMutation.isPending}
+                  className="w-full"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  {uploadLogoMutation.isPending ? 'Загрузка...' : 'Загрузить логотип'}
+                </Button>
+                <p className="text-xs text-neutral-500 mt-2">
+                  Допустимые форматы: JPEG, PNG, GIF, SVG. Максимальный размер: 5MB.
+                </p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

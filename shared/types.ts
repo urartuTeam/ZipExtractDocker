@@ -5,6 +5,7 @@ export type Department = {
   parent_department_id: number | null;
   parent_position_id: number | null;
   is_organization?: boolean;
+  logo_path?: string | null;
   deleted?: boolean;
   deleted_at?: string | null;
 };
