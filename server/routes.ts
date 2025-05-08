@@ -610,6 +610,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ status: 'error', message: 'Failed to delete project' });
     }
   });
+  
+  // Обновление порядка сортировки проектов
+  app.post('/api/projects/sort', async (req: Request, res: Response) => {
+    try {
+      const updates = req.body;
+      
+      if (!Array.isArray(updates)) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Неверный формат данных. Ожидается массив обновлений.' 
+        });
+      }
+      
+      // Проверяем, что все элементы имеют необходимые поля
+      const isValid = updates.every(item => 
+        typeof item === 'object' && 
+        item !== null && 
+        'project_id' in item && 
+        'sort' in item &&
+        typeof item.project_id === 'number' &&
+        typeof item.sort === 'number'
+      );
+      
+      if (!isValid) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Неверный формат данных. Каждый элемент должен содержать project_id и sort.' 
+        });
+      }
+      
+      // Обновляем порядок сортировки для каждого проекта
+      const results = await Promise.all(
+        updates.map(update => 
+          storage.updateProject(update.project_id, { sort: update.sort })
+        )
+      );
+      
+      // Проверяем, были ли обновлены все проекты
+      const allUpdated = results.every(result => result !== null);
+      
+      if (!allUpdated) {
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Не все проекты были обновлены. Некоторые проекты не найдены.' 
+        });
+      }
+      
+      res.json({ 
+        status: 'success', 
+        message: 'Порядок сортировки проектов успешно обновлен' 
+      });
+    } catch (error) {
+      console.error('Error updating projects sort order:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Ошибка при обновлении порядка сортировки проектов' 
+      });
+    }
+  });
 
   // EmployeeProjects endpoints
   app.get('/api/employeeprojects', async (req: Request, res: Response) => {

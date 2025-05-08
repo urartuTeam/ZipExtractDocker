@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useLocation } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useDataRefresh } from "@/hooks/use-data-refresh";
@@ -51,8 +51,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Project, EmployeeProject } from '@shared/schema';
-import { Plus, Edit, Trash, Users } from 'lucide-react';
+import { Plus, Edit, Trash, Users, GripVertical } from 'lucide-react';
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 
 // Основной компонент страницы проектов для админа 
 export default function AdminProjects() {
@@ -152,6 +153,93 @@ export default function AdminProjects() {
     (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Группировка проектов по организациям
+  const groupProjectsByOrganization = () => {
+    const grouped: Record<string, Project[]> = {};
+    const unassigned: Project[] = [];
+    
+    // Сортируем проекты по полю sort
+    const sortedProjects = [...filteredProjects].sort((a, b) => (a.sort || 0) - (b.sort || 0));
+    
+    // Группируем по организациям
+    sortedProjects.forEach(project => {
+      if (project.id_organization) {
+        const orgId = project.id_organization.toString();
+        if (!grouped[orgId]) {
+          grouped[orgId] = [];
+        }
+        grouped[orgId].push(project);
+      } else {
+        unassigned.push(project);
+      }
+    });
+    
+    return { grouped, unassigned };
+  };
+  
+  const { grouped: groupedProjects, unassigned: unassignedProjects } = groupProjectsByOrganization();
+  
+  // Мутация для обновления порядка сортировки проектов
+  const updateProjectSort = useMutation({
+    mutationFn: async (updates: { project_id: number, sort: number }[]) => {
+      const res = await apiRequest("POST", "/api/projects/sort", updates);
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при обновлении порядка проектов");
+      }
+      
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Порядок проектов обновлен",
+        description: "Новый порядок проектов сохранен",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
+  
+  // Обработчик окончания перетаскивания
+  const handleDragEnd = useCallback((result: DropResult) => {
+    const { source, destination } = result;
+    
+    // Если элемент не был перемещен никуда
+    if (!destination) return;
+    
+    // Если это перемещение в рамках одной организации
+    if (source.droppableId === destination.droppableId) {
+      const orgId = source.droppableId;
+      let projectsToUpdate: Project[] = [];
+      
+      if (orgId === 'unassigned') {
+        projectsToUpdate = [...unassignedProjects];
+      } else {
+        projectsToUpdate = [...groupedProjects[orgId]];
+      }
+      
+      // Перемещаем проект внутри списка
+      const [removed] = projectsToUpdate.splice(source.index, 1);
+      projectsToUpdate.splice(destination.index, 0, removed);
+      
+      // Обновляем индексы сортировки
+      const updates = projectsToUpdate.map((project, index) => ({
+        project_id: project.project_id,
+        sort: index
+      }));
+      
+      // Отправляем обновления на сервер
+      updateProjectSort.mutate(updates);
+    }
+  }, [unassignedProjects, groupedProjects, updateProjectSort]);
+
   const onSubmitAddProject = (values: z.infer<typeof projectFormSchema>) => {
     createProject.mutate(values);
   };
@@ -207,58 +295,172 @@ export default function AdminProjects() {
                   </Button>
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[60px]">ID</TableHead>
-                        <TableHead>Название</TableHead>
-                        <TableHead>Описание</TableHead>
-                        <TableHead>Организация</TableHead>
-                        <TableHead>Сотрудники</TableHead>
-                        <TableHead className="w-[100px]">Действия</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredProjects.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={6} className="text-center h-24">
-                            Проекты не найдены
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        filteredProjects.map((project) => (
-                          <TableRow key={project.project_id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/admin/projects/${project.project_id}`)}>
-                            <TableCell>{project.project_id}</TableCell>
-                            <TableCell className="font-medium">{project.name}</TableCell>
-                            <TableCell>{project.description || "—"}</TableCell>
-                            <TableCell>{getOrganizationName(project.id_organization)}</TableCell>
-                            <TableCell>
-                              <div className="flex items-center">
-                                <Users className="h-4 w-4 mr-2 text-gray-500" />
-                                <span>{getEmployeeCount(project.project_id)}</span>
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <div className="space-y-8">
+                    {/* Отображаем таблицы по организациям */}
+                    {Object.entries(groupedProjects).map(([orgId, orgProjects]) => {
+                      const organization = organizations.find(o => o.department_id.toString() === orgId);
+                      if (!organization || orgProjects.length === 0) return null;
+                      
+                      return (
+                        <div key={orgId} className="border rounded-md overflow-hidden">
+                          <div className="bg-gray-50 p-4 font-medium border-b">
+                            {organization.name}
+                          </div>
+                          <Droppable droppableId={orgId}>
+                            {(provided) => (
+                              <div className="relative" ref={provided.innerRef} {...provided.droppableProps}>
+                                <Table>
+                                  <TableHeader>
+                                    <TableRow>
+                                      <TableHead className="w-[40px]"></TableHead>
+                                      <TableHead className="w-[60px]">ID</TableHead>
+                                      <TableHead>Название</TableHead>
+                                      <TableHead>Описание</TableHead>
+                                      <TableHead>Сотрудники</TableHead>
+                                      <TableHead className="w-[100px]">Действия</TableHead>
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {orgProjects.map((project, index) => (
+                                      <Draggable
+                                        key={project.project_id.toString()}
+                                        draggableId={project.project_id.toString()}
+                                        index={index}
+                                      >
+                                        {(provided) => (
+                                          <TableRow
+                                            ref={provided.innerRef}
+                                            {...provided.draggableProps}
+                                            className="cursor-pointer hover:bg-gray-50"
+                                            onClick={() => navigate(`/admin/projects/${project.project_id}`)}
+                                          >
+                                            <TableCell className="w-[40px] p-0 pl-2">
+                                              <div 
+                                                {...provided.dragHandleProps}
+                                                className="flex items-center justify-center h-full cursor-move"
+                                                onClick={(e) => e.stopPropagation()}
+                                              >
+                                                <GripVertical className="h-4 w-4 text-gray-500" />
+                                              </div>
+                                            </TableCell>
+                                            <TableCell>{project.project_id}</TableCell>
+                                            <TableCell className="font-medium">{project.name}</TableCell>
+                                            <TableCell>{project.description || "—"}</TableCell>
+                                            <TableCell>
+                                              <div className="flex items-center">
+                                                <Users className="h-4 w-4 mr-2 text-gray-500" />
+                                                <span>{getEmployeeCount(project.project_id)}</span>
+                                              </div>
+                                            </TableCell>
+                                            <TableCell>
+                                              <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
+                                                <Button 
+                                                  variant="outline" 
+                                                  size="sm"
+                                                  onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(`/admin/projects/${project.project_id}`);
+                                                  }}
+                                                >
+                                                  <Edit className="h-4 w-4" />
+                                                </Button>
+                                              </div>
+                                            </TableCell>
+                                          </TableRow>
+                                        )}
+                                      </Draggable>
+                                    ))}
+                                    {provided.placeholder}
+                                  </TableBody>
+                                </Table>
                               </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/admin/projects/${project.project_id}`);
-                                  }}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                            )}
+                          </Droppable>
+                        </div>
+                      );
+                    })}
+                    
+                    {/* Таблица для проектов без организации */}
+                    {unassignedProjects.length > 0 && (
+                      <div className="border rounded-md overflow-hidden">
+                        <div className="bg-gray-50 p-4 font-medium border-b">
+                          Проекты без организации
+                        </div>
+                        <Droppable droppableId="unassigned">
+                          {(provided) => (
+                            <div className="relative" ref={provided.innerRef} {...provided.droppableProps}>
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="w-[40px]"></TableHead>
+                                    <TableHead className="w-[60px]">ID</TableHead>
+                                    <TableHead>Название</TableHead>
+                                    <TableHead>Описание</TableHead>
+                                    <TableHead>Сотрудники</TableHead>
+                                    <TableHead className="w-[100px]">Действия</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {unassignedProjects.map((project, index) => (
+                                    <Draggable
+                                      key={project.project_id.toString()}
+                                      draggableId={project.project_id.toString()}
+                                      index={index}
+                                    >
+                                      {(provided) => (
+                                        <TableRow
+                                          ref={provided.innerRef}
+                                          {...provided.draggableProps}
+                                          className="cursor-pointer hover:bg-gray-50"
+                                          onClick={() => navigate(`/admin/projects/${project.project_id}`)}
+                                        >
+                                          <TableCell className="w-[40px] p-0 pl-2">
+                                            <div 
+                                              {...provided.dragHandleProps}
+                                              className="flex items-center justify-center h-full cursor-move"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <GripVertical className="h-4 w-4 text-gray-500" />
+                                            </div>
+                                          </TableCell>
+                                          <TableCell>{project.project_id}</TableCell>
+                                          <TableCell className="font-medium">{project.name}</TableCell>
+                                          <TableCell>{project.description || "—"}</TableCell>
+                                          <TableCell>
+                                            <div className="flex items-center">
+                                              <Users className="h-4 w-4 mr-2 text-gray-500" />
+                                              <span>{getEmployeeCount(project.project_id)}</span>
+                                            </div>
+                                          </TableCell>
+                                          <TableCell>
+                                            <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
+                                              <Button 
+                                                variant="outline" 
+                                                size="sm"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  navigate(`/admin/projects/${project.project_id}`);
+                                                }}
+                                              >
+                                                <Edit className="h-4 w-4" />
+                                              </Button>
+                                            </div>
+                                          </TableCell>
+                                        </TableRow>
+                                      )}
+                                    </Draggable>
+                                  ))}
+                                  {provided.placeholder}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          )}
+                        </Droppable>
+                      </div>
+                    )}
+                  </div>
+                </DragDropContext>
               )}
             </>
           )}
