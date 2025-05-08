@@ -312,6 +312,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ status: 'error', message: 'Failed to fetch position categories' });
     }
   });
+  
+  // API для получения списка организаций (отделы с is_organization=true)
+  app.get('/api/organizations', async (req: Request, res: Response) => {
+    try {
+      const organizations = await db.select().from(departments).where(eq(departments.is_organization, true));
+      res.status(200).json({ status: 'success', data: organizations });
+    } catch (error) {
+      console.error('Ошибка при получении списка организаций:', error);
+      res.status(500).json({ status: 'error', message: 'Ошибка при получении списка организаций' });
+    }
+  });
 
   app.get('/api/positions/:id', async (req: Request, res: Response) => {
     try {

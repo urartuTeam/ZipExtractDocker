@@ -301,6 +301,37 @@ export default function AdminProjects() {
                 )}
               />
               
+              <FormField
+                control={projectForm.control}
+                name="id_organization"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Организация</FormLabel>
+                    <Select 
+                      onValueChange={(value) => field.onChange(parseInt(value, 10))}
+                      defaultValue={field.value?.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите организацию" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Организации</SelectLabel>
+                          {organizations.map(org => (
+                            <SelectItem key={org.department_id} value={org.department_id.toString()}>
+                              {org.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
               <DialogFooter>
                 <Button 
                   type="button" 
