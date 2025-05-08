@@ -106,6 +106,7 @@ export default function Organizations() {
   const uploadLogoMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const departmentId = selectedOrganization?.department_id;
+      // Используем относительный путь без хоста и порта
       const response = await fetch(`/api/upload/organization-logo/${departmentId}`, {
         method: 'POST',
         body: formData,
