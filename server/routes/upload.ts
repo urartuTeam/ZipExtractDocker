@@ -1,9 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { uploadSingle } from '../middlewares/upload';
+import { uploadSingle, processImage } from '../middlewares/upload';
 import { db } from '../db';
 import { departments } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 // Расширяем интерфейс Request для поддержки поля file, которое добавляет multer
 declare global {
@@ -46,8 +48,8 @@ router.post('/organization-logo/:id', (req: Request, res: Response) => {
         return res.status(400).json({ status: 'error', message: 'Файл не был загружен' });
       }
 
-      // Получаем путь к файлу относительно публичной директории
-      const logoPath = `/uploads/${req.file.filename}`;
+      // Обрабатываем изображение через Sharp, чтобы изменить размер до 100x100
+      const logoPath = await processImage(req.file);
 
       // Обновляем запись в базе данных
       await db.update(departments)
@@ -60,7 +62,6 @@ router.post('/organization-logo/:id', (req: Request, res: Response) => {
         data: {
           department_id: departmentId,
           logo_path: logoPath,
-          filename: req.file.filename,
           mimetype: req.file.mimetype,
           size: req.file.size
         }
@@ -113,6 +114,19 @@ router.delete('/organization-logo/:id', async (req: Request, res: Response) => {
     
     if (!department) {
       return res.status(404).json({ status: 'error', message: 'Организация не найдена' });
+    }
+
+    // Удаляем файл изображения, если он существует
+    if (department.logo_path) {
+      try {
+        const filePath = path.join(process.cwd(), 'public', department.logo_path);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      } catch (error) {
+        console.error('Ошибка при удалении файла логотипа:', error);
+        // Продолжаем выполнение, даже если не удалось удалить файл
+      }
     }
 
     // Обновляем запись в базе данных, очищая поле logo_path
