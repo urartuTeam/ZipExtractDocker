@@ -36,9 +36,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
   // Подключаем маршруты для загрузки файлов
+  // Важно: маршруты API должны быть зарегистрированы ДО middleware Vite
   // Добавляем логирование каждого запроса к эндпоинтам загрузки
   app.use('/api/upload', (req, res, next) => {
     console.log(`[upload router] Получен запрос: ${req.method} ${req.originalUrl}`);
+    
+    // Проверяем если это запрос на загрузку файла, устанавливаем правильные заголовки для CORS и типа ответа
+    if (req.method === 'POST' && req.originalUrl.includes('/organization-logo/')) {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
+      res.setHeader('Content-Type', 'application/json');
+    }
+    
     return uploadRoutes(req, res, next);
   });
 

@@ -96,24 +96,54 @@ export default function Organizations() {
   });
   
   // Получение информации о логотипе организации
+  const isLocalDev = window.location.hostname === 'localhost' && window.location.port !== '5000';
+  const baseUrl = isLocalDev ? 'http://localhost:5000' : '';
+  
   const { refetch: refetchOrganizationLogo } = useQuery<OrganizationLogoResponse>({
     queryKey: ['/api/upload/organization-logo', selectedOrganization?.department_id],
     enabled: !!selectedOrganization,
     refetchOnWindowFocus: false,
+    queryFn: async ({ queryKey }) => {
+      const [_, departmentId] = queryKey;
+      const response = await fetch(`${baseUrl}/api/upload/organization-logo/${departmentId}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textError = await response.text();
+        console.error('Получен не JSON ответ для GET логотипа:', textError);
+        throw new Error('Сервер вернул неверный формат ответа');
+      }
+      
+      return response.json();
+    },
   });
   
   // Загрузка логотипа
   const uploadLogoMutation = useMutation({
     mutationFn: async (formData: FormData) => {
       const departmentId = selectedOrganization?.department_id;
-      // Используем относительный путь без хоста и порта
-      const response = await fetch(`/api/upload/organization-logo/${departmentId}`, {
+      
+      // Используем прямой URL к порту 5000 для обхода Vite middleware
+      // В продакшене сервер будет на том же домене и порте, поэтому это работает только локально
+      const isLocalDev = window.location.hostname === 'localhost' && window.location.port !== '5000';
+      const baseUrl = isLocalDev ? 'http://localhost:5000' : '';
+      
+      console.log(`Отправка запроса на: ${baseUrl}/api/upload/organization-logo/${departmentId}`);
+      
+      const response = await fetch(`${baseUrl}/api/upload/organization-logo/${departmentId}`, {
         method: 'POST',
         body: formData,
         headers: {
           'Accept': 'application/json',
           // Важно: не устанавливаем 'Content-Type': 'multipart/form-data' - браузер сделает это сам с boundary
         },
+        credentials: 'include', // Важно для сохранения сессии
       });
       
       // Проверяем, что ответ JSON, а не HTML
@@ -158,7 +188,23 @@ export default function Organizations() {
   const deleteLogoMutation = useMutation({
     mutationFn: async () => {
       const departmentId = selectedOrganization?.department_id;
-      const response = await apiRequest('DELETE', `/api/upload/organization-logo/${departmentId}`, {});
+      
+      // Используем тот же подход с прямым URL к порту 5000, как и для загрузки
+      const response = await fetch(`${baseUrl}/api/upload/organization-logo/${departmentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+        },
+        credentials: 'include',
+      });
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const textError = await response.text();
+        console.error('Получен не JSON ответ для DELETE логотипа:', textError);
+        throw new Error('Сервер вернул неверный формат ответа');
+      }
+      
       return response.json();
     },
     onSuccess: () => {
