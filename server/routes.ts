@@ -36,7 +36,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
 
   // Подключаем маршруты для загрузки файлов
-  app.use('/api/upload', uploadRoutes);
+  // Добавляем логирование каждого запроса к эндпоинтам загрузки
+  app.use('/api/upload', (req, res, next) => {
+    console.log(`[upload router] Получен запрос: ${req.method} ${req.originalUrl}`);
+    return uploadRoutes(req, res, next);
+  });
 
   // Регистрация специализированных эндпоинтов для должностей
   registerPositionEndpoints(app);
