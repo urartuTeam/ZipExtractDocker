@@ -96,8 +96,7 @@ export default function Organizations() {
   });
   
   // Получение информации о логотипе организации
-  const isLocalDev = window.location.hostname === 'localhost' && window.location.port !== '5000';
-  const baseUrl = isLocalDev ? 'http://localhost:5000' : '';
+  const baseUrl = ''; // Используем относительный URL
   
   const { refetch: refetchOrganizationLogo } = useQuery<OrganizationLogoResponse>({
     queryKey: ['/api/upload/organization-logo', selectedOrganization?.department_id],
@@ -129,10 +128,8 @@ export default function Organizations() {
     mutationFn: async (formData: FormData) => {
       const departmentId = selectedOrganization?.department_id;
       
-      // Используем прямой URL к порту 5000 для обхода Vite middleware
-      // В продакшене сервер будет на том же домене и порте, поэтому это работает только локально
-      const isLocalDev = window.location.hostname === 'localhost' && window.location.port !== '5000';
-      const baseUrl = isLocalDev ? 'http://localhost:5000' : '';
+      // Используем относительный URL - это работает для всех сред
+      const baseUrl = '';
       
       console.log(`Отправка запроса на: ${baseUrl}/api/upload/organization-logo/${departmentId}`);
       
@@ -189,7 +186,7 @@ export default function Organizations() {
     mutationFn: async () => {
       const departmentId = selectedOrganization?.department_id;
       
-      // Используем тот же подход с прямым URL к порту 5000, как и для загрузки
+      // Используем тот же baseUrl с относительным URL, как и для загрузки
       const response = await fetch(`${baseUrl}/api/upload/organization-logo/${departmentId}`, {
         method: 'DELETE',
         headers: {

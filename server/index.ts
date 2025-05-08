@@ -4,13 +4,12 @@ import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
 
-// Добавляем middleware для CORS, чтобы разрешить запросы с других доменов (для локальной разработки)
+// Добавляем middleware для CORS, чтобы разрешить запросы с любых доменов (для разработки)
 app.use((req, res, next) => {
-  // Разрешаем запросы с localhost:8080 (для локальной разработки)
-  res.header('Access-Control-Allow-Origin', 'http://localhost:8080');
+  // Разрешаем запросы с любого домена
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Credentials', 'true');
   
   // Предварительные запросы OPTIONS
   if (req.method === 'OPTIONS') {
