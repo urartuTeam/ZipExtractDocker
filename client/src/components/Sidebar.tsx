@@ -92,7 +92,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
       )
     },
     {
-      path: '/projects',
+      path: '/admin/projects',
       label: 'Проекты',
       icon: (
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
