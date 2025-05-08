@@ -136,15 +136,20 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   const projectEmployees = projectEmployeesResponse?.data || [];
   
   // Форма редактирования проекта
-  const editProjectForm = useForm<{ name: string, description: string }>({
+  const editProjectForm = useForm<{ name: string, description: string, id_organization: number | undefined }>({
     defaultValues: {
       name: "",
       description: "",
+      id_organization: undefined
     },
     resolver: zodResolver(
       z.object({
         name: z.string().min(1, "Название проекта не может быть пустым"),
         description: z.string().optional(),
+        id_organization: z.number({
+          required_error: "Выберите организацию",
+          invalid_type_error: "Выберите организацию",
+        }).optional()
       })
     )
   });
@@ -168,12 +173,14 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
       // Используем данные из projectData
       const projectName = projectData.name;
       const projectDescription = projectData.description || "";
+      const projectOrganization = projectData.id_organization || undefined;
       
-      console.log(`Updating form with name: ${projectName}, description: ${projectDescription}`);
+      console.log(`Updating form with name: ${projectName}, description: ${projectDescription}, organization: ${projectOrganization}`);
       
       editProjectForm.reset({
         name: projectName,
         description: projectDescription,
+        id_organization: projectOrganization
       });
     }
   }, [projectData, editProjectForm]);
@@ -266,11 +273,12 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
   
   // Мутация для обновления информации о проекте
   const updateProject = useMutation({
-    mutationFn: async (values: { name: string, description: string }) => {
+    mutationFn: async (values: { name: string, description: string, id_organization?: number }) => {
       const res = await apiRequest("PUT", `/api/projects/${projectId}`, {
         name: values.name,
         description: values.description,
-        department_id: projectData?.department_id || null
+        department_id: projectData?.department_id || null,
+        id_organization: values.id_organization || null
       });
       
       if (!res.ok) {
@@ -381,6 +389,11 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
     queryKey: ['/api/departments'],
   });
   
+  // Запрос на получение списка организаций
+  const { data: organizationsResponse, isLoading: isLoadingOrganizations } = useQuery<{status: string, data: any[]}>({
+    queryKey: ['/api/organizations']
+  });
+  
   const allPositions = positionsResponse?.data || [];
   const allDepartments = departmentsResponse?.data || [];
   
@@ -410,7 +423,7 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
     addEmployeeToProject.mutate(values);
   };
   
-  const onSubmitEditProject = (values: { name: string, description: string }) => {
+  const onSubmitEditProject = (values: { name: string, description: string, id_organization?: number }) => {
     updateProject.mutate(values);
   };
   
@@ -776,6 +789,37 @@ export default function AdminProjectDetails({ params }: RouteComponentProps<{ id
                         value={field.value || ""}
                       />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editProjectForm.control}
+                name="id_organization"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Организация</FormLabel>
+                    <Select 
+                      onValueChange={(value) => field.onChange(parseInt(value, 10))}
+                      defaultValue={field.value?.toString()}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Выберите организацию" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Организации</SelectLabel>
+                          {organizationsResponse?.data?.map(org => (
+                            <SelectItem key={org.department_id} value={org.department_id.toString()}>
+                              {org.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
