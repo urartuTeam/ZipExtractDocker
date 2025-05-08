@@ -110,7 +110,20 @@ export default function Organizations() {
       const response = await fetch(`/api/upload/organization-logo/${departmentId}`, {
         method: 'POST',
         body: formData,
+        headers: {
+          'Accept': 'application/json',
+          // Важно: не устанавливаем 'Content-Type': 'multipart/form-data' - браузер сделает это сам с boundary
+        },
       });
+      
+      // Проверяем, что ответ JSON, а не HTML
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // Если ответ не JSON, выводим текст ошибки
+        const textError = await response.text();
+        console.error('Получен не JSON ответ:', textError);
+        throw new Error('Сервер вернул неверный формат ответа');
+      }
       
       if (!response.ok) {
         const errorData = await response.json();
