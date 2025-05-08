@@ -17,26 +17,29 @@ declare global {
 const router = Router();
 
 // API для загрузки логотипа организации
-router.post('/organization-logo/:id', async (req: Request, res: Response) => {
-  try {
-    // Получаем ID отдела/организации
-    const departmentId = parseInt(req.params.id, 10);
-    
-    if (isNaN(departmentId)) {
-      return res.status(400).json({ status: 'error', message: 'Неверный ID организации' });
+router.post('/organization-logo/:id', (req: Request, res: Response) => {
+  // Получаем ID отдела/организации
+  const departmentId = parseInt(req.params.id, 10);
+  
+  if (isNaN(departmentId)) {
+    return res.status(400).json({ status: 'error', message: 'Неверный ID организации' });
+  }
+
+  // Используем middleware для загрузки файла
+  uploadSingle(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ 
+        status: 'error', 
+        message: err instanceof Error ? err.message : 'Неизвестная ошибка при загрузке файла' 
+      });
     }
 
-    // Проверяем, существует ли отдел
-    const [department] = await db.select().from(departments).where(eq(departments.department_id, departmentId));
-    
-    if (!department) {
-      return res.status(404).json({ status: 'error', message: 'Организация не найдена' });
-    }
-
-    // Используем middleware для загрузки файла
-    uploadSingle(req, res, async (err: Error | null) => {
-      if (err) {
-        return res.status(400).json({ status: 'error', message: err.message });
+    try {
+      // Проверяем, существует ли отдел
+      const [department] = await db.select().from(departments).where(eq(departments.department_id, departmentId));
+      
+      if (!department) {
+        return res.status(404).json({ status: 'error', message: 'Организация не найдена' });
       }
 
       if (!req.file) {
@@ -62,11 +65,11 @@ router.post('/organization-logo/:id', async (req: Request, res: Response) => {
           size: req.file.size
         }
       });
-    });
-  } catch (error) {
-    console.error('Ошибка при загрузке логотипа:', error);
-    res.status(500).json({ status: 'error', message: 'Внутренняя ошибка сервера' });
-  }
+    } catch (error) {
+      console.error('Ошибка при обработке загрузки файла:', error);
+      res.status(500).json({ status: 'error', message: 'Внутренняя ошибка сервера' });
+    }
+  });
 });
 
 // API для получения информации о логотипе организации

@@ -11,10 +11,10 @@ if (!fs.existsSync(uploadDir)) {
 
 // Настройка хранилища для загруженных файлов
 const storage = multer.diskStorage({
-  destination: (_req: Request, _file: Express.Multer.File, cb: Function) => {
+  destination: (_req: Request, _file: Express.Multer.File, cb: (error: Error | null, destination: string) => void) => {
     cb(null, uploadDir);
   },
-  filename: (_req: Request, file: Express.Multer.File, cb: Function) => {
+  filename: (_req: Request, file: Express.Multer.File, cb: (error: Error | null, filename: string) => void) => {
     // Создаем уникальное имя файла с оригинальным расширением
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
