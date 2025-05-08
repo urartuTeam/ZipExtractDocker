@@ -139,6 +139,13 @@ export default function AdminProjects() {
     return employeeProjects.filter(ep => ep.project_id === projectId).length;
   };
   
+  // Получить название организации по ID
+  const getOrganizationName = (organizationId: number | null | undefined) => {
+    if (!organizationId) return "—";
+    const organization = organizations.find(org => org.department_id === organizationId);
+    return organization ? organization.name : "—";
+  };
+  
   // Фильтрация проектов по поисковому запросу
   const filteredProjects = projects.filter(project => 
     project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -207,6 +214,7 @@ export default function AdminProjects() {
                         <TableHead className="w-[60px]">ID</TableHead>
                         <TableHead>Название</TableHead>
                         <TableHead>Описание</TableHead>
+                        <TableHead>Организация</TableHead>
                         <TableHead>Сотрудники</TableHead>
                         <TableHead className="w-[100px]">Действия</TableHead>
                       </TableRow>
@@ -214,7 +222,7 @@ export default function AdminProjects() {
                     <TableBody>
                       {filteredProjects.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={5} className="text-center h-24">
+                          <TableCell colSpan={6} className="text-center h-24">
                             Проекты не найдены
                           </TableCell>
                         </TableRow>
@@ -224,6 +232,7 @@ export default function AdminProjects() {
                             <TableCell>{project.project_id}</TableCell>
                             <TableCell className="font-medium">{project.name}</TableCell>
                             <TableCell>{project.description || "—"}</TableCell>
+                            <TableCell>{getOrganizationName(project.id_organization)}</TableCell>
                             <TableCell>
                               <div className="flex items-center">
                                 <Users className="h-4 w-4 mr-2 text-gray-500" />
