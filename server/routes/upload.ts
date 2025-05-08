@@ -18,6 +18,19 @@ declare global {
 
 const router = Router();
 
+// API для проверки работоспособности
+router.get('/', (req: Request, res: Response) => {
+  res.status(200).json({ 
+    status: 'success', 
+    message: 'API загрузки логотипов работает', 
+    endpoints: [
+      'GET /api/upload/organization-logo/:id - Получить информацию о логотипе',
+      'POST /api/upload/organization-logo/:id - Загрузить логотип',
+      'DELETE /api/upload/organization-logo/:id - Удалить логотип'
+    ]
+  });
+});
+
 // API для загрузки логотипа организации
 router.post('/organization-logo/:id', (req: Request, res: Response) => {
   // Получаем ID отдела/организации
