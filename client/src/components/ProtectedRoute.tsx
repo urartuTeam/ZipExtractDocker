@@ -8,7 +8,11 @@ interface ProtectedRouteProps {
   children?: React.ReactNode | ((params: any) => React.ReactNode);
 }
 
-export function ProtectedRoute({ path, component: Component, children }: ProtectedRouteProps) {
+export function ProtectedRoute({
+  path,
+  component: Component,
+  children,
+}: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -29,21 +33,5 @@ export function ProtectedRoute({ path, component: Component, children }: Protect
     );
   }
 
-  // Дополнительная проверка для административных маршрутов
-  const isAdminRoute = path.startsWith('/admin/');
-  const isAdmin = user.role === 'admin';
-
-  if (isAdminRoute && !isAdmin) {
-    return (
-      <Route path={path}>
-        <Redirect to="/" />
-      </Route>
-    );
-  }
-
-  return (
-    <Route path={path}>
-      {Component ? <Component /> : children}
-    </Route>
-  );
+  return <Route path={path}>{Component ? <Component /> : children}</Route>;
 }

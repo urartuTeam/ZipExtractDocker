@@ -86,6 +86,7 @@ export const projects = pgTable("projects", {
   name: text("name").notNull(),
   description: text("description"),
   department_id: integer("department_id").references(() => departments.department_id),
+  id_organization: integer("id_organization").references(() => departments.department_id),
   deleted: boolean("deleted").default(false),
   deleted_at: timestamp("deleted_at"),
 });
@@ -128,6 +129,7 @@ export const departmentsRelations = relations(departments, ({ one, many }) => ({
   positions: many(position_department, { relationName: "department_positions" }),
   employees: many(employees),
   projects: many(projects),
+  organizationProjects: many(projects, { relationName: "project_organization" }),
 }));
 
 export const positionsRelations = relations(positions, ({ many }) => ({
@@ -196,6 +198,11 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   department: one(departments, {
     fields: [projects.department_id],
     references: [departments.department_id],
+  }),
+  organization: one(departments, {
+    fields: [projects.id_organization],
+    references: [departments.department_id],
+    relationName: "project_organization",
   }),
   employees: many(employeeprojects),
 }));

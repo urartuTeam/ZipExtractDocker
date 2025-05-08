@@ -38,6 +38,15 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -55,15 +64,25 @@ export default function AdminProjects() {
   // Форма добавления проекта
   const projectFormSchema = z.object({
     name: z.string().min(2, "Название должно содержать минимум 2 символа"),
-    description: z.string().optional()
+    description: z.string().optional(),
+    id_organization: z.number({
+      required_error: "Выберите организацию",
+      invalid_type_error: "Выберите организацию",
+    })
   });
 
   const projectForm = useForm<z.infer<typeof projectFormSchema>>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
       name: "",
-      description: ""
+      description: "",
+      id_organization: undefined
     }
+  });
+  
+  // Запрос на получение списка организаций (отделы с is_organization=true)
+  const { data: organizationsResponse, isLoading: isLoadingOrganizations } = useQuery<{status: string, data: any[]}>({
+    queryKey: ['/api/organizations']
   });
 
   // Запрос на получение всех проектов
@@ -110,9 +129,10 @@ export default function AdminProjects() {
   });
 
   // Обработка ошибок загрузки
-  const isLoading = isLoadingProjects || isLoadingEmployeeProjects;
+  const isLoading = isLoadingProjects || isLoadingEmployeeProjects || isLoadingOrganizations;
   const projects = projectsResponse?.data || [];
   const employeeProjects = employeeProjectsResponse?.data || [];
+  const organizations = organizationsResponse?.data || [];
   
   // Получить количество сотрудников в проекте
   const getEmployeeCount = (projectId: number) => {
