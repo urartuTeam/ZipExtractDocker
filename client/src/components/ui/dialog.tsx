@@ -7,12 +7,16 @@ import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const Dialog = DialogPrimitive.Root
+Dialog.displayName = "Dialog"
 
 const DialogTrigger = DialogPrimitive.Trigger
+DialogTrigger.displayName = "DialogTrigger"
 
 const DialogPortal = DialogPrimitive.Portal
+DialogPortal.displayName = "DialogPortal"
 
 const DialogClose = DialogPrimitive.Close
+DialogClose.displayName = "DialogClose"
 
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
