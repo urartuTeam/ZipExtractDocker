@@ -16,6 +16,9 @@ import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { registerPositionEndpoints } from "./api/position_endpoints";
 import { registerSortTreeEndpoints } from "./api/sort_tree_endpoints";
+import uploadRoutes from "./routes/upload";
+import path from "path";
+import express from "express";
 
 // Промежуточное ПО для проверки аутентификации
 function isAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -28,6 +31,12 @@ function isAuthenticated(req: Request, res: Response, next: NextFunction) {
 export async function registerRoutes(app: Express): Promise<Server> {
   // Настройка авторизации
   setupAuth(app);
+
+  // Статические файлы для загруженных изображений
+  app.use('/uploads', express.static(path.join(process.cwd(), 'public', 'uploads')));
+
+  // Подключаем маршруты для загрузки файлов
+  app.use('/api/upload', uploadRoutes);
 
   // Регистрация специализированных эндпоинтов для должностей
   registerPositionEndpoints(app);

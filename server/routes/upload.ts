@@ -3,6 +3,16 @@ import { uploadSingle } from '../middlewares/upload';
 import { db } from '../db';
 import { departments } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import multer from 'multer';
+
+// Расширяем интерфейс Request для поддержки поля file, которое добавляет multer
+declare global {
+  namespace Express {
+    interface Request {
+      file?: Express.Multer.File;
+    }
+  }
+}
 
 const router = Router();
 
@@ -24,7 +34,7 @@ router.post('/organization-logo/:id', async (req: Request, res: Response) => {
     }
 
     // Используем middleware для загрузки файла
-    uploadSingle(req, res, async (err) => {
+    uploadSingle(req, res, async (err: Error | null) => {
       if (err) {
         return res.status(400).json({ status: 'error', message: err.message });
       }
