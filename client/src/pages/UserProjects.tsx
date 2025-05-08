@@ -37,11 +37,13 @@ export default function UserProjects() {
   const isLoading = isLoadingProjects;
   const projects = projectsResponse?.data || [];
   
-  // Фильтрация проектов по поисковому запросу
-  const filteredProjects = projects.filter(project => 
-    project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  // Сортировка по полю sort и фильтрация проектов по поисковому запросу
+  const filteredProjects = [...projects]
+    .sort((a, b) => (a.sort || 0) - (b.sort || 0))
+    .filter(project => 
+      project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (project.description && project.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
 
   return (
     <div className="flex flex-col h-screen">

@@ -484,10 +484,10 @@ export default function Projects() {
   
   const isLoading = isLoadingProjects || isLoadingEmployeeProjects;
 
-  // Фильтрация проектов по поисковому запросу
-  const filteredProjects = projects.filter(project => 
-    project.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Сортировка проектов по полю sort и фильтрация по поисковому запросу
+  const filteredProjects = [...projects]
+    .sort((a, b) => (a.sort || 0) - (b.sort || 0))
+    .filter(project => project.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   // Подсчет количества сотрудников для каждого проекта
   const getEmployeeCount = (projectId: number) => {
