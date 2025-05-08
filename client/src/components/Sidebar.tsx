@@ -43,7 +43,8 @@ interface SidebarProps {
 export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const [location, setLocation] = useLocation();
   const { logoutMutation, user } = useAuth();
-  const isAdmin = user?.role === 'admin';
+  // Проверка на администратора теперь также включает проверку по имени пользователя
+  const isAdmin = user?.role === 'admin' || user?.username === 'admin';
 
   const navItems = [
     {
