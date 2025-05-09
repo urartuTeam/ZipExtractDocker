@@ -662,22 +662,44 @@ export default function Vacancies() {
     return [];
   }
 
-  // Получаем ID и название организации ООО "Цифролаб"
-  const cifroDepartment = departments.find(d => 
-    !d.deleted && d.name.includes("Цифролаб") && d.is_organization
-  );
-  const cifroDepartmentId = cifroDepartment?.department_id;
+  // Получаем состояние из localStorage, которое мы записываем при переходе с главной страницы
+  const [stateOrgId, setStateOrgId] = useState<number | null>(null);
+  const [stateOrgName, setStateOrgName] = useState<string | null>(null);
   
-  // Определяем, показывать только Цифролаб или все организации
-  const showOnlyCifro = Boolean(cifroDepartmentId);
+  // При монтировании компонента проверяем localStorage
+  useEffect(() => {
+    const savedOrgId = localStorage.getItem('selectedOrganizationId');
+    const savedOrgName = localStorage.getItem('selectedOrganizationName');
+    
+    if (savedOrgId) {
+      setStateOrgId(Number(savedOrgId));
+      localStorage.removeItem('selectedOrganizationId');
+    }
+    
+    if (savedOrgName) {
+      setStateOrgName(savedOrgName);
+      localStorage.removeItem('selectedOrganizationName');
+    }
+  }, []);
+  
+  // Если есть ID организации в state, используем его
+  // Иначе ищем Цифролаб как дефолтную организацию
+  let targetDepartment = stateOrgId 
+    ? departments.find(d => !d.deleted && d.department_id === stateOrgId)
+    : departments.find(d => !d.deleted && d.name.includes("Цифролаб") && d.is_organization);
+    
+  const targetDepartmentId = targetDepartment?.department_id;
+  
+  // Определяем, показывать только выбранную организацию или все организации
+  const showOnlyTarget = Boolean(targetDepartmentId);
   
   // Фильтруем корневые отделы в соответствии с поисковым запросом
   const roots = departments.filter(
       d =>
           !d.deleted &&
-          // Если найден Цифролаб, показываем только его, иначе показываем все корневые отделы
-          (showOnlyCifro 
-            ? d.department_id === cifroDepartmentId 
+          // Если найдена целевая организация, показываем только её, иначе показываем все корневые отделы
+          (showOnlyTarget 
+            ? d.department_id === targetDepartmentId 
             : (d.parent_department_id === null && d.parent_position_id === null)
           ) &&
           (!searchTerm.trim() || shouldShowInSearch('department', d.department_id))
@@ -737,11 +759,11 @@ export default function Vacancies() {
             </div>
             <div>
               <CardTitle>
-                {showOnlyCifro ? `Учет вакансий | ${cifroDepartment?.name}` : "Учет вакансий"}
+                {showOnlyTarget ? `Учет вакансий | ${targetDepartment?.name || stateOrgName}` : "Учет вакансий"}
               </CardTitle>
               <CardDescription>
                 Анализ штатных единиц и занятых позиций
-                {showOnlyCifro && (
+                {showOnlyTarget && (
                   <Button 
                     asChild
                     variant="link" 

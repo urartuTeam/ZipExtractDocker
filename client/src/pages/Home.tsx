@@ -194,7 +194,11 @@ export default function Home() {
                           </div>
                         </Link>
                         
-                        <Link href={`/vacancies${selectedPositionId ? '/'+selectedPositionId : ''}`}>
+                        <Link href="/vacancies" 
+                          onClick={() => {
+                            localStorage.setItem('selectedOrganizationId', org.department_id.toString());
+                            localStorage.setItem('selectedOrganizationName', org.name);
+                          }}>
                           <div className="bg-gray-50 p-4 rounded-md shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-center mb-2">
                               <h3 className="font-medium text-lg">Учет вакансий</h3>
