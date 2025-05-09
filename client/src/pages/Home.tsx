@@ -168,6 +168,7 @@ export default function Home() {
                         positionsData={positionsWithDepartments}
                         employeesData={employees}
                         onPositionClick={(id) => setSelectedPositionId(id)}
+                        showThreeLevels={true}
                     />
                   </div>
                 </div>

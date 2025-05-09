@@ -589,6 +589,7 @@ type OrganizationTreeProps = {
   departmentsData?: Department[];
   positionsData?: any[];
   employeesData?: Employee[];
+  showThreeLevels?: boolean;
 };
 
 const OrganizationTree: React.FC<OrganizationTreeProps> = ({
@@ -597,6 +598,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   departmentsData,
   positionsData,
   employeesData,
+  showThreeLevels: externalShowThreeLevels,
 }) => {
   // Загрузка данных из API (если не переданы через пропсы)
   const { data: departmentsResponse } = useQuery<{
@@ -715,11 +717,16 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   console.log("Настройки уровней иерархии:", hierarchyInitialLevels);
 
-  // Инициализируем состояние showThreeLevels на основе настроек
+  // Инициализируем состояние showThreeLevels на основе внешнего параметра или настроек
   useEffect(() => {
-    // Всегда устанавливаем в true, чтобы показывать все уровни иерархии
-    setShowThreeLevels(true);
-  }, [hierarchyInitialLevels]);
+    // Если передан внешний параметр, используем его
+    if (externalShowThreeLevels !== undefined) {
+      setShowThreeLevels(externalShowThreeLevels);
+    } else {
+      // Иначе всегда устанавливаем в true, чтобы показывать все уровни иерархии
+      setShowThreeLevels(true);
+    }
+  }, [hierarchyInitialLevels, externalShowThreeLevels]);
 
   // Эффект для обновления UI при изменении настройки showThreeLevels
   useEffect(() => {
