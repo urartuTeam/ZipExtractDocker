@@ -1172,39 +1172,92 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Создаем множество для отслеживания дочерних должностей
     const childPositions = new Set<number>();
 
-    // Строим иерархию на основе position_position
-    hierarchyRelations.forEach((relation) => {
-      const childId = relation.position_id;
-      const parentId = relation.parent_position_id;
-      const deptId = relation.department_id;
+    // Проверяем, есть ли связи между должностями
+    if (hierarchyRelations.length > 0) {
+      // Строим иерархию на основе position_position, если связи существуют
+      hierarchyRelations.forEach((relation) => {
+        const childId = relation.position_id;
+        const parentId = relation.parent_position_id;
+        const deptId = relation.department_id;
 
-      // Находим родительскую должность
-      const parentNode = positionNodes[parentId];
-      // Находим узел текущей должности
-      const currentNode = positionNodes[childId];
+        // Находим родительскую должность
+        const parentNode = positionNodes[parentId];
+        // Находим узел текущей должности
+        const currentNode = positionNodes[childId];
 
-      if (parentNode && currentNode) {
-        // Добавляем текущую должность как подчиненную к родительской
-        // Проверяем, не добавлен ли уже этот узел
-        if (
-          !parentNode.subordinates.some(
-            (sub) =>
-              sub.position.position_id === currentNode.position.position_id,
-          )
-        ) {
-          parentNode.subordinates.push(currentNode);
-          // Помечаем, что это дочерняя должность
-          childPositions.add(childId);
+        if (parentNode && currentNode) {
+          // Добавляем текущую должность как подчиненную к родительской
+          // Проверяем, не добавлен ли уже этот узел
+          if (
+            !parentNode.subordinates.some(
+              (sub) =>
+                sub.position.position_id === currentNode.position.position_id,
+            )
+          ) {
+            parentNode.subordinates.push(currentNode);
+            // Помечаем, что это дочерняя должность
+            childPositions.add(childId);
+            console.log(
+              `Создана связь: "${currentNode.position.name}" (ID: ${childId}) подчиняется "${parentNode.position.name}" (ID: ${parentId}) в отделе ${deptId}`,
+            );
+          }
+        } else {
           console.log(
-            `Создана связь: "${currentNode.position.name}" (ID: ${childId}) подчиняется "${parentNode.position.name}" (ID: ${parentId}) в отделе ${deptId}`,
+            `Не найдена родительская или дочерняя должность для связи: childId=${childId}, parentId=${parentId}, deptId=${deptId}`,
           );
         }
-      } else {
-        console.log(
-          `Не найдена родительская или дочерняя должность для связи: childId=${childId}, parentId=${parentId}, deptId=${deptId}`,
+      });
+    } else {
+      // Если связей нет, строим иерархию напрямую из отделов и позиций
+      console.log("Связи между должностями отсутствуют. Строим базовую иерархию.");
+      
+      // Находим должности в отделе Администрация (обычно это корневой отдел)
+      const adminDept = departments.find(d => d.name === "Администрация");
+      if (adminDept) {
+        const adminPositions = Object.values(positionNodes).filter(
+          node => node.position.departments.some(d => d.department_id === adminDept.department_id)
         );
+        
+        // Если есть хотя бы одна позиция в Администрации
+        if (adminPositions.length > 0) {
+          // Предполагаем, что первая позиция - это корневая (например, Заместитель руководителя департамента)
+          const rootPosition = adminPositions[0];
+          
+          // Найдем все организации и добавим их как подчиненные к корневой позиции
+          const organizations = departments.filter(d => d.is_organization);
+          
+          organizations.forEach(org => {
+            // Создаем виртуальный узел для организации
+            const orgNode: PositionHierarchyNode = {
+              position: {
+                position_id: org.department_id * 1000, // Используем уникальный ID, умножая ID отдела на 1000
+                name: `${org.name} (отдел)`,
+                parent_position_id: rootPosition.position.position_id,
+                department_id: org.department_id
+              },
+              employees: [],
+              subordinates: [],
+              childDepartments: [],
+              department: org
+            };
+            
+            // Находим должности в этой организации (обычно генеральный директор)
+            const orgPositions = Object.values(positionNodes).filter(
+              node => node.position.departments.some(d => d.department_id === org.department_id)
+            );
+            
+            // Добавляем их как подчиненные к узлу организации
+            orgPositions.forEach(pos => {
+              orgNode.subordinates.push(pos);
+              childPositions.add(pos.position.position_id);
+            });
+            
+            // Добавляем организацию как подчиненную к корневой позиции
+            rootPosition.subordinates.push(orgNode);
+          });
+        }
       }
-    });
+    }
 
     // Добавляем связь отделов и должностей
     departments.forEach((department) => {
@@ -1948,19 +2001,10 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   }, [selectedPositionId, positionHierarchy]);
 
   // Если данные еще не загружены, показываем загрузку
-  if (
-    departments.length === 0 ||
-    (positions.length === 0 && positionsWithDepartments.length === 0) ||
-    positionRelations.length === 0 // Добавлена проверка на загрузку данных о связях должностей
-  ) {
+  if (departments.length === 0 || positions.length === 0) {
     return (
       <div className="loading-message">
         Загрузка организационной структуры...
-        {departments.length > 0 &&
-          (positions.length > 0 || positionsWithDepartments.length > 0) &&
-          positionRelations.length === 0 && (
-            <div>Ожидание загрузки связей между должностями...</div>
-          )}
       </div>
     );
   }
