@@ -102,11 +102,13 @@ export default function Home() {
     
     // Количество занятых вакансий (сотрудников)
     const orgEmployees = employees.filter(emp => 
-      childDepartmentIds.includes(emp.department_id)
+      !emp.deleted && childDepartmentIds.includes(emp.department_id)
     ).length;
     
     // Свободные вакансии
     const vacantPositions = Math.max(0, totalVacancies - orgEmployees);
+    
+    console.log(`Организация ${organizationId}: всего вакансий=${totalVacancies}, сотрудников=${orgEmployees}, свободно=${vacantPositions}`);
     
     return {
       total: totalVacancies,
@@ -132,13 +134,15 @@ export default function Home() {
   }, 0);
 
   // Количество сотрудников (занятых мест)
-  const employeesCount = employees.length;
+  const employeesCount = employees.filter(emp => !emp.deleted).length;
 
   // ВСЕГО мест - прямо из БД (vacancies)
   const totalPositionsCount = totalPositionsFromDb;
 
   // Незанятых вакансий = ВСЕГО - Занятых мест
   const vacantPositionsCount = Math.max(0, totalPositionsCount - employeesCount);
+  
+  console.log(`Общая статистика: всего вакансий=${totalPositionsCount}, сотрудников=${employeesCount}, свободно=${vacantPositionsCount}`);
 
   const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects ||
       isLoadingPositionsWithDepartments || isLoadingPositionPositions || isLoadingOrganizations;
