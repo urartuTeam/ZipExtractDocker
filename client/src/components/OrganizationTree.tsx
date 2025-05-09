@@ -738,6 +738,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // Получение иерархии должностей для отдела с использованием новой таблицы position_position
   const getDeptPositionsHierarchy = (deptId: number) => {
+    console.log(`Получение иерархии должностей для отдела ID=${deptId}`);
+
     // Используем positionsWithDepartments, т.к. там уже есть связи с отделами
     const linkedPositions = positionsWithDepartments.filter(
       (p) =>
@@ -748,28 +750,62 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
     // Получаем ID должностей, привязанных к текущему отделу
     const deptPositionIds = linkedPositions.map((p) => p.position_id);
+    console.log(`Найдено ${deptPositionIds.length} должностей для отдела ID=${deptId}:`, deptPositionIds);
 
-    // Фильтруем связи должностей только для текущего отдела, используя department_id из relation
-    const deptPositionRelations = positionRelations
-      // Только связи этого отдела (проверяем department_id)
+    // Получаем все связи между должностями (без ограничения на отдел)
+    let deptPositionRelations = [];
+    
+    // ИЗМЕНЕНО: сначала проверяем связи с указанием конкретного отдела
+    const specificDeptRelations = positionRelations
       .filter((relation) => relation.department_id === deptId)
-      // Дополнительно проверяем, что должности действительно связаны с этим отделом
       .filter(
         (relation) =>
           deptPositionIds.includes(relation.parent_position_id) &&
-          deptPositionIds.includes(relation.position_id),
-      )
-      // Убираем дубликаты (одну и ту же пару parent-child в одном отделе)
-      .filter(
-        (relation, index, arr) =>
-          arr.findIndex(
-            (r) =>
-              r.parent_position_id === relation.parent_position_id &&
-              r.position_id === relation.position_id &&
-              r.department_id === relation.department_id,
-          ) === index,
+          deptPositionIds.includes(relation.position_id)
       );
+    
+    // Если не нашли связи для конкретного отдела, то берем все связи между должностями этого отдела
+    if (specificDeptRelations.length === 0) {
+      console.log(`Для отдела ID=${deptId} не найдено связей с указанием конкретного отдела, используем все связи`);
+      
+      // Находим все связи между должностями этого отдела, даже если department_id в связи не указан
+      deptPositionRelations = positionRelations
+        .filter((relation) => 
+          // Берем связи либо с указанием нашего отдела, либо вообще без указания отдела (null)
+          (relation.department_id === deptId || relation.department_id === null) &&
+          // Обе должности должны быть в нашем отделе
+          deptPositionIds.includes(relation.parent_position_id) &&
+          deptPositionIds.includes(relation.position_id)
+        );
+    } else {
+      deptPositionRelations = specificDeptRelations;
+    }
+    
+    // Если до сих пор не нашли связи, пробуем использовать любые связи между должностями отдела
+    if (deptPositionRelations.length === 0) {
+      console.log(`Для отдела ID=${deptId} все еще не найдено связей, пробуем найти все связи между его должностями`);
+      
+      // Находим все связи между должностями этого отдела, вне зависимости от department_id в связи
+      deptPositionRelations = positionRelations
+        .filter((relation) => 
+          // Хотя бы одна из должностей должна быть в нашем отделе
+          deptPositionIds.includes(relation.parent_position_id) ||
+          deptPositionIds.includes(relation.position_id)
+        );
+    }
+    
+    // Убираем дубликаты
+    deptPositionRelations = deptPositionRelations.filter(
+      (relation, index, arr) =>
+        arr.findIndex(
+          (r) =>
+            r.parent_position_id === relation.parent_position_id &&
+            r.position_id === relation.position_id
+        ) === index
+    );
 
+    console.log(`Найдено ${deptPositionRelations.length} связей между должностями для отдела ID=${deptId}`);
+    
     // Создаем словарь для быстрого доступа к должностям и их дочерним элементам
     const positionsMap: { [k: number]: any } = {};
 
@@ -778,7 +814,30 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       positionsMap[p.position_id] = { ...p, children: [] };
     });
 
-    // Строим иерархию на основе отфильтрованных связей для этого отдела
+    // Дополнительно добавляем в словарь должности, которые могут быть в связях,
+    // но не были найдены среди linkedPositions
+    deptPositionRelations.forEach((relation) => {
+      const childId = relation.position_id;
+      const parentId = relation.parent_position_id;
+      
+      // Если родительской должности нет в словаре, но она есть в positionsWithDepartments, добавляем её
+      if (!positionsMap[parentId]) {
+        const parentPosition = positionsWithDepartments.find(p => p.position_id === parentId);
+        if (parentPosition) {
+          positionsMap[parentId] = { ...parentPosition, children: [] };
+        }
+      }
+      
+      // Если дочерней должности нет в словаре, но она есть в positionsWithDepartments, добавляем её
+      if (!positionsMap[childId]) {
+        const childPosition = positionsWithDepartments.find(p => p.position_id === childId);
+        if (childPosition) {
+          positionsMap[childId] = { ...childPosition, children: [] };
+        }
+      }
+    });
+
+    // Строим иерархию на основе отфильтрованных связей
     deptPositionRelations.forEach((relation) => {
       const childId = relation.position_id;
       const parentId = relation.parent_position_id;
@@ -790,7 +849,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
 
     // Фильтруем только корневые должности (те, которые не являются ни чьими дочерними)
-    // Для этого находим все должности, которые не упоминаются как position_id в deptPositionRelations
     const childPositionIds = new Set(
       deptPositionRelations.map((r) => r.position_id),
     );
@@ -798,6 +856,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       (p: any) => !childPositionIds.has(p.position_id),
     );
 
+    console.log(`Построено ${rootPositions.length} корневых узлов`);
     return rootPositions;
   };
 
