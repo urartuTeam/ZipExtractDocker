@@ -698,28 +698,31 @@ export default function Vacancies() {
     if (departments.length && positions.length && !Object.keys(expDept).length) {
       console.log("Авто-раскрытие первых 2-х уровней дерева...");
       
-      // Определяем корневые отделы
-      const rootDepts = departments.filter(d => 
-        !d.deleted && d.parent_department_id === null
-      );
+      // Вычисляем глубину каждого отдела
+      const getDepthForDepartment = (dept: Department): number => {
+        if (!dept.parent_department_id) return 0;
+        
+        const parent = departments.find(d => d.department_id === dept.parent_department_id);
+        if (!parent) return 1; // Если родитель не найден, считаем глубину 1
+        
+        return getDepthForDepartment(parent) + 1;
+      };
       
-      // Определяем отделы первого уровня
-      const level1Depts = departments.filter(d => 
-        !d.deleted && rootDepts.some(rd => rd.department_id === d.parent_department_id)
-      );
-      
-      const newExpDept: { [k: number]: boolean } = {};
-      
-      // Раскрываем корневые отделы
-      rootDepts.forEach(d => {
-        newExpDept[d.department_id] = true;
+      // Определяем отделы с глубиной не более 2 (0, 1, 2)
+      const deptsToExpand = departments.filter(d => {
+        if (d.deleted) return false;
+        
+        const depth = getDepthForDepartment(d);
+        return depth <= 2;
       });
       
-      // Раскрываем отделы первого уровня
-      level1Depts.forEach(d => {
-        newExpDept[d.department_id] = true;
-      });
+      // Создаем объект для экспандированных отделов
+      const newExpDept = deptsToExpand.reduce((acc, dept) => {
+        acc[dept.department_id] = true;
+        return acc;
+      }, {} as { [k: number]: boolean });
       
+      console.log(`Автоматически раскрываем ${Object.keys(newExpDept).length} отделов`);
       setExpDept(newExpDept);
     }
   }, [departments, positions, expDept]);
