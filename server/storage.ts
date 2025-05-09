@@ -214,10 +214,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPosition(insertPosition: InsertPosition): Promise<Position> {
+    // Сначала проверяем, существует ли должность с таким именем, которая помечена как удаленная
+    const existingPositions = await db
+      .select()
+      .from(positions)
+      .where(
+        and(
+          eq(positions.name, insertPosition.name),
+          eq(positions.deleted, true)
+        )
+      );
+
+    if (existingPositions.length > 0) {
+      // Для избежания конфликтов primary key, физически удаляем старую запись
+      console.log(`Обнаружена удаленная должность "${insertPosition.name}". Удаляем её физически перед созданием новой.`);
+      await db
+        .delete(positions)
+        .where(eq(positions.position_id, existingPositions[0].position_id));
+    }
+
+    // Теперь создаем новую должность
     const [position] = await db
-        .insert(positions)
-        .values(insertPosition)
-        .returning();
+      .insert(positions)
+      .values(insertPosition)
+      .returning();
+      
     return position;
   }
 

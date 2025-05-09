@@ -1,6 +1,8 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { and, eq } from "drizzle-orm";
 import {
   insertUserSchema,
   insertDepartmentSchema,
@@ -10,10 +12,9 @@ import {
   insertProjectSchema,
   insertEmployeeProjectSchema,
   insertLeaveSchema,
-  departments
+  departments,
+  positions
 } from "@shared/schema";
-import { db } from "./db";
-import { eq } from "drizzle-orm";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
@@ -345,8 +346,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (positionData.is_category === undefined) {
         positionData.is_category = false;
       }
-      const position = await storage.createPosition(positionData);
-      res.status(201).json({ status: 'success', data: position });
+      
+      // Проверяем, существует ли уже должность с таким именем, но помеченная как удаленная
+      const existingPosition = await db
+        .select()
+        .from(positions)
+        .where(
+          and(
+            eq(positions.name, positionData.name), 
+            eq(positions.deleted, true)
+          )
+        )
+        .limit(1);
+      
+      let position;
+      
+      if (existingPosition.length > 0) {
+        // Если найдена удаленная должность с таким же именем, обновляем её
+        console.log(`Восстанавливаем удаленную должность ID ${existingPosition[0].position_id} с именем "${positionData.name}"`);
+        
+        [position] = await db
+          .update(positions)
+          .set({
+            ...positionData,
+            deleted: false,
+            deleted_at: null
+          })
+          .where(eq(positions.position_id, existingPosition[0].position_id))
+          .returning();
+          
+        res.status(200).json({ 
+          status: 'success', 
+          data: position,
+          message: 'Восстановлена ранее удаленная должность'
+        });
+      } else {
+        // Создаем новую должность
+        position = await storage.createPosition(positionData);
+        res.status(201).json({ status: 'success', data: position });
+      }
     } catch (error) {
       if (error instanceof ZodError) {
         const validationError = fromZodError(error);
