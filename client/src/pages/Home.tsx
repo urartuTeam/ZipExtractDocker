@@ -62,6 +62,59 @@ export default function Home() {
     sort: number;
   };
 
+  // Функция для получения всех дочерних отделов для заданного отдела
+  function getAllChildDepartments(departmentId: number, allDepartments: any[]): number[] {
+    const childDepartmentIds = [departmentId];
+    
+    // Рекурсивная функция для поиска дочерних отделов
+    function findChildren(parentId: number) {
+      const children = allDepartments.filter(dept => dept.parent_department_id === parentId);
+      if (children.length > 0) {
+        children.forEach(child => {
+          childDepartmentIds.push(child.department_id);
+          findChildren(child.department_id);
+        });
+      }
+    }
+    
+    findChildren(departmentId);
+    return childDepartmentIds;
+  }
+  
+  // Функция для получения количества вакансий для организации
+  function getOrganizationVacancies(organizationId: number): { 
+    total: number; 
+    occupied: number; 
+    vacant: number; 
+  } {
+    // Получаем все дочерние отделы для организации
+    const childDepartmentIds = getAllChildDepartments(organizationId, departments);
+    
+    // Общее количество вакансий во всех отделах организации
+    let totalVacancies = 0;
+    positionsWithDepartments.forEach(position => {
+      position.departments.forEach((dept: PositionDepartment) => {
+        if (dept.deleted !== true && childDepartmentIds.includes(dept.department_id)) {
+          totalVacancies += dept.vacancies || 0;
+        }
+      });
+    });
+    
+    // Количество занятых вакансий (сотрудников)
+    const orgEmployees = employees.filter(emp => 
+      childDepartmentIds.includes(emp.department_id)
+    ).length;
+    
+    // Свободные вакансии
+    const vacantPositions = Math.max(0, totalVacancies - orgEmployees);
+    
+    return {
+      total: totalVacancies,
+      occupied: orgEmployees,
+      vacant: vacantPositions
+    };
+  }
+
   // ПРЕДЕЛЬНО ПРОСТАЯ ЛОГИКА ПО УКАЗАНИЮ:
   // 1. ВСЕГО - сумма значений vacancies из БД по всем должностям
   // 2. Занято - количество сотрудников
@@ -151,10 +204,16 @@ export default function Home() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6M9 16h6"/>
                               </svg>
                             </div>
-                            <div className="text-2xl font-bold">
-                              <span className="text-[#a40000]">Всего: {totalPositionsCount}</span>{' '}
-                              <span className="text-green-600">({vacantPositionsCount})</span>
-                            </div>
+                            {(() => {
+                              // Получаем данные вакансий для текущей организации
+                              const vacancies = getOrganizationVacancies(org.department_id);
+                              return (
+                                <div className="text-2xl font-bold">
+                                  <span className="text-[#a40000]">Всего: {vacancies.total}</span>{' '}
+                                  <span className="text-green-600">({vacancies.vacant})</span>
+                                </div>
+                              );
+                            })()}
                             <div className="text-sm text-gray-500">Отчет по вакансиям</div>
                           </div>
                         </Link>
