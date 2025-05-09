@@ -1,0 +1,152 @@
+{
+        "position_id": 8,
+        "name": "Исполнительный директор",
+        "sort": 2,
+        "is_category": false,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 8,
+                "department_id": 4,
+                "department_name": "ООО \"Цифролаб\"",
+                "sort": 0,
+                "vacancies": 1,
+                "parent_positions": [
+                    {
+                        "position_id": 3,
+                        "name": "Генеральный директор"
+                    }
+                ],
+                "parent_position": {
+                    "position_id": 3,
+                    "name": "Генеральный директор"
+                },
+                "position_position_id": 6,
+                "group_key": "3_4"
+            }
+        ],
+        "parent_positions": [
+            {
+                "position_id": 3,
+                "name": "Генеральный директор",
+                "department_id": 4
+            }
+        ],
+        "children_positions": [],
+        "is_subordinate": true
+    },
+    {
+        "position_id": 4,
+        "name": "Заместитель генерального директора по координации реализации планов ОИВ",
+        "sort": 3,
+        "is_category": false,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 4,
+                "department_id": 4,
+                "department_name": "ООО \"Цифролаб\"",
+                "sort": 0,
+                "vacancies": 1,
+                "parent_positions": [
+                    {
+                        "position_id": 3,
+                        "name": "Генеральный директор"
+                    }
+                ],
+                "parent_position": {
+                    "position_id": 3,
+                    "name": "Генеральный директор"
+                },
+                "position_position_id": 2,
+                "group_key": "3_4"
+            }
+        ],
+        "parent_positions": [
+            {
+                "position_id": 3,
+                "name": "Генеральный директор",
+                "department_id": 4
+            }
+        ],
+        "children_positions": [],
+        "is_subordinate": true
+    },
+    {
+        "position_id": 5,
+        "name": "Заместитель генерального директора по координации аналитики",
+        "sort": 4,
+        "is_category": false,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 5,
+                "department_id": 4,
+                "department_name": "ООО \"Цифролаб\"",
+                "sort": 0,
+                "vacancies": 1,
+                "parent_positions": [
+                    {
+                        "position_id": 3,
+                        "name": "Генеральный директор"
+                    }
+                ],
+                "parent_position": {
+                    "position_id": 3,
+                    "name": "Генеральный директор"
+                },
+                "position_position_id": 3,
+                "group_key": "3_4"
+            }
+        ],
+        "parent_positions": [
+            {
+                "position_id": 3,
+                "name": "Генеральный директор",
+                "department_id": 4
+            }
+        ],
+        "children_positions": [],
+        "is_subordinate": true
+    },
+    {
+        "position_id": 7,
+        "name": "Заместитель генерального директора по координации разработки",
+        "sort": 5,
+        "is_category": false,
+        "deleted": false,
+        "deleted_at": null,
+        "departments": [
+            {
+                "position_link_id": 7,
+                "department_id": 4,
+                "department_name": "ООО \"Цифролаб\"",
+                "sort": 0,
+                "vacancies": 1,
+                "parent_positions": [
+                    {
+                        "position_id": 3,
+                        "name": "Генеральный директор"
+                    }
+                ],
+                "parent_position": {
+                    "position_id": 3,
+                    "name": "Генеральный директор"
+                },
+                "position_position_id": 5,
+                "group_key": "3_4"
+            }
+        ],
+        "parent_positions": [
+            {
+                "position_id": 3,
+                "name": "Генеральный директор",
+                "department_id": 4
+            }
+        ],
+        "children_positions": [],
+        "is_subordinate": true
+    },
