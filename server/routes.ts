@@ -266,11 +266,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Выполняем обновления в транзакции
+      // Выполняем обновления
       for (const update of updates) {
-        await db.update(departments)
+        await db
+          .update(departments)
           .set({ sort: update.sort })
-          .where(eq(departments.department_id, update.department_id));
+          .where(eq(departments.department_id, update.department_id))
+          .execute();
       }
       
       res.status(200).json({ 

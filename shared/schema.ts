@@ -49,6 +49,7 @@ export const departments = pgTable("departments", {
   parent_position_id: integer("parent_position_id"),
   is_organization: boolean("is_organization").default(false),
   logo_path: text("logo_path"),
+  sort: integer("sort").default(0),
   deleted: boolean("deleted").default(false),
   deleted_at: timestamp("deleted_at"),
 });
@@ -89,7 +90,6 @@ export const projects = pgTable("projects", {
   id_organization: integer("id_organization").references(() => departments.department_id),
   sort: integer("sort").default(0),
   deleted: boolean("deleted").default(false),
-  sort: integer("sort").default(0),
   deleted_at: timestamp("deleted_at"),
 });
 
