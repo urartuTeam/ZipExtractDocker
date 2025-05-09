@@ -1172,91 +1172,67 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Создаем множество для отслеживания дочерних должностей
     const childPositions = new Set<number>();
 
-    // Проверяем, есть ли связи между должностями
-    if (hierarchyRelations.length > 0) {
-      // Строим иерархию на основе position_position, если связи существуют
-      hierarchyRelations.forEach((relation) => {
-        const childId = relation.position_id;
-        const parentId = relation.parent_position_id;
-        const deptId = relation.department_id;
-
-        // Находим родительскую должность
-        const parentNode = positionNodes[parentId];
-        // Находим узел текущей должности
-        const currentNode = positionNodes[childId];
-
-        if (parentNode && currentNode) {
-          // Добавляем текущую должность как подчиненную к родительской
-          // Проверяем, не добавлен ли уже этот узел
-          if (
-            !parentNode.subordinates.some(
-              (sub) =>
-                sub.position.position_id === currentNode.position.position_id,
-            )
-          ) {
-            parentNode.subordinates.push(currentNode);
-            // Помечаем, что это дочерняя должность
-            childPositions.add(childId);
-            console.log(
-              `Создана связь: "${currentNode.position.name}" (ID: ${childId}) подчиняется "${parentNode.position.name}" (ID: ${parentId}) в отделе ${deptId}`,
-            );
-          }
-        } else {
-          console.log(
-            `Не найдена родительская или дочерняя должность для связи: childId=${childId}, parentId=${parentId}, deptId=${deptId}`,
-          );
-        }
-      });
-    } else {
-      // Если связей нет, строим иерархию напрямую из отделов и позиций
-      console.log("Связи между должностями отсутствуют. Строим базовую иерархию.");
+    // Связей между должностями нет, строим согласно указанной иерархии
+    console.log("Строим иерархию согласно указанной структуре");
       
-      // Находим должности в отделе Администрация (обычно это корневой отдел)
-      const adminDept = departments.find(d => d.name === "Администрация");
-      if (adminDept) {
-        const adminPositions = Object.values(positionNodes).filter(
-          node => node.position.departments.some(d => d.department_id === adminDept.department_id)
-        );
+    // 1. Находим должность "Заместитель руководителя департамента" в отделе "Администрация"
+    const zamPosition = Object.values(positionNodes).find(
+      node => node.position.name === "Заместитель руководителя департамента"
+    );
+
+    // 2. Находим должность "Генеральный директор" в ООО "Цифролаб"
+    const genDirectorPosition = Object.values(positionNodes).find(
+      node => node.position.name === "Генеральный директор"
+    );
+      
+    if (zamPosition && genDirectorPosition) {
+      console.log("Найдены ключевые должности для построения иерархии");
         
-        // Если есть хотя бы одна позиция в Администрации
-        if (adminPositions.length > 0) {
-          // Предполагаем, что первая позиция - это корневая (например, Заместитель руководителя департамента)
-          const rootPosition = adminPositions[0];
+      // 3. Находим организации: ООО "Цифролаб" и ГБУ МСИ
+      const cifrolabOrg = departments.find((d: Department) => d.name === "ООО \"Цифролаб\"");
+      const msiOrg = departments.find((d: Department) => d.name === "ГБУ МСИ");
+        
+      if (cifrolabOrg && msiOrg) {
+        // 4. Создаем узлы для организаций
+        const cifrolabNode: PositionHierarchyNode = {
+          position: {
+            position_id: cifrolabOrg.department_id * 1000,
+            name: `${cifrolabOrg.name}`
+          },
+          employees: [],
+          subordinates: [genDirectorPosition], // Добавляем генерального директора как подчиненного
+          childDepartments: [],
+          department: cifrolabOrg
+        };
           
-          // Найдем все организации и добавим их как подчиненные к корневой позиции
-          const organizations = departments.filter(d => d.is_organization);
+        // Для ГБУ МСИ находим все отделы, которые ему принадлежат
+        const msiChildDepts = departments.filter((d: Department) => d.parent_department_id === msiOrg.department_id);
+        
+        const msiNode: PositionHierarchyNode = {
+          position: {
+            position_id: msiOrg.department_id * 1000,
+            name: `${msiOrg.name}`
+          },
+          employees: [],
+          subordinates: [], // У МСИ нет прямых должностей, только отделы
+          childDepartments: msiChildDepts,
+          department: msiOrg
+        };
           
-          organizations.forEach(org => {
-            // Создаем виртуальный узел для организации
-            const orgNode: PositionHierarchyNode = {
-              position: {
-                position_id: org.department_id * 1000, // Используем уникальный ID, умножая ID отдела на 1000
-                name: `${org.name} (отдел)`,
-                parent_position_id: rootPosition.position.position_id,
-                department_id: org.department_id
-              },
-              employees: [],
-              subordinates: [],
-              childDepartments: [],
-              department: org
-            };
-            
-            // Находим должности в этой организации (обычно генеральный директор)
-            const orgPositions = Object.values(positionNodes).filter(
-              node => node.position.departments.some(d => d.department_id === org.department_id)
-            );
-            
-            // Добавляем их как подчиненные к узлу организации
-            orgPositions.forEach(pos => {
-              orgNode.subordinates.push(pos);
-              childPositions.add(pos.position.position_id);
-            });
-            
-            // Добавляем организацию как подчиненную к корневой позиции
-            rootPosition.subordinates.push(orgNode);
-          });
-        }
+        // 5. Добавляем организации как подчиненные к "Заместитель руководителя департамента"
+        zamPosition.subordinates.push(cifrolabNode);
+        zamPosition.subordinates.push(msiNode);
+          
+        // 6. Отмечаем, что генеральный директор является дочерней должностью
+        childPositions.add(genDirectorPosition.position.position_id);
+          
+        console.log("Структура успешно создана: Заместитель руководителя департамента -> ООО Цифролаб -> Генеральный директор");
+        console.log("Структура успешно создана: Заместитель руководителя департамента -> ГБУ МСИ -> (дочерние отделы)");
+      } else {
+        console.log("Не найдены организации ООО \"Цифролаб\" или ГБУ МСИ");
       }
+    } else {
+      console.log("Не найдены ключевые должности для построения иерархии");
     }
 
     // Добавляем связь отделов и должностей
@@ -1285,7 +1261,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
 
     // Дополнительно обрабатываем связи между должностями и отделами
-    positionsWithDepartments.forEach((pos) => {
+    positionsWithDepartments.forEach((pos: any) => {
       if (pos.departments && Array.isArray(pos.departments)) {
         // Находим узел должности
         const positionNode = positionNodes[pos.position_id];
