@@ -28,7 +28,10 @@ type Department = {
   name: string;
   parent_department_id: number | null;
   parent_position_id: number | null;
+  is_organization: boolean;
+  logo_path: string | null;
   deleted: boolean;
+  deleted_at: string | null;
 };
 
 type Position = {
@@ -205,10 +208,21 @@ export default function Vacancies() {
       const departments = deptData.data;
       const positions = posData.data;
 
+      // Найдем организацию ООО "Цифролаб"
+      const cifroOrg = departments.find(d => 
+        !d.deleted && d.name.includes("Цифролаб") && d.is_organization
+      );
+
       const allDepts = departments.reduce(
           (acc, dept) => {
             if (!dept.deleted) {
-              acc[dept.department_id] = false;
+              // Если это Цифролаб или его дочерний отдел, автоматически раскрываем
+              const isCifroDept = cifroOrg && (
+                dept.department_id === cifroOrg.department_id || 
+                dept.parent_department_id === cifroOrg.department_id
+              );
+              
+              acc[dept.department_id] = isCifroDept || false;
             }
             return acc;
           },
@@ -219,7 +233,11 @@ export default function Vacancies() {
           (acc, pos) => {
             pos.departments.forEach(dept => {
               const key = `${pos.position_id}-${dept.department_id}`;
-              acc[key] = false;
+              // Если эта должность принадлежит отделу Цифролаб, автоматически раскрываем
+              const isCifroPos = cifroOrg && (
+                dept.department_id === cifroOrg.department_id
+              );
+              acc[key] = isCifroPos || false;
             });
             return acc;
           },
@@ -644,12 +662,24 @@ export default function Vacancies() {
     return [];
   }
 
+  // Получаем ID и название организации ООО "Цифролаб"
+  const cifroDepartment = departments.find(d => 
+    !d.deleted && d.name.includes("Цифролаб") && d.is_organization
+  );
+  const cifroDepartmentId = cifroDepartment?.department_id;
+  
+  // Определяем, показывать только Цифролаб или все организации
+  const showOnlyCifro = Boolean(cifroDepartmentId);
+  
   // Фильтруем корневые отделы в соответствии с поисковым запросом
   const roots = departments.filter(
       d =>
           !d.deleted &&
-          d.parent_department_id === null &&
-          d.parent_position_id === null &&
+          // Если найден Цифролаб, показываем только его, иначе показываем все корневые отделы
+          (showOnlyCifro 
+            ? d.department_id === cifroDepartmentId 
+            : (d.parent_department_id === null && d.parent_position_id === null)
+          ) &&
           (!searchTerm.trim() || shouldShowInSearch('department', d.department_id))
   );
 
@@ -706,9 +736,20 @@ export default function Vacancies() {
               </div>
             </div>
             <div>
-              <CardTitle>Учет вакансий</CardTitle>
+              <CardTitle>
+                {showOnlyCifro ? `Учет вакансий | ${cifroDepartment?.name}` : "Учет вакансий"}
+              </CardTitle>
               <CardDescription>
                 Анализ штатных единиц и занятых позиций
+                {showOnlyCifro && (
+                  <Button 
+                    asChild
+                    variant="link" 
+                    className="ml-2 p-0 h-auto text-sm text-blue-500"
+                  >
+                    <Link href="/vacancies">Показать все</Link>
+                  </Button>
+                )}
               </CardDescription>
             </div>
           </CardHeader>
