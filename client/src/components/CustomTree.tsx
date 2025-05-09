@@ -1,5 +1,29 @@
 import React, { useState, useEffect } from "react";
-import { Department, Position, Employee } from "../../shared/types";
+
+// Определяем типы здесь, чтобы избежать проблем с импортом
+interface Department {
+  department_id: number;
+  name: string;
+  parent_department_id: number | null;
+  parent_position_id: number | null;
+  is_organization?: boolean;
+  logo_path?: string | null;
+}
+
+interface Position {
+  position_id: number;
+  name: string;
+  parent_position_id?: number | null;
+  department_id?: number | null;
+}
+
+interface Employee {
+  employee_id: number;
+  full_name: string;
+  position_id: number | null;
+  department_id: number | null;
+  manager_id: number | null;
+}
 
 // Создаем интерфейс для узла в иерархии
 interface PositionNode {
@@ -173,7 +197,11 @@ const CustomTree: React.FC<CustomTreeProps> = ({ departments, positions, employe
       <h2>Организационная структура</h2>
       <div className="tree-container">
         {hierarchy.map(node => (
-          <PositionCard key={node.position.position_id} node={node} />
+          <PositionCard 
+            key={node.position.position_id} 
+            node={node} 
+            onPositionClick={onPositionClick}
+          />
         ))}
       </div>
     </div>
