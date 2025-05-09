@@ -820,6 +820,7 @@ export default function Positions() {
                                           variant="secondary"
                                           size="sm"
                                           onClick={() => handleOpenAddDepartment(position)}
+                                          disabled={isSortMode}
                                         >
                                           <svg
                                             xmlns="http://www.w3.org/2000/svg"
@@ -842,6 +843,7 @@ export default function Positions() {
                                           variant="outline"
                                           size="sm"
                                           onClick={() => handleEdit(position)}
+                                          disabled={isSortMode}
                                         >
                                           Изменить
                                         </Button>
@@ -850,6 +852,7 @@ export default function Positions() {
                                           size="sm"
                                           onClick={() => handleDelete(position)}
                                           title={usedByEmployees ? "Должность назначена сотрудникам" : ""}
+                                          disabled={isSortMode}
                                         >
                                           Удалить
                                         </Button>

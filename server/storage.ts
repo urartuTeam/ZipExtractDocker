@@ -157,11 +157,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllDepartments(): Promise<Department[]> {
-    return await db.select()
+    const results = await db.select()
       .from(departments)
-      .where(eq(departments.deleted, false))
-      .orderBy(departments.sort)
-      .orderBy(departments.department_id);
+      .where(eq(departments.deleted, false));
+    
+    // Sort by sort field first, then by department_id
+    return results.sort((a, b) => {
+      const aSort = a.sort ?? 0;
+      const bSort = b.sort ?? 0;
+      
+      // If sort values are different, sort by sort
+      if (aSort !== bSort) {
+        return aSort - bSort;
+      }
+      // If sort values are the same, sort by department_id
+      return a.department_id - b.department_id;
+    });
   }
 
   async createDepartment(insertDepartment: InsertDepartment): Promise<Department> {
@@ -205,11 +216,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllPositions(): Promise<Position[]> {
-    return await db.select()
+    const results = await db.select()
       .from(positions)
-      .where(eq(positions.deleted, false))
-      .orderBy(positions.sort)
-      .orderBy(positions.position_id);
+      .where(eq(positions.deleted, false));
+    
+    // Sort by sort field first, then by position_id
+    return results.sort((a, b) => {
+      const aSort = a.sort ?? 0;
+      const bSort = b.sort ?? 0;
+      
+      // If sort values are different, sort by sort
+      if (aSort !== bSort) {
+        return aSort - bSort;
+      }
+      // If sort values are the same, sort by position_id
+      return a.position_id - b.position_id;
+    });
   }
 
   async getPositionCategories(): Promise<Position[]> {
