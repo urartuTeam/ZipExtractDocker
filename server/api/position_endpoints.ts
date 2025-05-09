@@ -48,7 +48,7 @@ export function registerPositionEndpoints(app: Express) {
 
         // Теперь найдем все родительские должности для этой должности
         const positionRelations = positionPositions.filter(
-            pp => pp.position_id === position.position_id
+            (pp) => pp.position_id !== null && pp.position_id === position.position_id
         );
 
         // Для каждой родительской связи, обновим соответствующую запись в linkMap
@@ -60,7 +60,7 @@ export function registerPositionEndpoints(app: Express) {
 
           // Найдем родительскую должность
           const parentPosition = positions.find(
-              p => p.position_id === relation.parent_position_id
+              (p: { position_id: number }) => p.position_id === relation.parent_position_id
           );
 
           if (!parentPosition) return;
@@ -72,7 +72,7 @@ export function registerPositionEndpoints(app: Express) {
 
             // Проверим, не добавлена ли уже эта родительская должность
             const alreadyHasParent = linkInfo.parent_positions.some(
-                p => p.position_id === parentPosition.position_id
+                (p: { position_id: number }) => p.position_id === parentPosition.position_id
             );
 
             if (!alreadyHasParent) {
@@ -100,7 +100,7 @@ export function registerPositionEndpoints(app: Express) {
         // Соберем информацию о родительских и дочерних должностях
         const parentPositionsInfo = positionRelations
             .map(relation => {
-              const parentPosition = positions.find(p => p.position_id === relation.parent_position_id);
+              const parentPosition = positions.find((p: { position_id: number }) => p.position_id === relation.parent_position_id);
               return parentPosition ? {
                 position_id: parentPosition.position_id,
                 name: parentPosition.name,
@@ -110,12 +110,12 @@ export function registerPositionEndpoints(app: Express) {
             .filter(Boolean);
 
         const childrenRelations = positionPositions.filter(
-            pp => pp.parent_position_id === position.position_id
+            pp => pp.parent_position_id !== null && pp.parent_position_id === position.position_id
         );
 
         const childrenPositionsInfo = childrenRelations
             .map(relation => {
-              const childPosition = positions.find(p => p.position_id === relation.position_id);
+              const childPosition = positions.find((p: { position_id: number }) => p.position_id === relation.position_id);
               return childPosition ? {
                 position_id: childPosition.position_id,
                 name: childPosition.name,
