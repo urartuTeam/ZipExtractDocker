@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
-import OrganizationTree from "@/components/OrganizationTree";
 import { useState } from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
+import CustomTree from "@/components/CustomTree";
 
 export default function Home() {
   const [selectedPositionId, setSelectedPositionId] = useState(0);
@@ -163,11 +163,10 @@ export default function Home() {
             ) : (
                 <div className="w-full overflow-x-auto custom-scrollbar h-full" style={{minHeight: '400px'}}>
                   <div style={{minWidth: 'max-content'}}>
-                    <OrganizationTree
-                        departmentsData={departments}
-                        positionsData={positionsWithDepartments}
-                        employeesData={employees}
-                        onPositionClick={(id) => setSelectedPositionId(id)}
+                    <CustomTree
+                        departments={departments}
+                        positions={positionsWithDepartments}
+                        employees={employees}
                         showThreeLevels={true}
                     />
                   </div>

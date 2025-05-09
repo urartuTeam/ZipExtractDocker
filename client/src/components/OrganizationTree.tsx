@@ -1173,24 +1173,38 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     const childPositions = new Set<number>();
 
     // Связей между должностями нет, строим согласно указанной иерархии
-    console.log("Строим иерархию согласно указанной структуре");
+    console.log("ОТЛАДКА: Строим иерархию согласно указанной структуре");
+    console.log("ОТЛАДКА: positionNodes содержит", Object.keys(positionNodes).length, "позиций");
+    
+    // Находим корневые узлы, используя собранный set childPositions
+    const rootNodes: PositionHierarchyNode[] = [];
+    
+    // Выводим список всех должностей для отладки
+    Object.values(positionNodes).forEach(node => {
+      console.log("ОТЛАДКА: Должность:", node.position.position_id, node.position.name);
+    });
       
     // 1. Находим должность "Заместитель руководителя департамента" в отделе "Администрация"
     const zamPosition = Object.values(positionNodes).find(
       node => node.position.name === "Заместитель руководителя департамента"
     );
+    console.log("ОТЛАДКА: Найден замдиректора:", zamPosition ? "ДА" : "НЕТ");
 
     // 2. Находим должность "Генеральный директор" в ООО "Цифролаб"
     const genDirectorPosition = Object.values(positionNodes).find(
       node => node.position.name === "Генеральный директор"
     );
+    console.log("ОТЛАДКА: Найден генеральный директор:", genDirectorPosition ? "ДА" : "НЕТ");
       
     if (zamPosition && genDirectorPosition) {
-      console.log("Найдены ключевые должности для построения иерархии");
+      console.log("ОТЛАДКА: Найдены ключевые должности для построения иерархии");
         
       // 3. Находим организации: ООО "Цифролаб" и ГБУ МСИ
       const cifrolabOrg = departments.find((d: Department) => d.name === "ООО \"Цифролаб\"");
       const msiOrg = departments.find((d: Department) => d.name === "ГБУ МСИ");
+      
+      console.log("ОТЛАДКА: Организация ООО Цифролаб:", cifrolabOrg ? "Найдена" : "НЕ найдена");
+      console.log("ОТЛАДКА: Организация ГБУ МСИ:", msiOrg ? "Найдена" : "НЕ найдена");
         
       if (cifrolabOrg && msiOrg) {
         // 4. Создаем узлы для организаций
@@ -1204,9 +1218,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           childDepartments: [],
           department: cifrolabOrg
         };
+        console.log("ОТЛАДКА: Создан узел для ООО Цифролаб");
           
         // Для ГБУ МСИ находим все отделы, которые ему принадлежат
         const msiChildDepts = departments.filter((d: Department) => d.parent_department_id === msiOrg.department_id);
+        console.log("ОТЛАДКА: Для ГБУ МСИ найдено", msiChildDepts.length, "дочерних отделов");
         
         const msiNode: PositionHierarchyNode = {
           position: {
@@ -1218,21 +1234,27 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           childDepartments: msiChildDepts,
           department: msiOrg
         };
+        console.log("ОТЛАДКА: Создан узел для ГБУ МСИ");
           
         // 5. Добавляем организации как подчиненные к "Заместитель руководителя департамента"
         zamPosition.subordinates.push(cifrolabNode);
         zamPosition.subordinates.push(msiNode);
+        console.log("ОТЛАДКА: У замдиректора теперь", zamPosition.subordinates.length, "подчиненных");
           
         // 6. Отмечаем, что генеральный директор является дочерней должностью
         childPositions.add(genDirectorPosition.position.position_id);
           
-        console.log("Структура успешно создана: Заместитель руководителя департамента -> ООО Цифролаб -> Генеральный директор");
-        console.log("Структура успешно создана: Заместитель руководителя департамента -> ГБУ МСИ -> (дочерние отделы)");
+        console.log("ОТЛАДКА: Структура успешно создана: Заместитель руководителя департамента -> ООО Цифролаб -> Генеральный директор");
+        console.log("ОТЛАДКА: Структура успешно создана: Заместитель руководителя департамента -> ГБУ МСИ -> (дочерние отделы)");
+        
+        // Важно: добавляем заместителя в rootNodes, чтобы его отображать
+        rootNodes.push(zamPosition);
+        console.log("ОТЛАДКА: Добавили замдиректора в корневые узлы, теперь их:", rootNodes.length);
       } else {
-        console.log("Не найдены организации ООО \"Цифролаб\" или ГБУ МСИ");
+        console.log("ОТЛАДКА: Не найдены организации ООО \"Цифролаб\" или ГБУ МСИ");
       }
     } else {
-      console.log("Не найдены ключевые должности для построения иерархии");
+      console.log("ОТЛАДКА: Не найдены ключевые должности для построения иерархии");
     }
 
     // Добавляем связь отделов и должностей
@@ -1492,7 +1514,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   const buildRootDepartmentHierarchy = () => {
     if (positions.length === 0 || departments.length === 0) {
-      console.error("Нет данных о должностях или отделах");
+      console.error("ОТЛАДКА: Нет данных о должностях или отделах");
       return [];
     }
 
@@ -1502,12 +1524,19 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     );
     
     if (!rootDepartment) {
-      console.error("Корневой отдел не найден");
+      console.error("ОТЛАДКА: Корневой отдел не найден");
       return [];
     }
 
+    console.log("ОТЛАДКА: Входные данные для buildRootDepartmentHierarchy:");
+    console.log("ОТЛАДКА: - Отделов:", departments.length);
+    console.log("ОТЛАДКА: - Должностей:", positions.length);
+    console.log("ОТЛАДКА: - Должностей с отделами:", positionsWithDepartments.length);
+    console.log("ОТЛАДКА: - Сотрудников:", employees.length);
+    console.log("ОТЛАДКА: - Отношений между должностями:", positionPositionsData ? positionPositionsData.length : 0);
+    
     console.log(
-      "Данные о связях position_position:",
+      "ОТЛАДКА: Данные о связях position_position:",
       positionPositionsData
         ? `получено ${positionPositionsData.length} связей`
         : "отсутствуют",
