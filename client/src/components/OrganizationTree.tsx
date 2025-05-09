@@ -334,6 +334,7 @@ const PositionTree = ({
   allEmployees,
   onPositionClick,
   selectedPositionId,
+  handleGoBack,
   hierarchyInitialLevels = 3, // По умолчанию 3 уровня
   showThreeLevels = false, // Показывать третий уровень
   showVacancies = false, // Показывать индикаторы вакансий
@@ -343,6 +344,7 @@ const PositionTree = ({
   allEmployees: Employee[];
   onPositionClick?: (positionId: number) => void;
   selectedPositionId?: number;
+  handleGoBack?: () => void;
   hierarchyInitialLevels?: number;
   showThreeLevels?: boolean;
   showVacancies?: boolean;
@@ -359,6 +361,9 @@ const PositionTree = ({
 
   // Определяем, является ли это первичным показом организационного дерева с самой вершины
   const isRootView = !selectedPositionId;
+
+  console.log(firstNode);
+  
 
   useEffect(() => {
     const calculateWidthsRecursively = (container: HTMLElement): number => {
@@ -428,7 +433,7 @@ const PositionTree = ({
           <div className="tree-node-container">
             <UnifiedPositionCard
               node={firstNode}
-              onPositionClick={onPositionClick}
+              onPositionClick={handleGoBack}
               isTopLevel={isRootView} // Верхний уровень, если это корневой вид
               showVacancies={showVacancies}
             />
@@ -440,7 +445,7 @@ const PositionTree = ({
               className="subordinates-container"
               style={
                 firstNode.department?.is_organization
-                  ? { width: "750px" }
+                  ? { minWidth: "750px" }
                   : undefined
               }
             >
@@ -478,7 +483,7 @@ const PositionTree = ({
                         className="subordinates-container"
                         style={
                           subNode.department?.is_organization
-                            ? { width: "750px" }
+                            ? { minWidth: "750px" }
                             : undefined
                         }
                       >
@@ -542,7 +547,7 @@ const PositionTree = ({
               className="subordinates-container"
               style={
                 node.department?.is_organization
-                  ? { width: "750px" }
+                  ? { minWidth: "750px" }
                   : undefined
               }
             >
@@ -1459,6 +1464,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       (dept) =>
         dept.parent_department_id === null && dept.parent_position_id === null,
     );
+    
     if (!rootDepartment) {
       console.error("Корневой отдел не найден");
       return [];
@@ -1990,6 +1996,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           allPositions={positions}
           allEmployees={employees}
           onPositionClick={handlePositionClick}
+          handleGoBack={handleGoBack}
           selectedPositionId={selectedPositionId}
           hierarchyInitialLevels={Number(hierarchyInitialLevels)}
           showThreeLevels={showThreeLevels}

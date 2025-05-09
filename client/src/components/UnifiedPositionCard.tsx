@@ -1,10 +1,35 @@
 import React from "react";
-import {
-  Position,
-  Employee,
-  Department,
-  PositionHierarchyNode,
-} from "@shared/types";
+
+// Импортируем типы
+type Position = {
+  position_id: number;
+  name: string;
+  parent_position_id?: number | null;
+  department_id?: number | null;
+};
+
+type Employee = {
+  employee_id: number;
+  full_name: string;
+  position_id: number | null;
+  department_id: number | null;
+  manager_id: number | null;
+};
+
+type Department = {
+  department_id: number;
+  name: string;
+  parent_department_id: number | null;
+  parent_position_id: number | null;
+};
+
+// Типы узлов в иерархии должностей
+type PositionHierarchyNode = {
+  position: Position;
+  employees: Employee[]; // Массив сотрудников на этой должности
+  subordinates: PositionHierarchyNode[];
+  childDepartments?: Department[]; // Добавляем поле для хранения подчиненных отделов
+};
 
 // Компонент для унифицированного отображения карточки позиции/отдела
 const UnifiedPositionCard = ({
@@ -50,14 +75,14 @@ const UnifiedPositionCard = ({
           alignItems: "center",
           justifyContent: "flex-start",
           padding: "15px",
-          width: "100%",
+          // width: "100%",
         }}
       >
         {node.department?.logo_path ? (
-          <img 
-            src={node.department?.logo_path} 
-            alt={`Логотип ${node.department?.name}`} 
-            className="mr-4 w-8 h-8 object-contain" 
+          <img
+            src={node.department?.logo_path}
+            alt={`Логотип ${node.department?.name}`}
+            className="mr-4 w-8 h-8 object-contain"
           />
         ) : (
           <img src={`/organization21.png`} alt="Организация" className="mr-4" />
@@ -70,6 +95,31 @@ const UnifiedPositionCard = ({
   }
 
   // Стандартный рендер для других типов карточек
+  const countEmployees = (position: PositionHierarchyNode) => {
+      let count = 0;
+
+      console.log(position.employees);
+
+
+      // Считаем сотрудников в текущем объекте
+      if (position.employees && Array.isArray(position.employees)) {
+          count += position.employees.length;
+      }
+
+      // Рекурсивно обрабатываем всех подчиненных
+      if (position.subordinates && Array.isArray(position.subordinates)) {
+          for (const subordinate of position.subordinates) {
+              count += countEmployees(subordinate);
+          }
+      }
+
+      return count;
+  }
+
+  // if (isTopLevel) {
+  //   console.log(countEmployees(node));
+  // }
+
   return (
     <div
       className={`position-card ${cardClass} ${isDepartment ? "department-card" : ""}`}

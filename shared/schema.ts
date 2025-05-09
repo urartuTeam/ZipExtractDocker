@@ -88,6 +88,7 @@ export const projects = pgTable("projects", {
   department_id: integer("department_id").references(() => departments.department_id),
   id_organization: integer("id_organization").references(() => departments.department_id),
   deleted: boolean("deleted").default(false),
+  sort: integer("sort").default(0),
   deleted_at: timestamp("deleted_at"),
 });
 

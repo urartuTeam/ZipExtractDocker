@@ -43,7 +43,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Добавляем логирование каждого запроса к эндпоинтам загрузки
   app.use('/api/upload', (req, res, next) => {
     console.log(`[upload router] Получен запрос: ${req.method} ${req.originalUrl}`);
-    
+
     // Проверяем если это запрос на загрузку файла, устанавливаем правильные заголовки для CORS и типа ответа
     if (req.method === 'POST' && req.originalUrl.includes('/organization-logo/')) {
       res.setHeader('Access-Control-Allow-Origin', '*');
@@ -51,7 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
       res.setHeader('Content-Type', 'application/json');
     }
-    
+
     return uploadRoutes(req, res, next);
   });
 
@@ -316,7 +316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ status: 'error', message: 'Failed to fetch position categories' });
     }
   });
-  
+
 
 
   app.get('/api/positions/:id', async (req: Request, res: Response) => {
@@ -543,6 +543,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ status: 'error', message: 'Project not found' });
       }
 
+      // Отладочный вывод для проверки полей проекта
+      console.log("Полный объект проекта из БД:", project);
+      console.log("Поля проекта:", Object.keys(project));
+      console.log("id_organization:", project.id_organization);
+
       res.json({ status: 'success', data: project });
     } catch (error) {
       console.error('Error fetching project:', error);
@@ -603,6 +608,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting project:', error);
       res.status(500).json({ status: 'error', message: 'Failed to delete project' });
+    }
+  });
+
+  // Обновление порядка сортировки проектов
+  app.post('/api/projects/sort', async (req: Request, res: Response) => {
+    try {
+      const updates = req.body;
+
+      if (!Array.isArray(updates)) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Неверный формат данных. Ожидается массив обновлений.'
+        });
+      }
+
+      // Проверяем, что все элементы имеют необходимые поля
+      const isValid = updates.every(item =>
+          typeof item === 'object' &&
+          item !== null &&
+          'project_id' in item &&
+          'sort' in item &&
+          typeof item.project_id === 'number' &&
+          typeof item.sort === 'number'
+      );
+
+      if (!isValid) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Неверный формат данных. Каждый элемент должен содержать project_id и sort.'
+        });
+      }
+
+      // Обновляем порядок сортировки для каждого проекта
+      const results = await Promise.all(
+          updates.map(update =>
+              storage.updateProject(update.project_id, { sort: update.sort })
+          )
+      );
+
+      // Проверяем, были ли обновлены все проекты
+      const allUpdated = results.every(result => result !== null);
+
+      if (!allUpdated) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Не все проекты были обновлены. Некоторые проекты не найдены.'
+        });
+      }
+
+      res.json({
+        status: 'success',
+        message: 'Порядок сортировки проектов успешно обновлен'
+      });
+    } catch (error) {
+      console.error('Error updating projects sort order:', error);
+      res.status(500).json({
+        status: 'error',
+        message: 'Ошибка при обновлении порядка сортировки проектов'
+      });
     }
   });
 
