@@ -32,12 +32,18 @@ export default function Home() {
   const { data: positionPositionsResponse, isLoading: isLoadingPositionPositions } = useQuery<{status: string, data: any[]}>({
     queryKey: ['/api/positionpositions'],
   });
+  
+  // Запрос на получение организаций
+  const { data: organizationsResponse, isLoading: isLoadingOrganizations } = useQuery<{status: string, data: any[]}>({
+    queryKey: ['/api/organizations'],
+  });
 
   const departments = departmentsResponse?.data || [];
   const employees = employeesResponse?.data || [];
   const projects = projectsResponse?.data || [];
   const positionsWithDepartments = positionsWithDepartmentsResponse?.data || [];
   const positionPositions = positionPositionsResponse?.data || [];
+  const organizations = organizationsResponse?.data || [];
 
   // Записываем данные в глобальный объект для доступа из других компонентов
   if (positionsWithDepartments.length > 0) {
@@ -82,7 +88,7 @@ export default function Home() {
   const vacantPositionsCount = Math.max(0, totalPositionsCount - employeesCount);
 
   const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects ||
-      isLoadingPositionsWithDepartments || isLoadingPositionPositions;
+      isLoadingPositionsWithDepartments || isLoadingPositionPositions || isLoadingOrganizations;
 
   return (
       <div className="flex flex-col">
@@ -114,74 +120,47 @@ export default function Home() {
           {/* Статистика в нижней части страницы, прижатая к низу */}
           {selectedPositionId === 0 ? (
               <>
-                <div className="flex items-center mb-4">
-                  <CardTitle className="flex-1 text-center">ГБУ МСИ</CardTitle>
-                  <CardTitle className="flex-1 text-center">ООО "Цифролаб"</CardTitle>
-                </div>
-                <div className="grid gap-4 md:grid-cols-4 flex-shrink-0">
-                  <Link href="/projects">
-                    <div className="bg-white p-4 rounded-md shadow-sm cursor-pointer hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-medium text-lg">Проекты</h3>
-                        <svg className="h-5 w-5 text-[#a40000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                        </svg>
+                <div className="flex flex-wrap gap-4">
+                  {organizations.map((org) => (
+                    <div key={org.department_id} className="bg-white p-4 rounded-md shadow-md flex-1 min-w-[300px]">
+                      <CardTitle className="mb-4 text-center">{org.name}</CardTitle>
+                      <div className="grid gap-4 grid-cols-2">
+                        <Link href="/projects">
+                          <div className="bg-gray-50 p-4 rounded-md shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-center mb-2">
+                              <h3 className="font-medium text-lg">Проекты</h3>
+                              <svg className="h-5 w-5 text-[#a40000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                              </svg>
+                            </div>
+                            <div className="text-2xl font-bold">
+                              {projects.filter(p => p.id_organization === org.department_id).length}
+                            </div>
+                            <div className="text-sm text-gray-500">Активных проектов</div>
+                          </div>
+                        </Link>
+                        
+                        <Link href={`/vacancies${selectedPositionId ? '/'+selectedPositionId : ''}`}>
+                          <div className="bg-gray-50 p-4 rounded-md shadow-sm cursor-pointer hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-center mb-2">
+                              <h3 className="font-medium text-lg">Учет вакансий</h3>
+                              <svg className="h-5 w-5 text-[#a40000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6M9 16h6"/>
+                              </svg>
+                            </div>
+                            <div className="text-2xl font-bold">
+                              <span className="text-[#a40000]">Всего: {totalPositionsCount}</span>{' '}
+                              <span className="text-green-600">({vacantPositionsCount})</span>
+                            </div>
+                            <div className="text-sm text-gray-500">Отчет по вакансиям</div>
+                          </div>
+                        </Link>
                       </div>
-                      <div className="text-2xl font-bold">{projects.length}</div>
-                      <div className="text-sm text-gray-500">Активных проектов</div>
                     </div>
-                  </Link>
-
-                  <Link href={`/vacancies${selectedPositionId ? '/'+selectedPositionId : ''}`}>
-                    <div className="bg-white p-4 rounded-md shadow-sm cursor-pointer hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-medium text-lg">Учет вакансий</h3>
-                        <svg className="h-5 w-5 text-[#a40000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6M9 16h6"/>
-                        </svg>
-                      </div>
-                      <div className="text-2xl font-bold">
-                        <span className="text-[#a40000]">Всего: {totalPositionsCount}</span>{' '}
-                        <span className="text-green-600">({vacantPositionsCount})</span>
-                      </div>
-                      <div className="text-sm text-gray-500">Отчет по вакансиям организации</div>
-                    </div>
-                  </Link>
-
-                  <Link href="/projects">
-                    <div className="bg-white p-4 rounded-md shadow-sm cursor-pointer hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-medium text-lg">Проекты</h3>
-                        <svg className="h-5 w-5 text-[#a40000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                        </svg>
-                      </div>
-                      <div className="text-2xl font-bold">{projects.length}</div>
-                      <div className="text-sm text-gray-500">Активных проектов</div>
-                    </div>
-                  </Link>
-
-                  <Link href={`/vacancies${selectedPositionId ? '/'+selectedPositionId : ''}`}>
-                    <div className="bg-white p-4 rounded-md shadow-sm cursor-pointer hover:shadow-md transition-shadow">
-                      <div className="flex justify-between items-center mb-2">
-                        <h3 className="font-medium text-lg">Учет вакансий</h3>
-                        <svg className="h-5 w-5 text-[#a40000]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6M9 16h6"/>
-                        </svg>
-                      </div>
-                      <div className="text-2xl font-bold">
-                        <span className="text-[#a40000]">Всего: {totalPositionsCount}</span>{' '}
-                        <span className="text-green-600">({vacantPositionsCount})</span>
-                      </div>
-                      <div className="text-sm text-gray-500">Отчет по вакансиям организации</div>
-                    </div>
-                  </Link>
+                  ))}
                 </div>
               </>
           ) : (
