@@ -485,11 +485,16 @@ export default function Vacancies() {
 
   // Рендеринг строки должности
   const renderPositionRow = (
-      p: Position & { children?: Array<Position & { children?: any[] }> },
+      p: Position & { children?: Array<Position & { children?: any[] }> } | undefined,
       deptId: number,
       lvl = 0,
       parentId?: string,
   ) => {
+    // Проверка на случай, если p не определено
+    if (!p) {
+      return [];
+    }
+    
     if (searchTerm.trim() && !shouldShowInSearch('position', p.position_id)) {
       return [];
     }
@@ -549,11 +554,15 @@ export default function Vacancies() {
     // Если поддерево развернуто, добавляем дочерние элементы
     if (ex) {
       childPositions.forEach((child) => {
-        rows.push(...renderPositionRow(child, deptId, lvl + 1, rowId));
+        if (child) { // Проверяем, что дочерний элемент существует
+          rows.push(...renderPositionRow(child, deptId, lvl + 1, rowId));
+        }
       });
 
       childDepts.forEach(dept => {
-        rows.push(...renderDepartmentRow(dept, lvl + 1, rowId));
+        if (dept) { // Проверяем, что дочерний отдел существует
+          rows.push(...renderDepartmentRow(dept, lvl + 1, rowId));
+        }
       });
     }
 
@@ -598,11 +607,15 @@ export default function Vacancies() {
     // Если поддерево развернуто, добавляем дочерние элементы
     if (ex) {
       deptPositions.forEach(position => {
-        rows.push(...renderPositionRow(position, d.department_id, lvl + 1, rowId));
+        if (position) { // Проверяем, что position существует
+          rows.push(...renderPositionRow(position, d.department_id, lvl + 1, rowId));
+        }
       });
 
       childDepts.forEach(childDept => {
-        rows.push(...renderDepartmentRow(childDept, lvl + 1, rowId));
+        if (childDept) { // Проверяем, что childDept существует
+          rows.push(...renderDepartmentRow(childDept, lvl + 1, rowId));
+        }
       });
     }
 
@@ -623,7 +636,12 @@ export default function Vacancies() {
             (!searchTerm.trim() || shouldShowInSearch('position', p.position_id))
     );
 
-    return department.length > 0 ? renderDepartmentRow(department[0], 0) : renderPositionRow(position[0], 0);
+    if (department.length > 0) {
+      return renderDepartmentRow(department[0], 0); 
+    } else if (position.length > 0) {
+      return renderPositionRow(position[0], 0);
+    }
+    return [];
   }
 
   // Фильтруем корневые отделы в соответствии с поисковым запросом
