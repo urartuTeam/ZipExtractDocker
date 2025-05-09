@@ -642,6 +642,22 @@ export default function Vacancies() {
     return rows;
   };
 
+  // При монтировании компонента проверяем localStorage и настраиваем автоматическое раскрытие уровней
+  useEffect(() => {
+    const savedOrgId = localStorage.getItem('selectedOrganizationId');
+    const savedOrgName = localStorage.getItem('selectedOrganizationName');
+    
+    if (savedOrgId) {
+      setStateOrgId(Number(savedOrgId));
+      localStorage.removeItem('selectedOrganizationId');
+    }
+    
+    if (savedOrgName) {
+      setStateOrgName(savedOrgName);
+      localStorage.removeItem('selectedOrganizationName');
+    }
+  }, [setStateOrgId, setStateOrgName]);
+
   const renderFromRoute = () => {
     const department = departments.filter(
         d =>
@@ -662,23 +678,7 @@ export default function Vacancies() {
       return renderPositionRow(position[0], 0);
     }
     return [];
-  }
-
-  // При монтировании компонента проверяем localStorage и настраиваем автоматическое раскрытие уровней
-  useEffect(() => {
-    const savedOrgId = localStorage.getItem('selectedOrganizationId');
-    const savedOrgName = localStorage.getItem('selectedOrganizationName');
-    
-    if (savedOrgId) {
-      setStateOrgId(Number(savedOrgId));
-      localStorage.removeItem('selectedOrganizationId');
-    }
-    
-    if (savedOrgName) {
-      setStateOrgName(savedOrgName);
-      localStorage.removeItem('selectedOrganizationName');
-    }
-  }, [setStateOrgId, setStateOrgName]);
+  };
   
   // Если есть ID организации в state, используем его
   // Иначе ищем Цифролаб как дефолтную организацию
