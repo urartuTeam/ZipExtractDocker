@@ -3,7 +3,7 @@ import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
-import CustomTree from "@/components/CustomTree";
+import OrganizationTree from "@/components/OrganizationTree";
 
 export default function Home() {
   const [selectedPositionId, setSelectedPositionId] = useState(0);
@@ -163,12 +163,12 @@ export default function Home() {
             ) : (
                 <div className="w-full overflow-x-auto custom-scrollbar h-full" style={{minHeight: '400px'}}>
                   <div style={{minWidth: 'max-content'}}>
-                    <CustomTree
-                        departments={departments}
-                        positions={positionsWithDepartments}
-                        employees={employees}
+                    <OrganizationTree
+                        departmentsData={departments}
+                        positionsData={positionsWithDepartments}
+                        employeesData={employees}
                         showThreeLevels={true}
-                        onPositionClick={(id) => setSelectedPositionId(id)}
+                        onPositionClick={(id: number) => setSelectedPositionId(id)}
                     />
                   </div>
                 </div>
