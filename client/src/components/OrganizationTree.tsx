@@ -336,7 +336,7 @@ const PositionTree = ({
   selectedPositionId,
   handleGoBack,
   hierarchyInitialLevels = 3, // По умолчанию 3 уровня
-  showThreeLevels = false, // Показывать третий уровень
+  showThreeLevels = true, // Показывать третий уровень
   showVacancies = false, // Показывать индикаторы вакансий
 }: {
   nodes: PositionHierarchyNode[];
@@ -686,7 +686,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   const [navigationHistory, setNavigationHistory] = useState<number[]>([]);
 
   // Состояния для настроек отображения
-  const [showThreeLevels, setShowThreeLevels] = useState<boolean>(false);
+  const [showThreeLevels, setShowThreeLevels] = useState<boolean>(true);
   const [showVacancies, setShowVacancies] = useState<boolean>(false);
 
   // Запрос настроек для получения количества показываемых уровней иерархии
@@ -717,8 +717,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // Инициализируем состояние showThreeLevels на основе настроек
   useEffect(() => {
-    const threeLevels = Number(hierarchyInitialLevels) === 3;
-    setShowThreeLevels(threeLevels);
+    // Всегда устанавливаем в true, чтобы показывать все уровни иерархии
+    setShowThreeLevels(true);
   }, [hierarchyInitialLevels]);
 
   // Эффект для обновления UI при изменении настройки showThreeLevels
