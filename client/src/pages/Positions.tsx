@@ -134,6 +134,8 @@ export default function Positions() {
   const [departmentPositions, setDepartmentPositions] = useState<Position[]>(
       [],
   );
+  // Режим сортировки drag-and-drop
+  const [isSortMode, setIsSortMode] = useState(false);
   const queryClient = useQueryClient();
 
   // Form для создания
@@ -326,6 +328,33 @@ export default function Positions() {
     onError: (error: Error) => {
       toast({
         title: "Ошибка при удалении связи",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation для обновления порядка сортировки должностей
+  const updatePositionSort = useMutation({
+    mutationFn: async (updates: { position_id: number, sort: number }[]) => {
+      const res = await apiRequest("POST", `/api/positions/sort`, { updates });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при обновлении порядка сортировки");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Порядок сортировки обновлен",
+        description: "Новый порядок сортировки должностей был сохранен",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/positions'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/positions/with-departments'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при обновлении порядка сортировки",
         description: error.message,
         variant: "destructive",
       });
@@ -602,152 +631,197 @@ export default function Positions() {
         (employee) => employee.position_id === positionId,
     );
   };
+  
+  // Обработчик завершения перетаскивания для сортировки должностей
+  const handleDragEnd = useCallback((result: DropResult) => {
+    const { source, destination } = result;
+    
+    // Если элемент не был перемещен никуда
+    if (!destination) return;
+    
+    // Если это внутри одного и того же droppable
+    if (source.droppableId === destination.droppableId && source.index !== destination.index) {
+      // Создаем копию должностей
+      const sortedPositions = [...filteredPositions];
+      
+      // Перемещаем должность в копии массива
+      const [removed] = sortedPositions.splice(source.index, 1);
+      sortedPositions.splice(destination.index, 0, removed);
+      
+      // Обновляем индексы сортировки
+      const updates = sortedPositions.map((position, index) => ({
+        position_id: position.position_id,
+        sort: index,
+      }));
+      
+      // Отправляем обновления на сервер
+      updatePositionSort.mutate(updates);
+    }
+  }, [filteredPositions, updatePositionSort]);
 
   return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center mb-6 mt-5">
-          <h1 className="text-2xl font-bold">Должности</h1>
-          <div className="flex items-center space-x-2">
-            <div className="relative">
-              <Input
-                  placeholder="Поиск должностей..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="max-w-sm"
-              />
-            </div>
-            <Button onClick={() => setIsAddDialogOpen(true)}>
-              Добавить должность
-            </Button>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center mb-6 mt-5">
+        <h1 className="text-2xl font-bold">Должности</h1>
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Input
+              placeholder="Поиск должностей..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="max-w-sm"
+            />
           </div>
+          <Button 
+            variant={isSortMode ? "destructive" : "outline"}
+            onClick={() => setIsSortMode(!isSortMode)}
+          >
+            {isSortMode ? "Выключить режим сортировки" : "Режим установки сортировки"}
+          </Button>
+          <Button 
+            onClick={() => setIsAddDialogOpen(true)}
+            disabled={isSortMode}
+          >
+            Добавить должность
+          </Button>
         </div>
+      </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Список должностей</CardTitle>
-            <CardDescription>
-              Всего должностей: {positionsData?.data.length || 0}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-                <div className="flex justify-center items-center h-64">
-                  <div className="text-lg text-gray-500">Загрузка данных...</div>
-                </div>
-            ) : error ? (
-                <div className="text-red-500">
-                  Ошибка при загрузке данных. Пожалуйста, попробуйте позже.
-                </div>
-            ) : (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[80px]">ID</TableHead>
-                        <TableHead>Название</TableHead>
-                        <TableHead>Родительская должность - Отдел</TableHead>
-                        <TableHead className="w-[150px]">Действия</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredPositions.length === 0 ? (
+      <Card>
+        <CardHeader>
+          <CardTitle>Список должностей</CardTitle>
+          <CardDescription>
+            Всего должностей: {positionsData?.data.length || 0}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="text-lg text-gray-500">Загрузка данных...</div>
+            </div>
+          ) : error ? (
+            <div className="text-red-500">
+              Ошибка при загрузке данных. Пожалуйста, попробуйте позже.
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <DragDropContext onDragEnd={handleDragEnd}>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[80px]">ID</TableHead>
+                      <TableHead>Название</TableHead>
+                      <TableHead>Родительская должность - Отдел</TableHead>
+                      <TableHead className="w-[150px]">Действия</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <Droppable droppableId="positions" isDropDisabled={!isSortMode}>
+                    {(provided) => (
+                      <TableBody 
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                      >
+                        {filteredPositions.length === 0 ? (
                           <TableRow>
                             <TableCell colSpan={5} className="text-center h-24">
                               Должности не найдены
                             </TableCell>
                           </TableRow>
-                      ) : (
-                          filteredPositions.map((position) => {
-                            const usedByEmployees = isPositionUsed(
-                                position.position_id,
-                            );
+                        ) : (
+                          filteredPositions.map((position, index) => {
+                            const usedByEmployees = isPositionUsed(position.position_id);
 
                             return (
-                                <TableRow key={position.position_id}>
-                                  <TableCell>{position.position_id}</TableCell>
-                                  <TableCell className="font-medium">
-                                    {position.name}
-                                  </TableCell>
-                                  <TableCell>
-                                    {position.departments &&
-                                    position.departments.length > 0 ? (
+                              <Draggable 
+                                key={position.position_id.toString()} 
+                                draggableId={position.position_id.toString()} 
+                                index={index}
+                                isDragDisabled={!isSortMode}
+                              >
+                                {(provided) => (
+                                  <TableRow
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    {...provided.dragHandleProps}
+                                  >
+                                    <TableCell>
+                                      {isSortMode && <MoveVertical size={16} className="text-muted-foreground mr-2 inline" />}
+                                      {position.position_id}
+                                    </TableCell>
+                                    <TableCell className="font-medium">
+                                      {position.name}
+                                    </TableCell>
+                                    <TableCell>
+                                      {position.departments && position.departments.length > 0 ? (
                                         <div className="border rounded-md divide-y">
                                           {position.departments.map((dept, index) => {
-                                            // Для каждого отдела найдем соответствующую родительскую должность
-                                            // В будущем здесь можно получать parent_position из position_position где department_id = dept.department_id
                                             return (
-                                                <div
-                                                    key={`dept_${position.position_id}_${dept.department_id}_${dept.position_link_id || 0}_${index}_${Math.random().toString(36).substring(2, 9)}`}
-                                                    className="p-2"
-                                                >
-                                                  <div className="grid grid-cols-[1fr,1fr,auto] gap-2 items-center">
-                                                    <div className="text-sm font-medium">
-                                                      {dept.parent_position ? (
-                                                          <span>
-                                              {dept.parent_position.name}
-                                            </span>
-                                                      ) : (
-                                                          <span className="text-gray-500">
-                                              Нет родительской должности
-                                            </span>
-                                                      )}
-                                                    </div>
-                                                    <div className="text-sm">
-                                                      {dept.department_name}
-                                                      {dept.vacancies !== undefined && (
-                                                          <span className="ml-1 text-xs text-gray-500">
-                                              (штатных единиц: {dept.vacancies})
-                                            </span>
-                                                      )}
-                                                    </div>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-6 w-6"
-                                                        onClick={() =>
-                                                            handleDeleteLink(
-                                                                dept.position_link_id,
-                                                            )
-                                                        }
-                                                        title="Удалить связь"
-                                                    >
-                                                      <svg
-                                                          xmlns="http://www.w3.org/2000/svg"
-                                                          width="16"
-                                                          height="16"
-                                                          viewBox="0 0 24 24"
-                                                          fill="none"
-                                                          stroke="currentColor"
-                                                          strokeWidth="2"
-                                                          strokeLinecap="round"
-                                                          strokeLinejoin="round"
-                                                          className="text-red-500"
-                                                      >
-                                                        <path d="M18 6 6 18"></path>
-                                                        <path d="m6 6 12 12"></path>
-                                                      </svg>
-                                                    </Button>
+                                              <div
+                                                key={`dept_${position.position_id}_${dept.department_id}_${dept.position_link_id || 0}_${index}_${Math.random().toString(36).substring(2, 9)}`}
+                                                className="p-2"
+                                              >
+                                                <div className="grid grid-cols-[1fr,1fr,auto] gap-2 items-center">
+                                                  <div className="text-sm font-medium">
+                                                    {dept.parent_position ? (
+                                                      <span>
+                                                        {dept.parent_position.name}
+                                                      </span>
+                                                    ) : (
+                                                      <span className="text-gray-500">
+                                                        Нет родительской должности
+                                                      </span>
+                                                    )}
                                                   </div>
+                                                  <div className="text-sm">
+                                                    {dept.department_name}
+                                                    {dept.vacancies !== undefined && (
+                                                      <span className="ml-1 text-xs text-gray-500">
+                                                        (штатных единиц: {dept.vacancies})
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                  <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-6 w-6"
+                                                    onClick={() => handleDeleteLink(dept.position_link_id)}
+                                                    title="Удалить связь"
+                                                  >
+                                                    <svg
+                                                      xmlns="http://www.w3.org/2000/svg"
+                                                      width="16"
+                                                      height="16"
+                                                      viewBox="0 0 24 24"
+                                                      fill="none"
+                                                      stroke="currentColor"
+                                                      strokeWidth="2"
+                                                      strokeLinecap="round"
+                                                      strokeLinejoin="round"
+                                                      className="text-red-500"
+                                                    >
+                                                      <path d="M18 6 6 18"></path>
+                                                      <path d="m6 6 12 12"></path>
+                                                    </svg>
+                                                  </Button>
                                                 </div>
+                                              </div>
                                             );
                                           })}
                                         </div>
-                                    ) : (
+                                      ) : (
                                         <span className="text-gray-500">
-                                Нет родительской должности и отделов
-                              </span>
-                                    )}
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="flex space-x-2">
-                                      <Button
+                                          Нет родительской должности и отделов
+                                        </span>
+                                      )}
+                                    </TableCell>
+                                    <TableCell>
+                                      <div className="flex space-x-2">
+                                        <Button
                                           variant="secondary"
                                           size="sm"
-                                          onClick={() =>
-                                              handleOpenAddDepartment(position)
-                                          }
-                                      >
-                                        <svg
+                                          onClick={() => handleOpenAddDepartment(position)}
+                                        >
+                                          <svg
                                             xmlns="http://www.w3.org/2000/svg"
                                             width="16"
                                             height="16"
@@ -758,40 +832,42 @@ export default function Positions() {
                                             strokeLinecap="round"
                                             strokeLinejoin="round"
                                             className="mr-1"
-                                        >
-                                          <path d="M5 12h14"></path>
-                                          <path d="M12 5v14"></path>
-                                        </svg>
-                                        Отдел
-                                      </Button>
-                                      <Button
+                                          >
+                                            <path d="M5 12h14"></path>
+                                            <path d="M12 5v14"></path>
+                                          </svg>
+                                          Отдел
+                                        </Button>
+                                        <Button
                                           variant="outline"
                                           size="sm"
                                           onClick={() => handleEdit(position)}
-                                      >
-                                        Изменить
-                                      </Button>
-                                      <Button
+                                        >
+                                          Изменить
+                                        </Button>
+                                        <Button
                                           variant="destructive"
                                           size="sm"
                                           onClick={() => handleDelete(position)}
-                                          title={
-                                            usedByEmployees
-                                                ? "Должность назначена сотрудникам"
-                                                : ""
-                                          }
-                                      >
-                                        Удалить
-                                      </Button>
-                                    </div>
-                                  </TableCell>
-                                </TableRow>
+                                          title={usedByEmployees ? "Должность назначена сотрудникам" : ""}
+                                        >
+                                          Удалить
+                                        </Button>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                )}
+                              </Draggable>
                             );
                           })
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
+                        )}
+                        {provided.placeholder}
+                      </TableBody>
+                    )}
+                  </Droppable>
+                </Table>
+              </DragDropContext>
+            </div>
             )}
           </CardContent>
         </Card>
