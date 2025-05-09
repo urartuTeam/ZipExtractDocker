@@ -1,32 +1,32 @@
-import React, { useState } from 'react';
-import { Link, useLocation, useParams } from 'wouter';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import React, { useState } from "react";
+import { Link, useLocation, useParams } from "wouter";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDataRefresh } from "@/hooks/use-data-refresh";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { Skeleton } from '@/components/ui/skeleton';
-import { 
+import { Skeleton } from "@/components/ui/skeleton";
+import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle 
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogFooter,
-  DialogDescription
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -48,8 +48,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Project, EmployeeProject, Employee } from '@shared/schema';
-import { ArrowLeft, Users, Plus, Edit, Trash } from 'lucide-react';
+import { Project, EmployeeProject, Employee } from "@shared/schema";
+import { ArrowLeft, Users, Plus, Edit, Trash } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 // Отдельная страница для проекта
@@ -63,39 +63,48 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
   const [showAddEmployeeDialog, setShowAddEmployeeDialog] = useState(false);
 
   // Запрос проекта
-  const { data: projectResponse, isLoading: isLoadingProject } = useQuery<{status: string, data: Project}>({
-    queryKey: ['/api/projects', projectId],
+  const { data: projectResponse, isLoading: isLoadingProject } = useQuery<{
+    status: string;
+    data: Project;
+  }>({
+    queryKey: ["/api/projects", projectId],
     enabled: !!projectId && !isNaN(projectId),
     onError: (error) => {
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить данные проекта',
-        variant: 'destructive',
+        title: "Ошибка",
+        description: "Не удалось загрузить данные проекта",
+        variant: "destructive",
       });
     },
   });
 
   // Запрос сотрудников проекта
-  const { data: projectEmployeesResponse, isLoading: isLoadingProjectEmployees } = useQuery<{status: string, data: EmployeeProject[]}>({
-    queryKey: ['/api/employeeprojects/project', projectId],
+  const {
+    data: projectEmployeesResponse,
+    isLoading: isLoadingProjectEmployees,
+  } = useQuery<{ status: string; data: EmployeeProject[] }>({
+    queryKey: ["/api/employeeprojects/project", projectId],
     enabled: !!projectId && !isNaN(projectId),
     onError: (error) => {
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить сотрудников проекта',
-        variant: 'destructive',
+        title: "Ошибка",
+        description: "Не удалось загрузить сотрудников проекта",
+        variant: "destructive",
       });
     },
   });
 
   // Запрос всех сотрудников
-  const { data: employeesResponse, isLoading: isLoadingEmployees } = useQuery<{status: string, data: Employee[]}>({
-    queryKey: ['/api/employees'],
+  const { data: employeesResponse, isLoading: isLoadingEmployees } = useQuery<{
+    status: string;
+    data: Employee[];
+  }>({
+    queryKey: ["/api/employees"],
     onError: (error) => {
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить список сотрудников',
-        variant: 'destructive',
+        title: "Ошибка",
+        description: "Не удалось загрузить список сотрудников",
+        variant: "destructive",
       });
     },
   });
@@ -107,9 +116,9 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
     },
     resolver: zodResolver(
       z.object({
-        employeeId: z.string().nonempty("Необходимо выбрать сотрудника")
-      })
-    )
+        employeeId: z.string().nonempty("Необходимо выбрать сотрудника"),
+      }),
+    ),
   });
 
   // Мутация для добавления сотрудника в проект
@@ -118,14 +127,16 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
       const res = await apiRequest("POST", "/api/employeeprojects", {
         employee_id: parseInt(values.employeeId),
         project_id: projectId,
-        role: "Участник"
+        role: "Участник",
       });
-      
+
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || "Ошибка при добавлении сотрудника в проект");
+        throw new Error(
+          errorData.message || "Ошибка при добавлении сотрудника в проект",
+        );
       }
-      
+
       return res.json();
     },
     onSuccess: () => {
@@ -133,7 +144,9 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
         title: "Сотрудник добавлен в проект",
         description: "Сотрудник успешно добавлен в проект",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/employeeprojects/project', projectId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/employeeprojects/project", projectId],
+      });
       setShowAddEmployeeDialog(false);
       addEmployeeForm.reset();
     },
@@ -143,19 +156,24 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
         description: error.message,
         variant: "destructive",
       });
-    }
+    },
   });
 
   // Мутация для удаления сотрудника из проекта
   const removeEmployeeFromProject = useMutation({
     mutationFn: async (employeeId: number) => {
-      const res = await apiRequest("DELETE", `/api/employeeprojects/${employeeId}/${projectId}`);
-      
+      const res = await apiRequest(
+        "DELETE",
+        `/api/employeeprojects/${employeeId}/${projectId}`,
+      );
+
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || "Ошибка при удалении сотрудника из проекта");
+        throw new Error(
+          errorData.message || "Ошибка при удалении сотрудника из проекта",
+        );
       }
-      
+
       return res.json();
     },
     onSuccess: () => {
@@ -163,7 +181,9 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
         title: "Сотрудник удален из проекта",
         description: "Сотрудник успешно удален из проекта",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/employeeprojects/project', projectId] });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/employeeprojects/project", projectId],
+      });
     },
     onError: (error: Error) => {
       toast({
@@ -171,34 +191,40 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
         description: error.message,
         variant: "destructive",
       });
-    }
+    },
   });
 
   const project = projectResponse?.data;
   const employeeProjects = projectEmployeesResponse?.data || [];
   const allEmployees = employeesResponse?.data || [];
-  
+
   // Получаем полную информацию о сотрудниках проекта
-  const projectEmployeesWithDetails = employeeProjects.map(ep => {
-    const employee = allEmployees.find(e => e.employee_id === ep.employee_id);
+  const projectEmployeesWithDetails = employeeProjects.map((ep) => {
+    const employee = allEmployees.find((e) => e.employee_id === ep.employee_id);
     return {
       ...ep,
-      employeeDetails: employee
+      employeeDetails: employee,
     };
   });
 
   // Фильтруем сотрудников, которые еще не добавлены в проект
   const availableEmployees = allEmployees.filter(
-    emp => !employeeProjects.some(ep => ep.employee_id === emp.employee_id)
+    (emp) => !employeeProjects.some((ep) => ep.employee_id === emp.employee_id),
   );
 
-  const isLoading = isLoadingProject || isLoadingProjectEmployees || isLoadingEmployees;
+  const isLoading =
+    isLoadingProject || isLoadingProjectEmployees || isLoadingEmployees;
 
   if (isLoading) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center mb-6">
-          <Button variant="outline" size="sm" className="mr-4" onClick={() => navigate('/admin/projects')}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mr-4"
+            onClick={() => navigate("/admin/projects")}
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Назад к проектам
           </Button>
@@ -224,7 +250,12 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center mb-6">
-          <Button variant="outline" size="sm" className="mr-4" onClick={() => navigate('/admin/projects')}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mr-4"
+            onClick={() => navigate("/admin/projects")}
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Назад к проектам
           </Button>
@@ -234,8 +265,10 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
           <CardContent className="pt-6">
             <div className="text-center p-12">
               <h2 className="text-xl font-medium mb-2">Проект не найден</h2>
-              <p className="text-gray-500 mb-4">Проект с ID {projectId} не существует.</p>
-              <Button onClick={() => navigate('/admin/projects')}>
+              <p className="text-gray-500 mb-4">
+                Проект с ID {projectId} не существует.
+              </p>
+              <Button onClick={() => navigate("/admin/projects")}>
                 Вернуться к списку проектов
               </Button>
             </div>
@@ -252,7 +285,12 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
   return (
     <div className="container mx-auto p-6">
       <div className="flex items-center mb-6">
-        <Button variant="outline" size="sm" className="mr-4" onClick={() => navigate('/admin/projects')}>
+        <Button
+          variant="outline"
+          size="sm"
+          className="mr-4"
+          onClick={() => navigate("/admin/projects")}
+        >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Назад к проектам
         </Button>
@@ -267,7 +305,9 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
         <CardContent>
           <div className="space-y-4">
             <div>
-              <p className="text-sm font-medium text-gray-500">Название проекта:</p>
+              <p className="text-sm font-medium text-gray-500">
+                Название проекта:
+              </p>
               <p className="text-lg">{project.name}</p>
             </div>
             <div>
@@ -282,7 +322,9 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Сотрудники проекта</CardTitle>
-            <CardDescription>Всего сотрудников: {projectEmployeesWithDetails.length}</CardDescription>
+            <CardDescription>
+              Всего сотрудников: {projectEmployeesWithDetails.length}
+            </CardDescription>
           </div>
           <Button onClick={() => setShowAddEmployeeDialog(true)}>
             <Plus className="mr-2 h-4 w-4" />
@@ -292,8 +334,12 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
         <CardContent>
           {projectEmployeesWithDetails.length === 0 ? (
             <div className="text-center p-12 border rounded-lg shadow-sm bg-white">
-              <h2 className="text-xl font-medium mb-2">Сотрудники не назначены</h2>
-              <p className="text-gray-500 mb-4">На данный момент к проекту не привязаны сотрудники.</p>
+              <h2 className="text-xl font-medium mb-2">
+                Сотрудники не назначены
+              </h2>
+              <p className="text-gray-500 mb-4">
+                На данный момент к проекту не привязаны сотрудники.
+              </p>
               <Button onClick={() => setShowAddEmployeeDialog(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Привязать сотрудника
@@ -314,15 +360,24 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
                 <TableBody>
                   {projectEmployeesWithDetails.map((ep) => (
                     <TableRow key={ep.employee_id}>
-                      <TableCell className="font-medium">{ep.employeeDetails?.full_name || "Неизвестный сотрудник"}</TableCell>
-                      <TableCell>{ep.employeeDetails?.position_id || "—"}</TableCell>
-                      <TableCell>{ep.employeeDetails?.department_id || "—"}</TableCell>
+                      <TableCell className="font-medium">
+                        {ep.employeeDetails?.full_name ||
+                          "Неизвестный сотрудник"}
+                      </TableCell>
+                      <TableCell>
+                        {ep.employeeDetails?.position_id || "—"}
+                      </TableCell>
+                      <TableCell>
+                        {ep.employeeDetails?.department_id || "—"}
+                      </TableCell>
                       <TableCell>{ep.role || "Участник"}</TableCell>
                       <TableCell>
-                        <Button 
-                          variant="destructive" 
+                        <Button
+                          variant="destructive"
                           size="sm"
-                          onClick={() => removeEmployeeFromProject.mutate(ep.employee_id)}
+                          onClick={() =>
+                            removeEmployeeFromProject.mutate(ep.employee_id)
+                          }
                         >
                           <Trash className="h-4 w-4" />
                         </Button>
@@ -336,7 +391,10 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
         </CardContent>
       </Card>
 
-      <Dialog open={showAddEmployeeDialog} onOpenChange={setShowAddEmployeeDialog}>
+      <Dialog
+        open={showAddEmployeeDialog}
+        onOpenChange={setShowAddEmployeeDialog}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Добавить сотрудника в проект</DialogTitle>
@@ -344,19 +402,19 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
               Выберите сотрудника для добавления в проект "{project.name}"
             </DialogDescription>
           </DialogHeader>
-          
+
           <Form {...addEmployeeForm}>
-            <form onSubmit={addEmployeeForm.handleSubmit(onSubmitAddEmployee)} className="space-y-4">
+            <form
+              onSubmit={addEmployeeForm.handleSubmit(onSubmitAddEmployee)}
+              className="space-y-4"
+            >
               <FormField
                 control={addEmployeeForm.control}
                 name="employeeId"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Сотрудник</FormLabel>
-                    <Select 
-                      value={field.value} 
-                      onValueChange={field.onChange}
-                    >
+                    <Select value={field.value} onValueChange={field.onChange}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Выберите сотрудника" />
@@ -364,10 +422,15 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
                       </FormControl>
                       <SelectContent>
                         {availableEmployees.length === 0 ? (
-                          <SelectItem value="none" disabled>Нет доступных сотрудников</SelectItem>
+                          <SelectItem value="none" disabled>
+                            Нет доступных сотрудников
+                          </SelectItem>
                         ) : (
                           availableEmployees.map((employee) => (
-                            <SelectItem key={employee.employee_id} value={employee.employee_id.toString()}>
+                            <SelectItem
+                              key={employee.employee_id}
+                              value={employee.employee_id.toString()}
+                            >
                               {employee.full_name}
                             </SelectItem>
                           ))
@@ -378,20 +441,25 @@ export const ProjectDetails = ({ id: propId }: { id?: string }) => {
                   </FormItem>
                 )}
               />
-              
+
               <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => setShowAddEmployeeDialog(false)}
                 >
                   Отмена
                 </Button>
-                <Button 
-                  type="submit" 
-                  disabled={addEmployeeToProject.isPending || availableEmployees.length === 0}
+                <Button
+                  type="submit"
+                  disabled={
+                    addEmployeeToProject.isPending ||
+                    availableEmployees.length === 0
+                  }
                 >
-                  {addEmployeeToProject.isPending ? "Добавление..." : "Добавить"}
+                  {addEmployeeToProject.isPending
+                    ? "Добавление..."
+                    : "Добавить"}
                 </Button>
               </DialogFooter>
             </form>
@@ -412,53 +480,59 @@ export default function Projects() {
 
   // Форма добавления проекта
   const projectFormSchema = z.object({
-    name: z.string().min(2, "Название должно содержать минимум 2 символа")
+    name: z.string().min(2, "Название должно содержать минимум 2 символа"),
   });
 
   const projectForm = useForm<z.infer<typeof projectFormSchema>>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      name: ""
-    }
+      name: "",
+    },
   });
 
   // Запрос на получение всех проектов
-  const { data: projectsResponse, isLoading: isLoadingProjects } = useQuery<{status: string, data: Project[]}>({
-    queryKey: ['/api/projects'],
+  const { data: projectsResponse, isLoading: isLoadingProjects } = useQuery<{
+    status: string;
+    data: Project[];
+  }>({
+    queryKey: ["/api/projects"],
     onError: (error) => {
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить проекты',
-        variant: 'destructive',
+        title: "Ошибка",
+        description: "Не удалось загрузить проекты",
+        variant: "destructive",
       });
     },
   });
 
   // Запрос на получение связей сотрудников и проектов
-  const { data: employeeProjectsResponse, isLoading: isLoadingEmployeeProjects } = useQuery<{status: string, data: EmployeeProject[]}>({
-    queryKey: ['/api/employeeprojects'],
+  const {
+    data: employeeProjectsResponse,
+    isLoading: isLoadingEmployeeProjects,
+  } = useQuery<{ status: string; data: EmployeeProject[] }>({
+    queryKey: ["/api/employeeprojects"],
     onError: (error) => {
       toast({
-        title: 'Ошибка',
-        description: 'Не удалось загрузить связи сотрудников и проектов',
-        variant: 'destructive',
+        title: "Ошибка",
+        description: "Не удалось загрузить связи сотрудников и проектов",
+        variant: "destructive",
       });
     },
   });
 
   // Настройка автоматического обновления данных
-  useDataRefresh(['/api/projects', '/api/employeeprojects']);
+  useDataRefresh(["/api/projects", "/api/employeeprojects"]);
 
   // Мутация для создания проекта
   const createProject = useMutation({
     mutationFn: async (values: z.infer<typeof projectFormSchema>) => {
       const res = await apiRequest("POST", "/api/projects", values);
-      
+
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Ошибка при создании проекта");
       }
-      
+
       return res.json();
     },
     onSuccess: () => {
@@ -466,7 +540,7 @@ export default function Projects() {
         title: "Проект создан",
         description: "Новый проект успешно создан",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/projects"] });
       setShowAddProjectDialog(false);
       projectForm.reset();
     },
@@ -476,22 +550,24 @@ export default function Projects() {
         description: error.message,
         variant: "destructive",
       });
-    }
+    },
   });
 
   const projects = projectsResponse?.data || [];
   const employeeProjects = employeeProjectsResponse?.data || [];
-  
+
   const isLoading = isLoadingProjects || isLoadingEmployeeProjects;
 
   // Сортировка проектов по полю sort и фильтрация по поисковому запросу
   const filteredProjects = [...projects]
     .sort((a, b) => (a.sort || 0) - (b.sort || 0))
-    .filter(project => project.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    .filter((project) =>
+      project.name.toLowerCase().includes(searchTerm.toLowerCase()),
+    );
 
   // Подсчет количества сотрудников для каждого проекта
   const getEmployeeCount = (projectId: number) => {
-    return employeeProjects.filter(ep => ep.project_id === projectId).length;
+    return employeeProjects.filter((ep) => ep.project_id === projectId).length;
   };
 
   const onSubmitProject = (values: z.infer<typeof projectFormSchema>) => {
@@ -532,7 +608,9 @@ export default function Projects() {
           ) : projects.length === 0 ? (
             <div className="text-center p-12 border rounded-lg shadow-sm bg-white">
               <h2 className="text-xl font-medium mb-2">Список проектов пуст</h2>
-              <p className="text-gray-500 mb-4">На данный момент проекты не созданы.</p>
+              <p className="text-gray-500 mb-4">
+                На данный момент проекты не созданы.
+              </p>
               <Button onClick={() => setShowAddProjectDialog(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Создать проект
@@ -558,9 +636,17 @@ export default function Projects() {
                     </TableRow>
                   ) : (
                     filteredProjects.map((project) => (
-                      <TableRow key={project.project_id} className="cursor-pointer hover:bg-gray-50" onClick={() => navigate(`/admin/projects/${project.project_id}`)}>
+                      <TableRow
+                        key={project.project_id}
+                        className="cursor-pointer hover:bg-gray-50"
+                        onClick={() =>
+                          navigate(`/admin/projects/${project.project_id}`)
+                        }
+                      >
                         <TableCell>{project.project_id}</TableCell>
-                        <TableCell className="font-medium">{project.name}</TableCell>
+                        <TableCell className="font-medium">
+                          {project.name}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center">
                             <Users className="h-4 w-4 mr-2 text-gray-500" />
@@ -568,13 +654,18 @@ export default function Projects() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
-                            <Button 
-                              variant="outline" 
+                          <div
+                            className="flex space-x-2"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              variant="outline"
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/admin/projects/${project.project_id}`);
+                                navigate(
+                                  `/admin/projects/${project.project_id}`,
+                                );
                               }}
                             >
                               <Edit className="h-4 w-4" />
@@ -591,7 +682,10 @@ export default function Projects() {
         </CardContent>
       </Card>
 
-      <Dialog open={showAddProjectDialog} onOpenChange={setShowAddProjectDialog}>
+      <Dialog
+        open={showAddProjectDialog}
+        onOpenChange={setShowAddProjectDialog}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Добавить новый проект</DialogTitle>
@@ -599,9 +693,12 @@ export default function Projects() {
               Введите информацию о новом проекте
             </DialogDescription>
           </DialogHeader>
-          
+
           <Form {...projectForm}>
-            <form onSubmit={projectForm.handleSubmit(onSubmitProject)} className="space-y-4">
+            <form
+              onSubmit={projectForm.handleSubmit(onSubmitProject)}
+              className="space-y-4"
+            >
               <FormField
                 control={projectForm.control}
                 name="name"
@@ -609,27 +706,25 @@ export default function Projects() {
                   <FormItem>
                     <FormLabel>Название проекта</FormLabel>
                     <FormControl>
-                      <Input placeholder="Введите название проекта" {...field} />
+                      <Input
+                        placeholder="Введите название проекта"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
 
-              
               <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   onClick={() => setShowAddProjectDialog(false)}
                 >
                   Отмена
                 </Button>
-                <Button 
-                  type="submit" 
-                  disabled={createProject.isPending}
-                >
+                <Button type="submit" disabled={createProject.isPending}>
                   {createProject.isPending ? "Создание..." : "Создать"}
                 </Button>
               </DialogFooter>

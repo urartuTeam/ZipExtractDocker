@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronDown, Building, Users, Search, X } from "lucide-react";
 import { Link, useRoute } from "wouter";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Типы данных
 type Department = {
@@ -72,13 +74,15 @@ export default function Vacancies() {
   // State
   const [expDept, setExpDept] = useState<{ [k: number]: boolean }>({});
   const [expPos, setExpPos] = useState<{ [k: string]: boolean }>({});
-  const [allExpanded, setAllExpanded] = useState(true);
+  const [allExpanded, setAllExpanded] = useState(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [searchMatches, setSearchMatches] = useState<SearchMatch>({
     departments: new Set<number>(),
     positions: new Set<number>()
   });
 
+  const [vacantSort, setVacantSort] = useState(false);
+  const [busySort, setBusySort] = useState(false);
   const [, routeParams] = useRoute('/vacancies/:id');
 
   // Запросы к API
@@ -505,13 +509,19 @@ export default function Vacancies() {
       bgClass = emps.length < staffUnits ? "bg-red-100" : "bg-green-100";
     }
 
+    if (vacancies === 0 && vacantSort || vacancies > 0 && busySort) {
+      bgClass += " opacity-30"
+    }
+
+    const paddingLeftValue = lvl * 20 + ((childPositions.length === 0 && childDepts.length === 0) ? 15 : 0);
+
     // Добавляем строку для текущей должности
     rows.push(
         <TableRow key={rowId} className={bgClass}>
           <TableCell className="font-medium">
             <div
                 className="flex items-center cursor-pointer"
-                style={{ paddingLeft: `${lvl * 20}px` }}
+                style={{ paddingLeft: `${paddingLeftValue}px` }}
                 onClick={() => togglePos(key)}
             >
               {(childPositions.length > 0 || childDepts.length > 0) &&
@@ -677,17 +687,43 @@ export default function Vacancies() {
                 </Button>
               </div>
             </div>
+            <div>
+              <CardTitle>Учет вакансий</CardTitle>
+              <CardDescription>
+                Анализ штатных единиц и занятых позиций
+              </CardDescription>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="-mt-[48px]">
             <Table>
               <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="min-w-[400px]"></TableHead>
+                  <TableHead colSpan={3}>
+                    <div className="flex items-center justify-center gap-2">
+                      Штатные позиции
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <Button className="p-0 h-auto size-4 rounded-[50%]">i</Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="text-center">Нажатием на <br></br>"Занято" или "Вакантно" <br></br>можно отфильтровать структуру <br></br>организации, оставив выбранное.</TooltipContent>
+                      </Tooltip>
+                    </div>
+                  </TableHead>
+                </TableRow>
                 <TableRow>
                   <TableHead className="min-w-[400px]">
                     Структура организации
                   </TableHead>
-                  <TableHead className="text-center">Всего мест</TableHead>
-                  <TableHead className="text-center">Занято</TableHead>
-                  <TableHead className="text-center">Вакансий</TableHead>
+                  <TableHead className="text-center">Всего</TableHead>
+                  <TableHead
+                    className={`selection:bg-transparent cursor-pointer text-center text-primary${busySort ? ' pointer-events-none opacity-50' : ''}`}
+                    onClick={() => setVacantSort((prevValue) => !prevValue)}
+                  >Занято</TableHead>
+                  <TableHead
+                    className={`selection:bg-transparent cursor-pointer text-center text-primary${vacantSort ? ' pointer-events-none opacity-50' : ''}`}
+                    onClick={() => setBusySort((prevValue) => !prevValue)}
+                  >Вакансии</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
