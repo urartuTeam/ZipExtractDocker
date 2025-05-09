@@ -134,18 +134,31 @@ export function registerPositionEndpoints(app: Express) {
         };
       });
 
+      // Сортируем результаты по полю sort, затем по position_id
+      const sortedPositions = positionsWithDepts.sort((a, b) => {
+        const aSort = a.sort ?? 0;
+        const bSort = b.sort ?? 0;
+        
+        // Если значения sort различаются, сортируем по sort
+        if (aSort !== bSort) {
+          return aSort - bSort;
+        }
+        // Если значения sort одинаковые, сортируем по position_id
+        return a.position_id - b.position_id;
+      });
+
       // Вывод отладочной информации
-      if (positionsWithDepts.length > 0) {
+      if (sortedPositions.length > 0) {
         console.log("Пример обработанной должности:",
             JSON.stringify({
-              position_id: positionsWithDepts[0].position_id,
-              name: positionsWithDepts[0].name,
-              departments: positionsWithDepts[0].departments
+              position_id: sortedPositions[0].position_id,
+              name: sortedPositions[0].name,
+              departments: sortedPositions[0].departments
             }, null, 2)
         );
       }
 
-      res.json({ status: 'success', data: positionsWithDepts });
+      res.json({ status: 'success', data: sortedPositions });
     } catch (error) {
       console.error('Ошибка при получении должностей с отделами:', error);
       res.status(500).json({
