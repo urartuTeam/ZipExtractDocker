@@ -205,7 +205,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllPositions(): Promise<Position[]> {
-    return await db.select().from(positions).where(eq(positions.deleted, false));
+    return await db.select()
+      .from(positions)
+      .where(eq(positions.deleted, false))
+      .orderBy(positions.sort)
+      .orderBy(positions.position_id);
   }
 
   async getPositionCategories(): Promise<Position[]> {

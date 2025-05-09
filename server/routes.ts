@@ -445,6 +445,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ status: 'error', message: 'Failed to delete position' });
     }
   });
+  
+  // Обновление порядка сортировки должностей
+  app.post('/api/positions/sort', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { updates } = req.body;
+      
+      if (!Array.isArray(updates)) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Ожидается массив обновлений' 
+        });
+      }
+      
+      // Проверяем валидность данных
+      for (const update of updates) {
+        if (!update.position_id || typeof update.sort !== 'number') {
+          return res.status(400).json({ 
+            status: 'error', 
+            message: 'Неверный формат данных обновления' 
+          });
+        }
+      }
+      
+      // Выполняем обновления 
+      for (const update of updates) {
+        await db
+          .update(positions)
+          .set({ sort: update.sort })
+          .where(eq(positions.position_id, update.position_id))
+          .execute();
+      }
+      
+      res.status(200).json({ 
+        status: 'success', 
+        message: 'Порядок сортировки должностей успешно обновлен' 
+      });
+    } catch (error) {
+      console.error('Error updating positions sort order:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Ошибка при обновлении порядка сортировки должностей' 
+      });
+    }
+  });
 
   // Сотрудники (Employees) endpoints
   app.get('/api/employees', async (req: Request, res: Response) => {

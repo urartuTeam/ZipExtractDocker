@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDataRefresh } from "@/hooks/use-data-refresh";
 import {
@@ -12,6 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
+import { MoveVertical } from "lucide-react";
 import {
   Card,
   CardContent,
