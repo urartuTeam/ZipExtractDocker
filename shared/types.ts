@@ -16,6 +16,7 @@ export type Position = {
   parent_position_id?: number | null;
   department_id?: number | null;
   is_category?: boolean;
+  sort?: number | null;
   deleted?: boolean;
   deleted_at?: string | null;
 };

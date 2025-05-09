@@ -362,7 +362,8 @@ const PositionTree = ({
   // Определяем, является ли это первичным показом организационного дерева с самой вершины
   const isRootView = !selectedPositionId;
 
-  // console.log(firstNode);
+ // console.log(firstNode);
+
 
   useEffect(() => {
     const calculateWidthsRecursively = (container: HTMLElement): number => {
@@ -398,8 +399,8 @@ const PositionTree = ({
         const last = branches[branches.length - 1]?.offsetWidth || 0;
         const totalLine = totalWidth - (first + last) / 2 - 20;
         line.style.width = `${totalLine}px`;
-        //  console.log("-------------------");
-        // console.log(first);
+      //  console.log("-------------------");
+       // console.log(first);
         // line.style.left = `${first / 2 + 10}px`;
       }
 
@@ -674,7 +675,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // Используем данные о должностях с отделами из пропсов или из запроса
   const positionsWithDepartments =
-    positionsData || positionsWithDepartmentsResponse?.data || [];
+      positionsData || positionsWithDepartmentsResponse?.data || [];
 
   // Сохраняем positionsWithDepartments в глобальном объекте для доступа из подкомпонентов
   if (typeof window !== "undefined") {
@@ -699,7 +700,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // Если есть ошибка с запросом настроек, просто логируем
   if (isError) {
-    //  console.log("Ошибка получения настроек, используем значения по умолчанию");
+  //  console.log("Ошибка получения настроек, используем значения по умолчанию");
   }
 
   // Получаем настройки из ответа или используем значение по умолчанию
@@ -712,7 +713,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       )?.data_value || defaultLevels
     : defaultLevels;
 
-  // console.log("Настройки уровней иерархии:", hierarchyInitialLevels);
+ // console.log("Настройки уровней иерархии:", hierarchyInitialLevels);
 
   // Инициализируем состояние showThreeLevels на основе настроек
   useEffect(() => {
@@ -723,7 +724,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   // Эффект для обновления UI при изменении настройки showThreeLevels
   useEffect(() => {
     // Реагируем на изменение настройки отображения уровней
-    //  console.log("Обновленная настройка showThreeLevels:", showThreeLevels);
+  //  console.log("Обновленная настройка showThreeLevels:", showThreeLevels);
   }, [showThreeLevels]);
 
   // Обработчики для изменения настроек отображения
@@ -1434,23 +1435,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       }
     });
 
-    //  console.log(`Построено ${rootNodes.length} корневых узлов`);
-    
-    // Сортируем подчиненные должности для каждого узла по полю sort
-    Object.values(positionNodes).forEach(node => {
-      // Сортируем подчиненных по полю sort
-      if (node.subordinates.length > 0) {
-        node.subordinates.sort((a, b) => {
-          // Если sort отсутствует, считаем его равным 0
-          const aSort = a.position.sort ?? 0;
-          const bSort = b.position.sort ?? 0;
-          
-          // Сортировка по полю sort
-          return aSort - bSort;
-        });
-      }
-    });
-    
+  //  console.log(`Построено ${rootNodes.length} корневых узлов`);
     // Выводим информацию о корневых узлах
     rootNodes.forEach((node) => {
       // console.log(
@@ -1460,7 +1445,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       if (node.subordinates.length > 0) {
         node.subordinates.forEach((sub) => {
           // console.log(
-          //   `- Подчиненный: "${sub.position.name}" (ID: ${sub.position.position_id}), родительская должность: ${sub.position.parent_position_id}, sort: ${sub.position.sort}`,
+          //   `- Подчиненный: "${sub.position.name}" (ID: ${sub.position.position_id}), родительская должность: ${sub.position.parent_position_id}`,
           // );
         });
       }
@@ -1469,11 +1454,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     return rootNodes;
   };
 
-  const attachAllChildDepartmentsRecursively = (
-    node: PositionHierarchyNode,
-  ) => {
+  const attachAllChildDepartmentsRecursively = (node: PositionHierarchyNode) => {
     const childDepts = departments.filter(
-      (d) => d.parent_position_id === node.position.position_id,
+        (d) => d.parent_position_id === node.position.position_id
     );
 
     childDepts.forEach((dept) => {
@@ -1503,27 +1486,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       attachAllChildDepartmentsRecursively(deptNode);
 
       // Добавляем отдел в текущий узел
-      if (
-        !node.subordinates.some(
-          (n) => n.position.position_id === deptNode.position.position_id,
-        )
-      ) {
+      if (!node.subordinates.some(n => n.position.position_id === deptNode.position.position_id)) {
         node.subordinates.push(deptNode);
       }
     });
 
-    // Сортируем подчиненных по полю sort
-    if (node.subordinates.length > 0) {
-      node.subordinates.sort((a, b) => {
-        // Если sort отсутствует, считаем его равным 0
-        const aSort = a.position.sort ?? 0;
-        const bSort = b.position.sort ?? 0;
-        
-        // Сортировка по полю sort
-        return aSort - bSort;
-      });
-    }
-    
     // Рекурсивно обходим всех subordinates
     node.subordinates.forEach((childNode) => {
       attachAllChildDepartmentsRecursively(childNode);
@@ -1532,7 +1499,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   const buildRootDepartmentHierarchy = () => {
     if (positions.length === 0 || departments.length === 0) {
-      //  console.error("Нет данных о должностях или отделах");
+    //  console.error("Нет данных о должностях или отделах");
       return [];
     }
 
@@ -1931,8 +1898,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   useEffect(() => {
     // Проверка всех необходимых данных
     const hasAllData =
-      departments.length > 0 &&
-      (positions.length > 0 || positionsWithDepartments.length > 0);
+        departments.length > 0 &&
+        (positions.length > 0 || positionsWithDepartments.length > 0);
 
     if (hasAllData) {
       // Вычисляем данные для построения дерева только 1 раз, когда все загружено
