@@ -254,8 +254,27 @@ const DepartmentWithChildren = ({
     }
   }
 
+  // Сортируем должности по полю sort, затем по position_id
+  const sortedDepartmentPositions = [...departmentPositions].sort((a, b) => {
+    // Находим связь position-department для текущей должности и текущего отдела
+    const aLink = a.departments?.find((d: any) => d.department_id === department.department_id);
+    const bLink = b.departments?.find((d: any) => d.department_id === department.department_id);
+    
+    // Извлекаем значения sort, если не найдены, используем 0
+    const aSort = aLink?.sort ?? 0;
+    const bSort = bLink?.sort ?? 0;
+    
+    // Если значения sort различаются, сортируем по sort
+    if (aSort !== bSort) {
+      return aSort - bSort;
+    }
+    
+    // Если значения sort одинаковые, сортируем по position_id
+    return a.position_id - b.position_id;
+  });
+  
   // Получаем сотрудников для каждой должности
-  const positionsWithEmployees = departmentPositions.map((position) => {
+  const positionsWithEmployees = sortedDepartmentPositions.map((position) => {
     const positionEmployees = allEmployees.filter(
       (emp) =>
         emp.position_id === position.position_id &&
