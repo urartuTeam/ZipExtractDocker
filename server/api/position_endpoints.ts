@@ -94,8 +94,16 @@ export function registerPositionEndpoints(app: Express) {
           });
         });
 
-        // Преобразуем Map обратно в массив для результата
-        const linkedDepartments = Array.from(linkMap.values());
+        // Преобразуем Map обратно в массив для результата и сортируем по полю sort
+        const linkedDepartments = Array.from(linkMap.values())
+            .sort((a, b) => {
+                // Если sort отсутствует, считаем его равным 0
+                const aSort = a.sort ?? 0;
+                const bSort = b.sort ?? 0;
+                
+                // Сортировка только по полю sort
+                return aSort - bSort;
+            });
 
         // Соберем информацию о родительских и дочерних должностях
         const parentPositionsInfo = positionRelations
@@ -134,17 +142,14 @@ export function registerPositionEndpoints(app: Express) {
         };
       });
 
-      // Сортируем результаты по полю sort, затем по position_id
+      // Сортируем результаты ТОЛЬКО по полю sort
       const sortedPositions = positionsWithDepts.sort((a, b) => {
+        // Если sort отсутствует, считаем его равным 0
         const aSort = a.sort ?? 0;
         const bSort = b.sort ?? 0;
         
-        // Если значения sort различаются, сортируем по sort
-        if (aSort !== bSort) {
-          return aSort - bSort;
-        }
-        // Если значения sort одинаковые, сортируем по position_id
-        return a.position_id - b.position_id;
+        // Сортировка только по полю sort
+        return aSort - bSort;
       });
 
       // Вывод отладочной информации
