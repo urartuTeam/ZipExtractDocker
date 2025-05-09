@@ -87,6 +87,8 @@ export default function Vacancies() {
   const [vacantSort, setVacantSort] = useState(false);
   const [busySort, setBusySort] = useState(false);
   const [, routeParams] = useRoute('/vacancies/:id');
+  const [stateOrgId, setStateOrgId] = useState<number | null>(null);
+  const [stateOrgName, setStateOrgName] = useState<string | null>(null);
 
   // Запросы к API
   const { data: deptData, isLoading: ldDept } = useQuery<{ data: Department[] }>({
@@ -662,10 +664,6 @@ export default function Vacancies() {
     return [];
   }
 
-  // Получаем состояние из localStorage, которое мы записываем при переходе с главной страницы
-  const [stateOrgId, setStateOrgId] = useState<number | null>(null);
-  const [stateOrgName, setStateOrgName] = useState<string | null>(null);
-  
   // При монтировании компонента проверяем localStorage и настраиваем автоматическое раскрытие уровней
   useEffect(() => {
     const savedOrgId = localStorage.getItem('selectedOrganizationId');
@@ -680,7 +678,7 @@ export default function Vacancies() {
       setStateOrgName(savedOrgName);
       localStorage.removeItem('selectedOrganizationName');
     }
-  }, []);
+  }, [setStateOrgId, setStateOrgName]);
   
   // Если есть ID организации в state, используем его
   // Иначе ищем Цифролаб как дефолтную организацию
