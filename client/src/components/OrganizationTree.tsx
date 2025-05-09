@@ -256,21 +256,41 @@ const DepartmentWithChildren = ({
 
   // Сортируем должности по полю sort, затем по position_id
   const sortedDepartmentPositions = [...departmentPositions].sort((a, b) => {
-    // Находим связь position-department для текущей должности и текущего отдела
-    const aLink = a.departments?.find((d: any) => d.department_id === department.department_id);
-    const bLink = b.departments?.find((d: any) => d.department_id === department.department_id);
-    
-    // Извлекаем значения sort, если не найдены, используем 0
-    const aSort = aLink?.sort ?? 0;
-    const bSort = bLink?.sort ?? 0;
-    
-    // Если значения sort различаются, сортируем по sort
-    if (aSort !== bSort) {
-      return aSort - bSort;
+    try {
+      // Проверяем наличие нужных свойств перед обработкой
+      if (!a || !b || typeof a !== 'object' || typeof b !== 'object') {
+        console.error('Некорректные объекты должностей при сортировке:', a, b);
+        return 0; // Не меняем порядок при ошибке данных
+      }
+      
+      // Безопасно находим связь position-department для текущей должности и текущего отдела
+      const aLink = a.departments && Array.isArray(a.departments) 
+        ? a.departments.find((d) => d && d.department_id === department.department_id) 
+        : null;
+      
+      const bLink = b.departments && Array.isArray(b.departments) 
+        ? b.departments.find((d) => d && d.department_id === department.department_id) 
+        : null;
+      
+      // Извлекаем значения sort, если не найдены, используем 0
+      const aSort = aLink && typeof aLink.sort === 'number' ? aLink.sort : 0;
+      const bSort = bLink && typeof bLink.sort === 'number' ? bLink.sort : 0;
+      
+      // Если значения sort различаются, сортируем по sort
+      if (aSort !== bSort) {
+        return aSort - bSort;
+      }
+      
+      // Если значения sort одинаковые, сортируем по position_id (если есть)
+      if (typeof a.position_id === 'number' && typeof b.position_id === 'number') {
+        return a.position_id - b.position_id;
+      }
+      
+      return 0; // По умолчанию не меняем порядок
+    } catch (error) {
+      console.error('Ошибка при сортировке должностей:', error);
+      return 0; // Не меняем порядок при ошибке
     }
-    
-    // Если значения sort одинаковые, сортируем по position_id
-    return a.position_id - b.position_id;
   });
   
   // Получаем сотрудников для каждой должности
@@ -1196,7 +1216,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     console.log("ОТЛАДКА: positionNodes содержит", Object.keys(positionNodes).length, "позиций");
     
     // Находим корневые узлы, используя собранный set childPositions
-    const rootNodes: PositionHierarchyNode[] = [];
+    let rootNodesCustom: PositionHierarchyNode[] = [];
     
     // Выводим список всех должностей для отладки
     Object.values(positionNodes).forEach(node => {
@@ -1266,9 +1286,9 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         console.log("ОТЛАДКА: Структура успешно создана: Заместитель руководителя департамента -> ООО Цифролаб -> Генеральный директор");
         console.log("ОТЛАДКА: Структура успешно создана: Заместитель руководителя департамента -> ГБУ МСИ -> (дочерние отделы)");
         
-        // Важно: добавляем заместителя в rootNodes, чтобы его отображать
-        rootNodes.push(zamPosition);
-        console.log("ОТЛАДКА: Добавили замдиректора в корневые узлы, теперь их:", rootNodes.length);
+        // Важно: добавляем заместителя в rootNodesCustom, чтобы его отображать
+        rootNodesCustom.push(zamPosition);
+        console.log("ОТЛАДКА: Добавили замдиректора в корневые узлы, теперь их:", rootNodesCustom.length);
       } else {
         console.log("ОТЛАДКА: Не найдены организации ООО \"Цифролаб\" или ГБУ МСИ");
       }
@@ -1423,7 +1443,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     });
 
     // Находим корневые узлы, используя собранный set childPositions
-    const rootNodes: PositionHierarchyNode[] = [];
+    // Продолжаем использовать rootNodesCustom, который был объявлен ранее
 
     // Получаем информацию о том, какие позиции должны быть на корневом уровне
     // На корневом уровне должны быть позиции, у которых is_subordinate = false
@@ -1441,7 +1461,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
       // Если позиция не подчиненная (не имеет родителей в position_position), то это корневая позиция
       if (!isSubordinate) {
-        rootNodes.push(node);
+        rootNodesCustom.push(node);
         console.log(
           `Добавлена корневая должность: "${node.position.name}" (ID: ${positionId}) с ${node.subordinates.length} подчиненными`,
         );
@@ -1487,11 +1507,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           childPositions.add(childId);
 
           // Удаляем из корневых узлов, если там есть
-          const childNodeIndex = rootNodes.findIndex(
+          const childNodeIndex = rootNodesCustom.findIndex(
             (node) => node.position.position_id === childId,
           );
           if (childNodeIndex !== -1) {
-            rootNodes.splice(childNodeIndex, 1);
+            rootNodesCustom.splice(childNodeIndex, 1);
           }
 
           // И удаляем из подчинённых других узлов (если есть)
