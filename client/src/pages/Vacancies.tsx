@@ -666,7 +666,7 @@ export default function Vacancies() {
   const [stateOrgId, setStateOrgId] = useState<number | null>(null);
   const [stateOrgName, setStateOrgName] = useState<string | null>(null);
   
-  // При монтировании компонента проверяем localStorage
+  // При монтировании компонента проверяем localStorage и настраиваем автоматическое раскрытие уровней
   useEffect(() => {
     const savedOrgId = localStorage.getItem('selectedOrganizationId');
     const savedOrgName = localStorage.getItem('selectedOrganizationName');
@@ -692,6 +692,37 @@ export default function Vacancies() {
   
   // Определяем, показывать только выбранную организацию или все организации
   const showOnlyTarget = Boolean(targetDepartmentId);
+  
+  // Эффект для авто-раскрытия первых двух уровней дерева при загрузке данных
+  useEffect(() => {
+    if (departments.length && positions.length && !Object.keys(expDept).length) {
+      console.log("Авто-раскрытие первых 2-х уровней дерева...");
+      
+      // Определяем корневые отделы
+      const rootDepts = departments.filter(d => 
+        !d.deleted && d.parent_department_id === null
+      );
+      
+      // Определяем отделы первого уровня
+      const level1Depts = departments.filter(d => 
+        !d.deleted && rootDepts.some(rd => rd.department_id === d.parent_department_id)
+      );
+      
+      const newExpDept: { [k: number]: boolean } = {};
+      
+      // Раскрываем корневые отделы
+      rootDepts.forEach(d => {
+        newExpDept[d.department_id] = true;
+      });
+      
+      // Раскрываем отделы первого уровня
+      level1Depts.forEach(d => {
+        newExpDept[d.department_id] = true;
+      });
+      
+      setExpDept(newExpDept);
+    }
+  }, [departments, positions, expDept]);
   
   // Фильтруем корневые отделы в соответствии с поисковым запросом
   const roots = departments.filter(
