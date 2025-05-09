@@ -157,7 +157,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllDepartments(): Promise<Department[]> {
-    return await db.select().from(departments).where(eq(departments.deleted, false)).orderBy(departments.department_id);
+    return await db.select()
+      .from(departments)
+      .where(eq(departments.deleted, false))
+      .orderBy(departments.sort)
+      .orderBy(departments.department_id);
   }
 
   async createDepartment(insertDepartment: InsertDepartment): Promise<Department> {
