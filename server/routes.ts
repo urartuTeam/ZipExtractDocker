@@ -243,6 +243,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ status: 'error', message: 'Failed to delete department' });
     }
   });
+  
+  // Обновление порядка сортировки отделов
+  app.post('/api/departments/sort', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { updates } = req.body;
+      
+      if (!Array.isArray(updates)) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Ожидается массив обновлений' 
+        });
+      }
+      
+      // Проверяем валидность данных
+      for (const update of updates) {
+        if (!update.department_id || typeof update.sort !== 'number') {
+          return res.status(400).json({ 
+            status: 'error', 
+            message: 'Неверный формат данных обновления' 
+          });
+        }
+      }
+      
+      // Выполняем обновления в транзакции
+      for (const update of updates) {
+        await db.update(departments)
+          .set({ sort: update.sort })
+          .where(eq(departments.department_id, update.department_id));
+      }
+      
+      res.status(200).json({ 
+        status: 'success', 
+        message: 'Порядок сортировки отделов успешно обновлен' 
+      });
+    } catch (error) {
+      console.error('Error updating departments sort order:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Ошибка при обновлении порядка сортировки отделов' 
+      });
+    }
+  });
 
   // Organizations endpoints
   app.get('/api/organizations', async (req: Request, res: Response) => {
