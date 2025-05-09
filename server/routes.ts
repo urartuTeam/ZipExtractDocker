@@ -347,44 +347,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         positionData.is_category = false;
       }
       
-      // Проверяем, существует ли уже должность с таким именем, но помеченная как удаленная
-      const existingPosition = await db
-        .select()
-        .from(positions)
-        .where(
-          and(
-            eq(positions.name, positionData.name), 
-            eq(positions.deleted, true)
-          )
-        )
-        .limit(1);
-      
-      let position;
-      
-      if (existingPosition.length > 0) {
-        // Если найдена удаленная должность с таким же именем, обновляем её
-        console.log(`Восстанавливаем удаленную должность ID ${existingPosition[0].position_id} с именем "${positionData.name}"`);
-        
-        [position] = await db
-          .update(positions)
-          .set({
-            ...positionData,
-            deleted: false,
-            deleted_at: null
-          })
-          .where(eq(positions.position_id, existingPosition[0].position_id))
-          .returning();
-          
-        res.status(200).json({ 
-          status: 'success', 
-          data: position,
-          message: 'Восстановлена ранее удаленная должность'
-        });
-      } else {
-        // Создаем новую должность
-        position = await storage.createPosition(positionData);
-        res.status(201).json({ status: 'success', data: position });
-      }
+      // Создаем новую должность - внутри storage.createPosition будет
+      // проверка и удаление старых должностей с тем же именем
+      const position = await storage.createPosition(positionData);
+      res.status(201).json({ status: 'success', data: position });
     } catch (error) {
       if (error instanceof ZodError) {
         const validationError = fromZodError(error);
