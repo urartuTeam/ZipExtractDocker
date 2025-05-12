@@ -2406,15 +2406,26 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         subordinatesCount: filteredSubordinates.length,
       });
 
-      // Показываем только выбранный узел - его отфильтрованные подчиненные видны внутри него
-      setFilteredHierarchy([filteredNode]);
-    } else {
-      // Если должность не найдена, показываем только второй уровень иерархии
-      if (positionHierarchy[0] && positionHierarchy[0].subordinates) {
-        setFilteredHierarchy(positionHierarchy[0].subordinates);
+      // Для построения правильного дерева нам нужно либо:
+      // 1. Показать полное дерево и просто скроллировать к выбранному узлу (что не очень удобно)
+      // 2. Показать поддерево, начиная с выбранного узла (это мы и делаем)
+      
+      // Важно: при использовании [filteredNode] мы строим только один уровень вниз
+      // Это означает, что вы увидите подчиненных, но не увидите связь генерального директора с его дочерними отделами
+      
+      // При переходе на такие должности как генеральный директор, мы хотим показать все дерево
+      if (filteredNode.position && filteredNode.childDepartments && filteredNode.childDepartments.length > 0) {
+        console.log(`У ${filteredNode.position.name} есть дочерние отделы, показываем полное дерево`);
+        // Находим корень дерева и показываем полную иерархию
+        setFilteredHierarchy(positionHierarchy);
       } else {
-        setFilteredHierarchy([]);
+        // Иначе показываем только выбранный узел и его подчиненных
+        setFilteredHierarchy([filteredNode]);
       }
+    } else {
+      // Если должность не найдена, показываем все уровни иерархии с корня
+      // Это важно для построения правильного дерева
+      setFilteredHierarchy(positionHierarchy);
     }
   }, [selectedPositionId, positionHierarchy]);
 
