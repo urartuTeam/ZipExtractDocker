@@ -862,17 +862,48 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   };
 
   // Рекурсивно ищем узел должности по ID
+  // Добавлен параметр currentDepartmentId для сохранения контекста отдела
   const findPositionNodeById = (
     nodes: PositionHierarchyNode[],
     positionId: number,
+    currentDepartmentId?: number | null
   ): PositionHierarchyNode | null => {
     for (const node of nodes) {
       if (node.position.position_id === positionId) {
-        return node;
+        // Когда находим нужную должность, создаем копию узла,
+        // чтобы избежать изменения исходного объекта
+        let result = { ...node };
+        
+        // Если передан ID отдела и текущий узел не содержит информацию об отделе,
+        // то добавляем department_id в поле position
+        if (currentDepartmentId && !result.department) {
+          const departmentInfo = departments.find(d => d.department_id === currentDepartmentId);
+          if (departmentInfo) {
+            result.department = departmentInfo;
+          }
+        }
+        
+        // Если нам известен отдел, фильтруем сотрудников только для этого отдела
+        if (currentDepartmentId) {
+          // Получаем сотрудников из всех сотрудников, относящихся к данной должности и отделу
+          const deptEmployees = employees.filter(e => 
+            e.position_id === positionId && 
+            e.department_id === currentDepartmentId &&
+            !e.deleted // Только не удаленные сотрудники
+          );
+          
+          // Если у нас есть конкретные сотрудники для этого отдела, 
+          // обновляем массив сотрудников в узле
+          if (deptEmployees.length > 0) {
+            result.employees = deptEmployees;
+          }
+        }
+        
+        return result;
       }
 
       if (node.subordinates.length > 0) {
-        const found = findPositionNodeById(node.subordinates, positionId);
+        const found = findPositionNodeById(node.subordinates, positionId, currentDepartmentId);
         if (found) {
           return found;
         }
@@ -1987,10 +2018,43 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       return;
     }
 
-    // Находим выбранную должность в иерархии
+    // Находим выбранную должность в иерархии и сохраняем контекст отдела
     let selectedNode: PositionHierarchyNode | null = null;
+    
+    // Определяем текущий отдел, из которого мы пришли - по информации из локального состояния
+    // Можно также использовать URL-параметры или другие механизмы для сохранения контекста
+    
+    // Попытка найти департамент для выбранной должности
+    let currentDepartmentId: number | null = null;
+    
+    // Сначала проверяем, есть ли у нас информация о департаментах для этой должности
+    const positionWithDeptInfo = positionsWithDepartments.find(
+      (p) => p.position_id === selectedPositionId
+    );
+    
+    if (positionWithDeptInfo && positionWithDeptInfo.departments && positionWithDeptInfo.departments.length > 0) {
+      // Находим департамент, содержащий нашего сотрудника "Герц"
+      const deptWithEmployee = positionWithDeptInfo.departments.find(dept => {
+        const deptId = dept.department_id;
+        const hasEmployee = employees.some(e => 
+          e.position_id === selectedPositionId && 
+          e.department_id === deptId &&
+          !e.deleted
+        );
+        return hasEmployee;
+      });
+      
+      if (deptWithEmployee) {
+        currentDepartmentId = deptWithEmployee.department_id;
+      } else {
+        // Если нет департамента с сотрудником, берем первый департамент
+        currentDepartmentId = positionWithDeptInfo.departments[0].department_id;
+      }
+    }
+    
+    // Теперь поиск должности передает информацию о департаменте
     for (const node of positionHierarchy) {
-      const found = findPositionNodeById([node], selectedPositionId);
+      const found = findPositionNodeById([node], selectedPositionId, currentDepartmentId);
       if (found) {
         selectedNode = found;
         break;
