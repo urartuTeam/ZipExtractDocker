@@ -61,6 +61,8 @@ export interface PositionHierarchyNode {
   subordinates: PositionHierarchyNode[];
   department?: Department;
   childDepartments?: Department[];
+  departmentContext?: number | null; // Контекст отдела для сохранения при навигации
+  isDepartment?: boolean; // Флаг, указывающий что это узел-отдел, а не должность
 }
 
 export interface NavigationHistoryItem {
