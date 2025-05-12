@@ -2,6 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Стили для дочерних отделов */
+.child-departments {
+  margin-top: 15px;
+  margin-left: 20px;
+  border-left: 2px dashed #3498db;
+  padding-left: 15px;
+}
+
+.child-departments-header {
+  font-weight: bold;
+  color: #3498db;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.child-departments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.child-department-card {
+  background-color: #ecf5ff;
+  border: 1px solid #c1e0fe;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.child-department-card:hover {
+  background-color: #d6ebff;
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.child-department-name {
+  font-size: 13px;
+  color: #2c3e50;
+  font-weight: 500;
+}
 
 
 /* Стили для тонкого скроллбара */
