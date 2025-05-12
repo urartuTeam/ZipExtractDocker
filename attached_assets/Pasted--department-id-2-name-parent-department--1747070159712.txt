@@ -1,0 +1,156 @@
+[
+    {
+        "department_id": 2,
+        "name": "Администрация",
+        "parent_department_id": null,
+        "parent_position_id": null,
+        "is_organization": false,
+        "logo_path": null,
+        "sort": 0,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "department_id": 3,
+        "name": "ГБУ МСИ",
+        "parent_department_id": null,
+        "parent_position_id": 2,
+        "is_organization": true,
+        "logo_path": "/uploads/logo-1746807877873-135578036.png",
+        "sort": 1,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "department_id": 4,
+        "name": "ООО \"Цифролаб\"",
+        "parent_department_id": null,
+        "parent_position_id": 2,
+        "is_organization": true,
+        "logo_path": null,
+        "sort": 2,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "department_id": 6,
+        "name": "Управление цифрового развития",
+        "parent_department_id": 3,
+        "parent_position_id": null,
+        "is_organization": false,
+        "logo_path": null,
+        "sort": 3,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "department_id": 5,
+        "name": "Управление цифровизации и градостроительных данных",
+        "parent_department_id": 3,
+        "parent_position_id": null,
+        "is_organization": false,
+        "logo_path": null,
+        "sort": 4,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "department_id": 7,
+        "name": "Отдел координации реализации планов ОИВ",
+        "parent_department_id": null,
+        "parent_position_id": 4,
+        "is_organization": false,
+        "logo_path": null,
+        "sort": 5,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "department_id": 8,
+        "name": "Отдел координации аналитики ПО Строительство",
+        "parent_department_id": null,
+        "parent_position_id": 5,
+        "is_organization": false,
+        "logo_path": null,
+        "sort": 6,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "department_id": 9,
+        "name": "Отдел координации аналитики ПО Земля",
+        "parent_department_id": null,
+        "parent_position_id": 5,
+        "is_organization": false,
+        "logo_path": null,
+        "sort": 7,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "department_id": 10,
+        "name": "Отдел координации аналитики ПО Градрешения",
+        "parent_department_id": null,
+        "parent_position_id": 5,
+        "is_organization": false,
+        "logo_path": null,
+        "sort": 8,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "department_id": 11,
+        "name": "Отдел координации аналитики ПО Аналитики и Мониторинга",
+        "parent_department_id": null,
+        "parent_position_id": 5,
+        "is_organization": false,
+        "logo_path": null,
+        "sort": 9,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "department_id": 12,
+        "name": "Отдел координации разработки",
+        "parent_department_id": null,
+        "parent_position_id": 7,
+        "is_organization": false,
+        "logo_path": null,
+        "sort": 10,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "department_id": 13,
+        "name": "Отдел инженерного обеспечения",
+        "parent_department_id": null,
+        "parent_position_id": 7,
+        "is_organization": false,
+        "logo_path": null,
+        "sort": 11,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "department_id": 14,
+        "name": "Отдел тестирования",
+        "parent_department_id": null,
+        "parent_position_id": 7,
+        "is_organization": false,
+        "logo_path": null,
+        "sort": 12,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "department_id": 15,
+        "name": "Отдел координации деятельности",
+        "parent_department_id": null,
+        "parent_position_id": 8,
+        "is_organization": false,
+        "logo_path": null,
+        "sort": 13,
+        "deleted": false,
+        "deleted_at": null
+    }
+]
