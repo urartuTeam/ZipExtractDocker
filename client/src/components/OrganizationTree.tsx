@@ -1130,10 +1130,16 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
           });
 
           // Добавляем дочерние отделы для подчиненных должностей
-          result.subordinates = result.subordinates.map((subNode) => {
+          result.subordinates = result.subordinates.map((subNode: any) => {
             subNode.childDepartments = departments.filter(
-              (d) => d.parent_department_id === subNode.position.department_id,
+              (d: any) => d.parent_department_id === subNode.position.department_id,
             ); // Добавляем дочерние отделы для подчиненных
+            
+            // Добавляем контекст текущего отдела к подчиненным позициям
+            if (currentDepartmentId) {
+              subNode.departmentContext = currentDepartmentId;
+            }
+            
             return subNode;
           });
 
