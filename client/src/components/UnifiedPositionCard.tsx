@@ -102,10 +102,10 @@ const UnifiedPositionCard = ({
   // Получаем дочерние отделы для этой должности
   const childDepartments = node.childDepartments || [];
   const hasChildDepartments = childDepartments.length > 0;
-  
+
   // Вычисляем количество вакансий для индикаторов
   const vacanciesCount = topIndicator;
-  
+
   return (
     <div
       className={`position-card ${cardClass} ${isDepartment ? "department-card" : ""}`}
@@ -143,29 +143,6 @@ const UnifiedPositionCard = ({
         </div>
       )}
 
-      {/* Показываем индикатор дочерних отделов, если они есть */}
-      {hasChildDepartments && (
-        <div
-          style={{
-            position: "absolute",
-            top: "5px",
-            left: "5px",
-            background: "#27ae60",
-            color: "white",
-            borderRadius: "50%",
-            width: "20px",
-            height: "20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "12px",
-            fontWeight: "bold",
-          }}
-        >
-          {childDepartments.length}
-        </div>
-      )}
-
       <div className="position-title">
         {isDepartment
           ? node.position.name.replace(" (отдел)", "")
@@ -193,18 +170,6 @@ const UnifiedPositionCard = ({
             </div>
           ) : (
             <div className="position-vacant">Вакантная должность</div>
-          )}
-          
-          {/* Показываем список дочерних отделов, если они есть */}
-          {hasChildDepartments && (
-            <div className="child-departments-list">
-              <div className="child-departments-title">Подведомственные отделы:</div>
-              {childDepartments.map((dept) => (
-                <div key={dept.department_id} className="child-department-item">
-                  • {dept.name}
-                </div>
-              ))}
-            </div>
           )}
         </>
       )}

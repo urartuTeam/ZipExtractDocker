@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import UnifiedPositionCard from "./UnifiedPositionCard";
-import PositionTree from "./PositionTree";
 import DisplaySettings from "./DisplaySettings";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Building } from "lucide-react";
@@ -11,8 +10,6 @@ import {
   Employee,
   DepartmentNode,
   PositionHierarchyNode,
-  PositionWithEmployees,
-  DepartmentAsPosition,
 } from "../types";
 
 // Тип для элемента истории навигации, который сохраняет контекст отдела
@@ -2518,17 +2515,54 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           </div>
         </div>
 
-        <PositionTree
-          nodes={filteredHierarchy}
-          allPositions={positions}
-          allEmployees={employees}
-          onPositionClick={handlePositionClick}
-          handleGoBack={handleGoBack}
-          selectedPositionId={selectedPositionId}
-          hierarchyInitialLevels={Number(hierarchyInitialLevels)}
-          showThreeLevels={showThreeLevels}
-          showVacancies={showVacancies}
-        />
+        <div className="position-hierarchy-container">
+          {filteredHierarchy.map((node, nodeIndex) => (
+            <div key={`node-${node.position.position_id}-${nodeIndex}`} className="tree-node">
+              <div className="tree-branch">
+                <div className="tree-node-container">
+                  <UnifiedPositionCard
+                    node={node}
+                    onPositionClick={handlePositionClick}
+                    isTopLevel={true}
+                    showVacancies={showVacancies}
+                  />
+                </div>
+                
+                {/* Показываем подчиненных, только если их есть и настройки позволяют */}
+                {node.subordinates && node.subordinates.length > 0 && (
+                  <div className="subordinates-container">
+                    {node.subordinates.map((subNode, subIndex) => (
+                      <div key={`sub-${subNode.position.position_id}-${subIndex}`} className="subordinate-branch">
+                        <UnifiedPositionCard
+                          node={subNode}
+                          onPositionClick={handlePositionClick}
+                          isTopLevel={false}
+                          showVacancies={showVacancies}
+                        />
+                        
+                        {/* Показываем третий уровень вложенности только если настройки позволяют */}
+                        {showThreeLevels && subNode.subordinates && subNode.subordinates.length > 0 && (
+                          <div className="subordinates-container">
+                            {subNode.subordinates.map((grandChild, grandIndex) => (
+                              <div key={`grand-${grandChild.position.position_id}-${grandIndex}`} className="subordinate-branch">
+                                <UnifiedPositionCard
+                                  node={grandChild}
+                                  onPositionClick={handlePositionClick}
+                                  isTopLevel={false}
+                                  showVacancies={showVacancies}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
