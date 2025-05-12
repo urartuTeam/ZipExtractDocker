@@ -1,35 +1,5 @@
 import React from "react";
-
-// Импортируем типы
-type Position = {
-  position_id: number;
-  name: string;
-  parent_position_id?: number | null;
-  department_id?: number | null;
-};
-
-type Employee = {
-  employee_id: number;
-  full_name: string;
-  position_id: number | null;
-  department_id: number | null;
-  manager_id: number | null;
-};
-
-type Department = {
-  department_id: number;
-  name: string;
-  parent_department_id: number | null;
-  parent_position_id: number | null;
-};
-
-// Типы узлов в иерархии должностей
-type PositionHierarchyNode = {
-  position: Position;
-  employees: Employee[]; // Массив сотрудников на этой должности
-  subordinates: PositionHierarchyNode[];
-  childDepartments?: Department[]; // Добавляем поле для хранения подчиненных отделов
-};
+import { Position, Employee, Department, PositionHierarchyNode } from "@shared/types";
 
 // Компонент для унифицированного отображения карточки позиции/отдела
 const UnifiedPositionCard = ({
@@ -39,7 +9,7 @@ const UnifiedPositionCard = ({
   showVacancies = false,
 }: {
   node: PositionHierarchyNode;
-  onPositionClick?: (positionId: number) => void;
+  onPositionClick?: (positionId: number, departmentId?: number | null) => void;
   isTopLevel?: boolean;
   showVacancies?: boolean;
 }) => {
@@ -65,9 +35,13 @@ const UnifiedPositionCard = ({
     return (
       <div
         className={`position-card ${cardClass} department-card`}
-        onClick={() =>
-          onPositionClick && onPositionClick(node.position.position_id)
-        }
+        onClick={() => {
+          if (onPositionClick) {
+            // Если есть department, передаем его ID, если нет - null
+            const departmentId = node.department?.department_id || null;
+            onPositionClick(node.position.position_id, departmentId);
+          }
+        }}
         style={{
           cursor: onPositionClick ? "pointer" : "default",
           position: "relative",
