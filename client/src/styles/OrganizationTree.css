@@ -1,0 +1,144 @@
+.org-tree-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 20px;
+}
+
+.position-hierarchy {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: 20px;
+}
+
+.position-tree {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  min-width: 500px;
+}
+
+.position-node {
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  padding: 10px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.position-node.selected {
+  border: 2px solid #a40000;
+  background-color: #ffeeee;
+}
+
+.position-node.vacant {
+  border-color: #aaa;
+  background-color: #f5f5f5;
+}
+
+.position-node.department-node {
+  border-color: #4a90e2;
+  background-color: #e9f3ff;
+}
+
+.position-info {
+  cursor: pointer;
+}
+
+.position-name {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.department-context {
+  font-size: 0.85em;
+  color: #666;
+  font-style: italic;
+}
+
+.employees-list {
+  margin-top: 5px;
+  font-size: 0.9em;
+}
+
+.employee-name {
+  padding: 2px 0;
+  color: #333;
+}
+
+.vacancy-label {
+  color: #999;
+  font-style: italic;
+}
+
+.subordinates-container {
+  margin-left: 20px;
+  margin-top: 10px;
+  border-left: 1px dashed #ccc;
+  padding-left: 15px;
+}
+
+.position-navigation {
+  margin-bottom: 15px;
+}
+
+.back-to-main-hierarchy {
+  background-color: #a40000;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.back-to-main-hierarchy:hover {
+  background-color: #870000;
+}
+
+.organization-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 0 10px;
+}
+
+.display-settings-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 30px;
+  font-size: 18px;
+  color: #666;
+}
+
+/* Стили для настроек отображения */
+.display-settings {
+  display: flex;
+  gap: 15px;
+  background-color: #f0f0f0;
+  padding: 10px;
+  border-radius: 4px;
+  align-items: center;
+}
+
+.setting-option {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.setting-option label {
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+}
+
+.setting-option input[type="checkbox"] {
+  cursor: pointer;
+}
