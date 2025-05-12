@@ -175,7 +175,7 @@ export default function Home() {
                         departmentsData={departments}
                         positionsData={positionsWithDepartments}
                         employeesData={employees}
-                        showThreeLevels={true}
+                        showThreeLevels={false}
                         currentDepartmentId={currentDepartmentId}
                         onPositionClick={(id: number) => {
                           // Обработка клика по позиции с сохранением контекста отдела
