@@ -14,7 +14,8 @@ const UnifiedPositionCard = ({
   showVacancies?: boolean;
 }) => {
   const isDepartment = node.position.name.includes("(отдел)");
-  const isOrganization = node.department?.is_organization;
+  const department = node.department;
+  const isOrganization = department ? department.is_organization : false;
 
   // Определяем класс на основе типа узла и положения в дереве
   let cardClass = isDepartment
@@ -52,17 +53,17 @@ const UnifiedPositionCard = ({
           // width: "100%",
         }}
       >
-        {node.department?.logo_path ? (
+        {department && department.logo_path ? (
           <img
-            src={node.department?.logo_path}
-            alt={`Логотип ${node.department?.name}`}
+            src={department.logo_path}
+            alt={`Логотип ${department.name}`}
             className="mr-4 w-8 h-8 object-contain"
           />
         ) : (
           <img src={`/organization21.png`} alt="Организация" className="mr-4" />
         )}
         <span>
-          {node.department?.name || node.position.name.replace(" (отдел)", "")}
+          {department?.name || node.position.name.replace(" (отдел)", "")}
         </span>
       </div>
     );
@@ -97,9 +98,12 @@ const UnifiedPositionCard = ({
   return (
     <div
       className={`position-card ${cardClass} ${isDepartment ? "department-card" : ""}`}
-      onClick={() =>
-        onPositionClick && onPositionClick(node.position.position_id)
-      }
+      onClick={() => {
+        if (onPositionClick) {
+          const departmentId = department?.department_id || null;
+          onPositionClick(node.position.position_id, departmentId);
+        }
+      }}
       style={{
         cursor: onPositionClick ? "pointer" : "default",
         position: "relative", // Добавляем позиционирование для абсолютных элементов
