@@ -696,7 +696,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   const [currentDepartmentContext, setCurrentDepartmentContext] = useState<number | null>(null);
 
   // Состояния для настроек отображения
-  const [showThreeLevels, setShowThreeLevels] = useState<boolean>(false);
+  const [showThreeLevels, setShowThreeLevels] = useState<boolean>(true); // По умолчанию показываем 3 уровня
   const [showVacancies, setShowVacancies] = useState<boolean>(false);
 
   // Запрос настроек для получения количества показываемых уровней иерархии
@@ -727,8 +727,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // Инициализируем состояние showThreeLevels на основе настроек
   useEffect(() => {
-    const threeLevels = Number(hierarchyInitialLevels) === 3;
-    setShowThreeLevels(threeLevels);
+    // Всегда используем 3 уровня для правильного отображения дерева
+    setShowThreeLevels(true);
   }, [hierarchyInitialLevels]);
 
   // Эффект для обновления UI при изменении настройки showThreeLevels
