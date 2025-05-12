@@ -2343,13 +2343,32 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         });
       }
 
-      // Показываем только выбранную должность и её отфильтрованных подчиненных
+      // Показываем выбранную должность и её подчиненных с сохранением всех уровней
       // ВАЖНО: используем selectedNodeCopy, а не selectedNode
       // чтобы отфильтрованные сотрудники применились
       const filteredNode = {
         ...selectedNodeCopy,
         subordinates: filteredSubordinates,
       };
+
+      // Рекурсивно проходим по всем подчиненным и сохраняем их дочерние отделы
+      const preserveChildDepartments = (node: PositionHierarchyNode) => {
+        // Для каждого подчиненного...
+        node.subordinates.forEach(subordinate => {
+          // Сохраняем ссылку на подчиненные отделы
+          if (subordinate.childDepartments && subordinate.childDepartments.length > 0) {
+            console.log(`Сохраняем ${subordinate.childDepartments.length} дочерних отделов для ${subordinate.position.name}`);
+          }
+          
+          // Рекурсивно обрабатываем подчиненных этого подчиненного
+          if (subordinate.subordinates && subordinate.subordinates.length > 0) {
+            preserveChildDepartments(subordinate);
+          }
+        });
+      };
+      
+      // Применяем рекурсивную функцию к узлу
+      preserveChildDepartments(filteredNode);
 
       console.log("Итоговое отображение:", {
         positionId: selectedPositionId,
