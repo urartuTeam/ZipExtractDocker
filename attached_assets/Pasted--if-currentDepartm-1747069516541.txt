@@ -1,0 +1,56 @@
+// Если контекст не был найден через сохраненное значение, продолжаем поиск
+    if (!currentDepartmentId) {
+      // 1. Пытаемся найти сотрудника для этой должности
+      // Важно: для позиции "Начальник управления" (ID=44) проверяем контекст department_id
+      let employeeForPosition;
+      
+      // Для позиции "Начальник управления" (ID=44) или других проблемных позиций
+      // используем специальную логику, чтобы выбрать сотрудника из правильного отдела
+      if (selectedPositionId === 44) {
+        // Для "Начальник управления" ищем сотрудника, но выбираем только из отдела 24
+        // когда "Герц" привязан к должности в этом отделе
+        employeeForPosition = employees.find(
+          (e) => e.position_id === selectedPositionId && 
+                 e.department_id === 24 && // Принудительно выбираем отдел "Управление цифрового развития"
+                 !e.deleted,
+        );
+      } else {
+        // Для других должностей используем стандартную логику
+        employeeForPosition = employees.find(
+          (e) => e.position_id === selectedPositionId && !e.deleted,
+        );
+      }
+
+      if (employeeForPosition && employeeForPosition.department_id) {
+        // Берем департамент сотрудника
+        currentDepartmentId = employeeForPosition.department_id;
+        console.log(
+          `Выбран департамент ${currentDepartmentId} по сотруднику ${employeeForPosition.full_name}`,
+        );
+      } else {
+        // 2. Если сотрудника нет, ищем департамент через positionWithDepartments
+        const positionWithDeptInfo = positionsWithDepartments.find(
+          (p) => p.position_id === selectedPositionId,
+        );
+
+        if (positionWithDeptInfo?.departments?.length > 0) {
+          // Берем первый департамент
+          currentDepartmentId = positionWithDeptInfo.departments[0].department_id;
+          console.log(
+            `Выбран департамент ${currentDepartmentId} из списка департаментов должности`,
+          );
+        } else {
+          // 3. Проверяем position_department связи
+          const pdRelation = positionRelations.find(
+            (rel) => rel.position_id === selectedPositionId && !rel.deleted,
+          );
+
+          if (pdRelation && pdRelation.department_id) {
+            currentDepartmentId = pdRelation.department_id;
+            console.log(
+              `Выбран департамент ${currentDepartmentId} из связи в position_position`,
+            );
+          }
+        }
+      }
+    }

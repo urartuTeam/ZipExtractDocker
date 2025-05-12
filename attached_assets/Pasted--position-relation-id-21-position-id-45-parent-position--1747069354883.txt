@@ -1,0 +1,101 @@
+[
+    {
+        "position_relation_id": 21,
+        "position_id": 45,
+        "parent_position_id": 121,
+        "department_id": 6,
+        "sort": null,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "position_relation_id": 22,
+        "position_id": 45,
+        "parent_position_id": 121,
+        "department_id": 5,
+        "sort": null,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "position_relation_id": 23,
+        "position_id": 46,
+        "parent_position_id": 121,
+        "department_id": 6,
+        "sort": null,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "position_relation_id": 24,
+        "position_id": 46,
+        "parent_position_id": 121,
+        "department_id": 5,
+        "sort": null,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "position_relation_id": 25,
+        "position_id": 47,
+        "parent_position_id": 121,
+        "department_id": 6,
+        "sort": null,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "position_relation_id": 26,
+        "position_id": 47,
+        "parent_position_id": 121,
+        "department_id": 5,
+        "sort": null,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "position_relation_id": 27,
+        "position_id": 48,
+        "parent_position_id": 121,
+        "department_id": 6,
+        "sort": null,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "position_relation_id": 28,
+        "position_id": 48,
+        "parent_position_id": 121,
+        "department_id": 5,
+        "sort": null,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "position_relation_id": 29,
+        "position_id": 41,
+        "parent_position_id": 121,
+        "department_id": 6,
+        "sort": null,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "position_relation_id": 30,
+        "position_id": 41,
+        "parent_position_id": 121,
+        "department_id": 5,
+        "sort": null,
+        "deleted": false,
+        "deleted_at": null
+    },
+    {
+        "position_relation_id": 33,
+        "position_id": 122,
+        "parent_position_id": 121,
+        "department_id": 5,
+        "sort": null,
+        "deleted": false,
+        "deleted_at": null
+    }
+]

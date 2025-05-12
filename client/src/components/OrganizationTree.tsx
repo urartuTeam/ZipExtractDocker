@@ -2160,23 +2160,25 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Если контекст не был найден через сохраненное значение, продолжаем поиск
     if (!currentDepartmentId) {
       // 1. Пытаемся найти сотрудника для этой должности
-      // Важно: для позиции "Начальник управления" (ID=44) проверяем контекст department_id
       let employeeForPosition;
       
-      // Для позиции "Начальник управления" (ID=44) или других проблемных позиций
-      // используем специальную логику, чтобы выбрать сотрудника из правильного отдела
-      if (selectedPositionId === 44) {
-        // Для "Начальник управления" ищем сотрудника, но выбираем только из отдела 24
-        // когда "Герц" привязан к должности в этом отделе
+      // Проверяем, есть ли в истории навигации контекст конкретного отдела
+      const lastItem = navigationHistory[navigationHistory.length - 1];
+      const contextDeptFromHistory = lastItem?.departmentId;
+      
+      if (contextDeptFromHistory) {
+        // Если мы пришли из конкретного отдела, ищем сотрудника именно в этом отделе
         employeeForPosition = employees.find(
           (e) => e.position_id === selectedPositionId && 
-                 e.department_id === 24 && // Принудительно выбираем отдел "Управление цифрового развития"
-                 !e.deleted,
+                 e.department_id === contextDeptFromHistory && 
+                 !e.deleted
         );
-      } else {
-        // Для других должностей используем стандартную логику
+      }
+      
+      // Если сотрудник в нужном отделе не найден, используем стандартную логику
+      if (!employeeForPosition) {
         employeeForPosition = employees.find(
-          (e) => e.position_id === selectedPositionId && !e.deleted,
+          (e) => e.position_id === selectedPositionId && !e.deleted
         );
       }
 
