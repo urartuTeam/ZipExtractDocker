@@ -580,6 +580,37 @@ const PositionTree = ({
                 ))}
             </div>
           )}
+          
+          {/* Дочерние отделы */}
+          {node.childDepartments && node.childDepartments.length > 0 && (
+            <div className="child-departments">
+              <div className="child-departments-header">Дочерние отделы:</div>
+              <div className="child-departments-list">
+                {node.childDepartments.map((dept) => (
+                  <div 
+                    key={`dept-${dept.department_id}`} 
+                    className="child-department-card"
+                    onClick={() => {
+                      // При клике на дочерний отдел создаем для него фиктивный узел и устанавливаем его как текущий
+                      const deptAsPosition: Position = {
+                        position_id: dept.department_id * 1000, // Используем уникальный ID для различения
+                        name: `${dept.name} (отдел)`,
+                        departments: [],
+                        parent_positions: [],
+                        children_positions: [],
+                      };
+                      
+                      if (onPositionClick) {
+                        onPositionClick(deptAsPosition.position_id);
+                      }
+                    }}
+                  >
+                    <div className="child-department-name">{dept.name}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ))}
     </div>
