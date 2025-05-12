@@ -2,26 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Стили для дочерних отделов в карточке */
-.child-departments-list {
-  margin-top: 10px;
-  border-top: 1px dashed #aaa;
-  padding-top: 8px;
-}
 
-.child-departments-title {
-  font-weight: bold;
-  color: #27ae60;
-  font-size: 0.9rem;
-  margin-bottom: 5px;
-}
-
-.child-department-item {
-  font-size: 0.85rem;
-  margin-left: 5px;
-  padding: 3px 0;
-  color: #555;
-}
 
 /* Стили для тонкого скроллбара */
 .custom-scrollbar {

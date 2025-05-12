@@ -99,10 +99,6 @@ const UnifiedPositionCard = ({
   //   console.log(countEmployees(node));
   // }
 
-  // Получаем дочерние отделы для этой должности
-  const childDepartments = node.childDepartments || [];
-  const hasChildDepartments = childDepartments.length > 0;
-
   // Вычисляем количество вакансий для индикаторов
   const vacanciesCount = topIndicator;
 
