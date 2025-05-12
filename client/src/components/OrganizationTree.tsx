@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import UnifiedPositionCard from "./UnifiedPositionCard";
+import PositionTree from "./PositionTree";
 import DisplaySettings from "./DisplaySettings";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Building } from "lucide-react";
@@ -12,7 +13,7 @@ import {
   PositionHierarchyNode,
   PositionWithEmployees,
   DepartmentAsPosition,
-} from "@shared/types";
+} from "../types";
 
 // Тип для элемента истории навигации, который сохраняет контекст отдела
 type NavigationHistoryItem = {
@@ -334,7 +335,8 @@ const DepartmentWithChildren = ({
 // Убираем вспомогательный компонент, так как теперь он импортирован из отдельного файла
 
 // Компонент для отображения горизонтального дерева иерархии должностей
-const PositionTree = ({
+// Переименовываем внутренний компонент, чтобы не было конфликта с PositionTree из внешнего импорта
+const PositionTreeInternal = ({
   nodes,
   allPositions,
   allEmployees,

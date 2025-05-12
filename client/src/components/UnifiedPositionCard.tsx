@@ -1,5 +1,10 @@
 import React from "react";
-import { Position, Employee, Department, PositionHierarchyNode } from "@shared/types";
+import {
+  Position,
+  Employee,
+  Department,
+  PositionHierarchyNode,
+} from "../types";
 
 // Компонент для унифицированного отображения карточки позиции/отдела
 const UnifiedPositionCard = ({
@@ -71,25 +76,24 @@ const UnifiedPositionCard = ({
 
   // Стандартный рендер для других типов карточек
   const countEmployees = (position: PositionHierarchyNode) => {
-      let count = 0;
+    let count = 0;
 
-      console.log(position.employees);
+    console.log(position.employees);
 
+    // Считаем сотрудников в текущем объекте
+    if (position.employees && Array.isArray(position.employees)) {
+      count += position.employees.length;
+    }
 
-      // Считаем сотрудников в текущем объекте
-      if (position.employees && Array.isArray(position.employees)) {
-          count += position.employees.length;
+    // Рекурсивно обрабатываем всех подчиненных
+    if (position.subordinates && Array.isArray(position.subordinates)) {
+      for (const subordinate of position.subordinates) {
+        count += countEmployees(subordinate);
       }
+    }
 
-      // Рекурсивно обрабатываем всех подчиненных
-      if (position.subordinates && Array.isArray(position.subordinates)) {
-          for (const subordinate of position.subordinates) {
-              count += countEmployees(subordinate);
-          }
-      }
-
-      return count;
-  }
+    return count;
+  };
 
   // if (isTopLevel) {
   //   console.log(countEmployees(node));
@@ -101,14 +105,6 @@ const UnifiedPositionCard = ({
       onClick={() => {
         if (onPositionClick) {
           const departmentId = department?.department_id || null;
-          
-          // Исправление для должностей с дочерними отделами
-          const positionHasChildDepartments = node.childDepartments && node.childDepartments.length > 0;
-          
-          if (positionHasChildDepartments) {
-            console.log(`Клик на должность ${node.position.name} с ${node.childDepartments.length} дочерними отделами`);
-          }
-          
           onPositionClick(node.position.position_id, departmentId);
         }
       }}
@@ -169,15 +165,6 @@ const UnifiedPositionCard = ({
             <div className="position-vacant">Вакантная должность</div>
           )}
         </>
-      )}
-
-      {/* Отображаем индикатор, что есть подчиненные отделы, но сами отделы будут отображаться отдельно в дереве */}
-      {node.childDepartments && node.childDepartments.length > 0 && (
-        <div className="has-child-departments">
-          <div className="child-departments-count">
-            Управляет {node.childDepartments.length} {node.childDepartments.length === 1 ? 'отделом' : 'отделами'}
-          </div>
-        </div>
       )}
 
       {/* Индикатор в правом нижнем углу, показывается только если включены вакансии */}
