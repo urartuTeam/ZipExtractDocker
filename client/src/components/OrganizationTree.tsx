@@ -522,34 +522,51 @@ const PositionTree = ({
                       </div>
                     )}
                     
-                    {/* Дочерние отделы подузла */}
+                    {/* Дочерние отделы подузла, отображаются как элементы дерева */}
                     {subNode.childDepartments && subNode.childDepartments.length > 0 && (
-                      <div className="child-departments">
-                        <div className="child-departments-header">Дочерние отделы:</div>
-                        <div className="child-departments-list">
-                          {subNode.childDepartments.map((dept) => (
-                            <div 
-                              key={`dept-${dept.department_id}`} 
-                              className="child-department-card"
-                              onClick={() => {
-                                // При клике на дочерний отдел создаем для него фиктивный узел и устанавливаем его как текущий
-                                const deptAsPosition: Position = {
-                                  position_id: dept.department_id * 1000, // Используем уникальный ID для различения
-                                  name: `${dept.name} (отдел)`,
-                                  departments: [],
-                                  parent_positions: [],
-                                  children_positions: [],
-                                };
-                                
-                                if (onPositionClick) {
-                                  onPositionClick(deptAsPosition.position_id);
-                                }
-                              }}
-                            >
-                              <div className="child-department-name">{dept.name}</div>
-                            </div>
-                          ))}
+                      <div className="subordinates-container">
+                        <div className="tree-branch-connections">
+                          <div
+                            className="tree-branch-line"
+                            style={{
+                              width: `${Math.max(subNode.childDepartments.length * 120, 100)}px`,
+                            }}
+                          ></div>
                         </div>
+
+                        {subNode.childDepartments.map((dept) => {
+                          // Создаем фиктивную позицию-узел для отдела
+                          const deptAsPosition: Position = {
+                            position_id: dept.department_id * 1000,
+                            name: `${dept.name} (отдел)`,
+                            departments: [],
+                            parent_positions: [],
+                            children_positions: [],
+                          };
+                          
+                          // Создаем узел для дерева
+                          const deptNode: PositionHierarchyNode = {
+                            position: deptAsPosition,
+                            employees: [],
+                            subordinates: [],
+                            department: dept,
+                            isDepartment: true,
+                          };
+                          
+                          return (
+                            <div
+                              key={`dept-sub-tree-${dept.department_id}`}
+                              className="subordinate-branch"
+                            >
+                              <UnifiedPositionCard
+                                node={deptNode}
+                                onPositionClick={onPositionClick}
+                                isTopLevel={false}
+                                showVacancies={false}
+                              />
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
@@ -557,34 +574,51 @@ const PositionTree = ({
             </div>
           )}
           
-          {/* Дочерние отделы для firstNode */}
+          {/* Дочерние отделы для firstNode, отображаются как элементы дерева */}
           {firstNode && firstNode.childDepartments && firstNode.childDepartments.length > 0 && (
-            <div className="child-departments">
-              <div className="child-departments-header">Дочерние отделы:</div>
-              <div className="child-departments-list">
-                {firstNode.childDepartments.map((dept) => (
-                  <div 
-                    key={`dept-${dept.department_id}`} 
-                    className="child-department-card"
-                    onClick={() => {
-                      // При клике на дочерний отдел создаем для него фиктивный узел и устанавливаем его как текущий
-                      const deptAsPosition: Position = {
-                        position_id: dept.department_id * 1000, // Используем уникальный ID для различения
-                        name: `${dept.name} (отдел)`,
-                        departments: [],
-                        parent_positions: [],
-                        children_positions: [],
-                      };
-                      
-                      if (onPositionClick) {
-                        onPositionClick(deptAsPosition.position_id);
-                      }
-                    }}
-                  >
-                    <div className="child-department-name">{dept.name}</div>
-                  </div>
-                ))}
+            <div className="subordinates-container">
+              <div className="tree-branch-connections">
+                <div
+                  className="tree-branch-line"
+                  style={{
+                    width: `${Math.max(firstNode.childDepartments.length * 120, 100)}px`,
+                  }}
+                ></div>
               </div>
+
+              {firstNode.childDepartments.map((dept) => {
+                // Создаем фиктивную позицию-узел для отдела
+                const deptAsPosition: Position = {
+                  position_id: dept.department_id * 1000,
+                  name: `${dept.name} (отдел)`,
+                  departments: [],
+                  parent_positions: [],
+                  children_positions: [],
+                };
+                
+                // Создаем узел для дерева
+                const deptNode: PositionHierarchyNode = {
+                  position: deptAsPosition,
+                  employees: [],
+                  subordinates: [],
+                  department: dept,
+                  isDepartment: true,
+                };
+                
+                return (
+                  <div
+                    key={`dept-tree-${dept.department_id}`}
+                    className="subordinate-branch"
+                  >
+                    <UnifiedPositionCard
+                      node={deptNode}
+                      onPositionClick={onPositionClick}
+                      isTopLevel={false}
+                      showVacancies={false}
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
