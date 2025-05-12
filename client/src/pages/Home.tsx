@@ -196,7 +196,7 @@ export default function Home() {
                             const position = positionsWithDepartments.find(p => p.position_id === id);
                             if (position) {
                               // Если позиция найдена и у нее есть контекст текущего отдела, сохраняем его
-                              if (currentDepartmentId && position.departments.some(d => d.department_id === currentDepartmentId)) {
+                              if (currentDepartmentId && position.departments.some((d: any) => d.department_id === currentDepartmentId)) {
                                 // Эта позиция присутствует в текущем отделе, оставляем контекст
                                 setNavigationHistory(prev => [...prev, { positionId: id, departmentId: currentDepartmentId }]);
                                 console.log(`Контекст отдела сохранен: ${currentDepartmentId} для позиции ${id}`);

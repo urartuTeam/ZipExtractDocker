@@ -721,15 +721,22 @@ type OrganizationTreeProps = {
   departmentsData?: Department[];
   positionsData?: any[];
   employeesData?: Employee[];
+  currentDepartmentId?: number | null; // Добавляем контекст текущего отдела
+  showThreeLevels?: boolean; // Свойство для отображения 3 уровней иерархии
+  showVacancies?: boolean; // Свойство для отображения вакансий
 };
 
-const OrganizationTree: React.FC<OrganizationTreeProps> = ({
-  initialPositionId,
-  onPositionClick,
-  departmentsData,
-  positionsData,
-  employeesData,
-}) => {
+const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
+  const {
+    initialPositionId = 0,
+    onPositionClick,
+    departmentsData,
+    positionsData,
+    employeesData,
+    currentDepartmentId,
+    showThreeLevels = false,
+    showVacancies = false,
+  } = props;
   // Загрузка данных из API (если не переданы через пропсы)
   const { data: departmentsResponse } = useQuery<{
     status: string;
@@ -826,8 +833,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   >(null);
 
   // Состояния для настроек отображения
-  const [showThreeLevels, setShowThreeLevels] = useState<boolean>(false);
-  const [showVacancies, setShowVacancies] = useState<boolean>(false);
+  const [localShowThreeLevels, setLocalShowThreeLevels] = useState<boolean>(showThreeLevels);
+  const [localShowVacancies, setLocalShowVacancies] = useState<boolean>(showVacancies);
 
   // Запрос настроек для получения количества показываемых уровней иерархии
   const { data: settingsResponse, isError } = useQuery<{
@@ -855,17 +862,17 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // console.log("Настройки уровней иерархии:", hierarchyInitialLevels);
 
-  // Инициализируем состояние showThreeLevels на основе настроек
+  // Инициализируем состояние localShowThreeLevels на основе настроек
   useEffect(() => {
     const threeLevels = Number(hierarchyInitialLevels) === 3;
-    setShowThreeLevels(threeLevels);
+    setLocalShowThreeLevels(threeLevels);
   }, [hierarchyInitialLevels]);
 
-  // Эффект для обновления UI при изменении настройки showThreeLevels
+  // Эффект для обновления UI при изменении настройки localShowThreeLevels
   useEffect(() => {
     // Реагируем на изменение настройки отображения уровней
-    //  console.log("Обновленная настройка showThreeLevels:", showThreeLevels);
-  }, [showThreeLevels]);
+    //  console.log("Обновленная настройка localShowThreeLevels:", localShowThreeLevels);
+  }, [localShowThreeLevels]);
 
   // Эффект для отслеживания изменений текущего контекста отдела
   useEffect(() => {
@@ -876,11 +883,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
   // Обработчики для изменения настроек отображения
   const handleThreeLevelsChange = (value: boolean) => {
-    setShowThreeLevels(value);
+    setLocalShowThreeLevels(value);
   };
 
   const handleShowVacanciesChange = (value: boolean) => {
-    setShowVacancies(value);
+    setLocalShowVacancies(value);
   };
 
   // Получение иерархии должностей для отдела с использованием новой таблицы position_position
