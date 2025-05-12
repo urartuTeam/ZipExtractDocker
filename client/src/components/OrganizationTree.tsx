@@ -582,6 +582,12 @@ const PositionTree = ({
   );
 };
 
+// Определяем тип элемента истории навигации
+type NavigationHistoryItem = {
+  positionId: number;
+  departmentId: number | null;
+};
+
 type OrganizationTreeProps = {
   initialPositionId?: number;
   onPositionClick?: (positionId: number) => void;
@@ -1976,14 +1982,29 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     return rootNodes;
   };
 
+  // Добавляем состояние для хранения текущего контекста отдела
+  const [currentContextDepartmentId, setCurrentContextDepartmentId] = useState<number | null>(null);
+
   // Обработчик клика по должности
-  const handlePositionClick = (positionId: number) => {
-    // console.log(`Клик по должности с ID: ${positionId}`);
+  const handlePositionClick = (positionId: number, departmentContext?: number | null) => {
+    console.log(`Клик по должности с ID: ${positionId}, контекст отдела: ${departmentContext || 'не указан'}`);
+
+    // Если передан контекст отдела, сохраняем его
+    if (departmentContext) {
+      setCurrentContextDepartmentId(departmentContext);
+      console.log(`Сохранен контекст отдела: ${departmentContext}`);
+    }
 
     // Если текущая позиция выбрана, добавляем её в историю перед переходом на новую
     if (selectedPositionId) {
-      // console.log(`Сохраняем в историю позицию: ${selectedPositionId}`);
-      setNavigationHistory((prev) => [...prev, selectedPositionId]);
+      // При сохранении в историю также сохраняем текущий контекст отдела
+      setNavigationHistory((prev) => [
+        ...prev, 
+        { 
+          positionId: selectedPositionId, 
+          departmentId: currentContextDepartmentId 
+        }
+      ]);
     }
 
     // Обновляем ID выбранной должности
@@ -1999,22 +2020,31 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
   const handleGoBack = () => {
     if (navigationHistory.length > 0) {
       // Получаем последнюю позицию из истории
-      const prevPosition = navigationHistory[navigationHistory.length - 1];
-      // console.log(`Возвращаемся к позиции: ${prevPosition}`);
+      const prevItem = navigationHistory[navigationHistory.length - 1];
+      console.log(`Возвращаемся к позиции: ${typeof prevItem === 'object' ? 
+        `ID=${prevItem.positionId}, отдел=${prevItem.departmentId}` : 
+        prevItem}`);
 
       // Убираем её из истории
       setNavigationHistory((prev) => prev.slice(0, -1));
 
+      // Устанавливаем контекст отдела из истории
+      if (typeof prevItem === 'object' && prevItem.departmentId) {
+        setCurrentContextDepartmentId(prevItem.departmentId);
+      }
+
       // Устанавливаем как текущую позицию
-      setSelectedPositionId(prevPosition);
+      const positionId = typeof prevItem === 'object' ? prevItem.positionId : prevItem;
+      setSelectedPositionId(positionId);
 
       if (onPositionClick) {
-        onPositionClick(prevPosition);
+        onPositionClick(positionId);
       }
     } else {
       // Если история пуста, возвращаемся к корню
-      // console.log("История пуста, возвращаемся к корню");
+      console.log("История пуста, возвращаемся к корню");
       setSelectedPositionId(undefined);
+      setCurrentContextDepartmentId(null);
 
       if (onPositionClick) {
         onPositionClick(0);
