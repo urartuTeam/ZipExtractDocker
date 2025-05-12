@@ -14,6 +14,12 @@ import {
   DepartmentAsPosition,
 } from "@shared/types";
 
+// Тип для элемента истории навигации, который сохраняет контекст отдела
+type NavigationHistoryItem = {
+  positionId: number;
+  departmentId: number | null;
+};
+
 // Расширяем интерфейс Window глобально
 declare global {
   interface Window {
@@ -582,11 +588,7 @@ const PositionTree = ({
   );
 };
 
-// Определяем тип элемента истории навигации
-type NavigationHistoryItem = {
-  positionId: number;
-  departmentId: number | null;
-};
+// Тип уже определен выше
 
 type OrganizationTreeProps = {
   initialPositionId?: number;
@@ -687,8 +689,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     window.positionsWithDepartmentsData = positionsWithDepartments;
   }
 
-  // Состояние для хранения истории навигации по дереву
-  const [navigationHistory, setNavigationHistory] = useState<number[]>([]);
+  // Состояние для хранения истории навигации по дереву с учетом контекста отдела
+  const [navigationHistory, setNavigationHistory] = useState<NavigationHistoryItem[]>([]);
+  
+  // Состояние для хранения текущего контекста отдела
+  const [currentDepartmentContext, setCurrentDepartmentContext] = useState<number | null>(null);
 
   // Состояния для настроек отображения
   const [showThreeLevels, setShowThreeLevels] = useState<boolean>(false);
@@ -1982,16 +1987,13 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     return rootNodes;
   };
 
-  // Добавляем состояние для хранения текущего контекста отдела
-  const [currentContextDepartmentId, setCurrentContextDepartmentId] = useState<number | null>(null);
-
   // Обработчик клика по должности
   const handlePositionClick = (positionId: number, departmentContext?: number | null) => {
     console.log(`Клик по должности с ID: ${positionId}, контекст отдела: ${departmentContext || 'не указан'}`);
 
     // Если передан контекст отдела, сохраняем его
     if (departmentContext) {
-      setCurrentContextDepartmentId(departmentContext);
+      setCurrentDepartmentContext(departmentContext);
       console.log(`Сохранен контекст отдела: ${departmentContext}`);
     }
 
@@ -2002,7 +2004,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         ...prev, 
         { 
           positionId: selectedPositionId, 
-          departmentId: currentContextDepartmentId 
+          departmentId: currentDepartmentContext 
         }
       ]);
     }
@@ -2021,20 +2023,18 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     if (navigationHistory.length > 0) {
       // Получаем последнюю позицию из истории
       const prevItem = navigationHistory[navigationHistory.length - 1];
-      console.log(`Возвращаемся к позиции: ${typeof prevItem === 'object' ? 
-        `ID=${prevItem.positionId}, отдел=${prevItem.departmentId}` : 
-        prevItem}`);
+      console.log(`Возвращаемся к позиции: ID=${prevItem.positionId}, отдел=${prevItem.departmentId}`);
 
       // Убираем её из истории
       setNavigationHistory((prev) => prev.slice(0, -1));
 
       // Устанавливаем контекст отдела из истории
-      if (typeof prevItem === 'object' && prevItem.departmentId) {
-        setCurrentContextDepartmentId(prevItem.departmentId);
+      if (prevItem.departmentId) {
+        setCurrentDepartmentContext(prevItem.departmentId);
       }
 
       // Устанавливаем как текущую позицию
-      const positionId = typeof prevItem === 'object' ? prevItem.positionId : prevItem;
+      const positionId = prevItem.positionId;
       setSelectedPositionId(positionId);
 
       if (onPositionClick) {
@@ -2044,7 +2044,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       // Если история пуста, возвращаемся к корню
       console.log("История пуста, возвращаемся к корню");
       setSelectedPositionId(undefined);
-      setCurrentContextDepartmentId(null);
+      setCurrentDepartmentContext(null);
 
       if (onPositionClick) {
         onPositionClick(0);
