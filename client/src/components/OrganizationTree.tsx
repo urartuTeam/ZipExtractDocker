@@ -926,7 +926,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
           result.employees = deptEmployees;
           
           // Фильтруем подчиненных, которые связаны с этим отделом
-          const filteredSubordinates = result.subordinates.filter(subNode => {
+          const filteredSubordinates = result.subordinates.filter((subNode: any) => {
             const subPositionId = subNode.position.position_id;
             
             // Проверяем связь подчиненной должности с отделом в positionRelations

@@ -644,19 +644,22 @@ export default function Vacancies() {
 
   // При монтировании компонента проверяем localStorage и настраиваем автоматическое раскрытие уровней
   useEffect(() => {
-    const savedOrgId = localStorage.getItem('selectedOrganizationId');
-    const savedOrgName = localStorage.getItem('selectedOrganizationName');
-    
-    if (savedOrgId) {
-      setStateOrgId(Number(savedOrgId));
-      localStorage.removeItem('selectedOrganizationId');
+    // Убедимся, что хук вызывается только на клиентской стороне
+    if (typeof window !== 'undefined') {
+      const savedOrgId = localStorage.getItem('selectedOrganizationId');
+      const savedOrgName = localStorage.getItem('selectedOrganizationName');
+      
+      if (savedOrgId) {
+        setStateOrgId(Number(savedOrgId));
+        localStorage.removeItem('selectedOrganizationId');
+      }
+      
+      if (savedOrgName) {
+        setStateOrgName(savedOrgName);
+        localStorage.removeItem('selectedOrganizationName');
+      }
     }
-    
-    if (savedOrgName) {
-      setStateOrgName(savedOrgName);
-      localStorage.removeItem('selectedOrganizationName');
-    }
-  }, [setStateOrgId, setStateOrgName]);
+  }, []);
 
   const renderFromRoute = () => {
     const department = departments.filter(
