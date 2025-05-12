@@ -2034,7 +2034,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     
     if (positionWithDeptInfo && positionWithDeptInfo.departments && positionWithDeptInfo.departments.length > 0) {
       // Находим департамент, содержащий нашего сотрудника "Герц"
-      const deptWithEmployee = positionWithDeptInfo.departments.find(dept => {
+      const deptWithEmployee = positionWithDeptInfo.departments.find((dept: any) => {
         const deptId = dept.department_id;
         const hasEmployee = employees.some(e => 
           e.position_id === selectedPositionId && 
@@ -2063,13 +2063,70 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
     // Если должность найдена, показываем только её непосредственных подчиненных 1-го уровня
     if (selectedNode) {
-      // Показываем только выбранную должность и её непосредственных подчиненных
+      // Нам известен отдел выбранной должности
+      const departmentId = currentDepartmentId;
+      
+      // Фильтруем подчиненных с учетом отдела
+      let filteredSubordinates = [...selectedNode.subordinates];
+      
+      if (departmentId) {
+        // Фильтруем подчиненных, оставляя только те, которые относятся к текущему отделу
+        filteredSubordinates = filteredSubordinates.filter(subNode => {
+          // Проверяем связь должность-отдел или наличие сотрудников в этом отделе
+          const posWithDeptInfo = positionsWithDepartments.find(
+            p => p.position_id === subNode.position.position_id
+          );
+          
+          // Проверяем, имеет ли должность связь с этим отделом
+          const isLinkedToDepartment = posWithDeptInfo?.departments?.some(
+            (dept: any) => dept.department_id === departmentId
+          );
+          
+          // Проверяем, есть ли сотрудники с этой должностью в этом отделе
+          const hasEmployeesInDepartment = employees.some(e => 
+            e.position_id === subNode.position.position_id && 
+            e.department_id === departmentId &&
+            !e.deleted
+          );
+          
+          return isLinkedToDepartment || hasEmployeesInDepartment;
+        });
+        
+        // Для каждого оставшегося подчиненного обновляем список сотрудников
+        filteredSubordinates = filteredSubordinates.map(subNode => {
+          // Создаем копию узла
+          const updatedNode = { ...subNode };
+          
+          // Обновляем список сотрудников для этого отдела, если такие есть
+          const deptEmployees = employees.filter(e => 
+            e.position_id === subNode.position.position_id && 
+            e.department_id === departmentId &&
+            !e.deleted
+          );
+          
+          if (deptEmployees.length > 0) {
+            updatedNode.employees = deptEmployees;
+          }
+          
+          // Обновляем информацию об отделе
+          if (!updatedNode.department) {
+            const departmentInfo = departments.find(d => d.department_id === departmentId);
+            if (departmentInfo) {
+              updatedNode.department = departmentInfo;
+            }
+          }
+          
+          return updatedNode;
+        });
+      }
+      
+      // Показываем только выбранную должность и её отфильтрованных подчиненных
       const filteredNode = {
         ...selectedNode,
-        subordinates: [...selectedNode.subordinates], // Получаем всех непосредственных подчиненных
+        subordinates: filteredSubordinates
       };
 
-      // Показываем только выбранный узел - его подчиненные видны внутри него
+      // Показываем только выбранный узел - его отфильтрованные подчиненные видны внутри него
       setFilteredHierarchy([filteredNode]);
     } else {
       // Если должность не найдена, показываем только второй уровень иерархии
