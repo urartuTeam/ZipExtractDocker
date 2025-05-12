@@ -1,0 +1,261 @@
+// Фильтруем иерархию при изменении выбранной должности
+  useEffect(() => {
+    if (!selectedPositionId || positionHierarchy.length === 0) {
+      // Если нет выбранной должности, показываем все должности корневого отдела
+      // Это будут корневые узлы, полученные из функции buildRootDepartmentHierarchy
+      setFilteredHierarchy(positionHierarchy);
+      return;
+    }
+
+    // Находим выбранную должность в иерархии и сохраняем контекст отдела
+    let selectedNode: PositionHierarchyNode | null = null;
+
+    // Определяем текущий отдел, из которого мы пришли - по информации из локального состояния
+    // Можно также использовать URL-параметры или другие механизмы для сохранения контекста
+
+    // Попытка найти департамент для выбранной должности
+    let currentDepartmentId: number | null = null;
+
+    // 0. Приоритет отдаем сохраненному контексту отдела
+    if (currentDepartmentContext) {
+      // Проверяем, что должность действительно связана с этим отделом
+      // через position_department, position_position или через сотрудников
+
+      // Проверяем связь с отделом через position_department
+      const hasPositionDepartmentLink = positionsWithDepartments
+          .find(p => p.position_id === selectedPositionId)
+          ?.departments?.some((d: any) => d.department_id === currentDepartmentContext);
+
+      // Проверяем связь с отделом через position_position
+      const hasPositionRelation = positionRelations.some(
+          rel => (rel.position_id === selectedPositionId || rel.parent_position_id === selectedPositionId) &&
+              rel.department_id === currentDepartmentContext &&
+              !rel.deleted
+      );
+
+      // Проверяем наличие сотрудников в этом отделе
+      const hasEmployees = employees.some(
+          e => e.position_id === selectedPositionId &&
+              e.department_id === currentDepartmentContext &&
+              !e.deleted
+      );
+
+      // Если должность связана с сохраненным контекстом, используем его
+      if (hasPositionDepartmentLink || hasPositionRelation || hasEmployees) {
+        currentDepartmentId = currentDepartmentContext;
+        console.log(`Используем сохраненный контекст отдела: ${currentDepartmentId}`);
+      }
+    }
+
+    // Если контекст не был найден через сохраненное значение, продолжаем поиск
+    if (!currentDepartmentId) {
+      // 1. Пытаемся найти сотрудника для этой должности
+      let employeeForPosition;
+
+      // Проверяем, есть ли в истории навигации контекст конкретного отдела
+      const lastItem = navigationHistory[navigationHistory.length - 1];
+      const contextDeptFromHistory = lastItem?.departmentId;
+
+      if (contextDeptFromHistory) {
+        // Если мы пришли из конкретного отдела, ищем сотрудника именно в этом отделе
+        employeeForPosition = employees.find(
+            (e) => e.position_id === selectedPositionId &&
+                e.department_id === contextDeptFromHistory &&
+                !e.deleted
+        );
+      }
+
+      // Если сотрудник в нужном отделе не найден, используем стандартную логику
+      if (!employeeForPosition) {
+        employeeForPosition = employees.find(
+            (e) => e.position_id === selectedPositionId && !e.deleted
+        );
+      }
+
+      if (employeeForPosition && employeeForPosition.department_id) {
+        // Берем департамент сотрудника
+        currentDepartmentId = employeeForPosition.department_id;
+        console.log(
+            `Выбран департамент ${currentDepartmentId} по сотруднику ${employeeForPosition.full_name}`,
+        );
+      } else {
+        // 2. Если сотрудника нет, ищем департамент через positionWithDepartments
+        const positionWithDeptInfo = positionsWithDepartments.find(
+            (p) => p.position_id === selectedPositionId,
+        );
+
+        if (positionWithDeptInfo?.departments?.length > 0) {
+          // Берем первый департамент
+          currentDepartmentId = positionWithDeptInfo.departments[0].department_id;
+          console.log(
+              `Выбран департамент ${currentDepartmentId} из списка департаментов должности`,
+          );
+        } else {
+          // 3. Проверяем position_department связи
+          const pdRelation = positionRelations.find(
+              (rel) => rel.position_id === selectedPositionId && !rel.deleted,
+          );
+
+          if (pdRelation && pdRelation.department_id) {
+            currentDepartmentId = pdRelation.department_id;
+            console.log(
+                `Выбран департамент ${currentDepartmentId} из связи в position_position`,
+            );
+          }
+        }
+      }
+    }
+
+    // После определения контекста отдела, сохраняем его в состоянии
+    if (currentDepartmentId && currentDepartmentId !== currentDepartmentContext) {
+      setCurrentDepartmentContext(currentDepartmentId);
+    }
+
+    console.log(
+        `Для должности ${selectedPositionId} установлен департамент ${currentDepartmentId}`,
+    );
+
+    // Теперь поиск должности передает информацию о департаменте
+    for (const node of positionHierarchy) {
+      const found = findPositionNodeById(
+          [node],
+          selectedPositionId,
+          currentDepartmentId,
+      );
+      if (found) {
+        selectedNode = found;
+        break;
+      }
+    }
+
+    // Если должность найдена, показываем только её непосредственных подчиненных 1-го уровня
+    if (selectedNode) {
+      // Нам известен отдел выбранной должности
+      const departmentId = currentDepartmentId;
+
+      // Начинаем с создания копии объекта selectedNode, чтобы не менять оригинал
+      const selectedNodeCopy = { ...selectedNode };
+
+      // Обновляем список сотрудников для выбранной должности (важно для "Герц")
+      if (departmentId) {
+        // Фильтруем сотрудников только для текущего отдела
+        const filteredEmployees = employees.filter(
+            (e) =>
+                e.position_id === selectedPositionId &&
+                e.department_id === departmentId &&
+                !e.deleted,
+        );
+
+        // Заменяем сотрудников в узле на отфильтрованных
+        selectedNodeCopy.employees = filteredEmployees;
+
+        // Также привязываем отдел к узлу
+        const departmentInfo = departments.find(
+            (d) => d.department_id === departmentId,
+        );
+        if (departmentInfo) {
+          selectedNodeCopy.department = departmentInfo;
+        }
+      }
+
+      // Фильтруем подчиненных с учетом отдела
+      let filteredSubordinates = [...selectedNodeCopy.subordinates];
+
+      if (departmentId) {
+        // Определяем, связана ли должность с отделом (функция-помощник)
+        const isPositionLinkedToDepartment = (positionId: number): boolean => {
+          // 1. Проверяем связь position_position с учетом отдела
+          const hasPositionRelation = positionRelations.some(
+              (rel) =>
+                  rel.position_id === positionId &&
+                  rel.parent_position_id === selectedPositionId &&
+                  rel.department_id === departmentId &&
+                  !rel.deleted,
+          );
+
+          if (hasPositionRelation) return true;
+
+          // 2. Проверяем прямую связь должности с отделом (position_department)
+          const hasDepartmentLink = positionsWithDepartments
+              .find((p) => p.position_id === positionId)
+              ?.departments?.some((d: any) => d.department_id === departmentId);
+
+          if (hasDepartmentLink) return true;
+
+          // 3. Проверяем, есть ли сотрудники с этой должностью в этом отделе
+          const hasEmployees = employees.some(
+              (e) =>
+                  e.position_id === positionId &&
+                  e.department_id === departmentId &&
+                  !e.deleted,
+          );
+
+          return hasEmployees;
+        };
+
+        // Фильтруем подчиненных, оставляя только те, которые относятся к текущему отделу
+        filteredSubordinates = filteredSubordinates.filter((subNode) => {
+          const subPositionId = subNode.position.position_id;
+          return isPositionLinkedToDepartment(subPositionId);
+        });
+
+        // Для каждого подчиненного обновляем список сотрудников и информацию об отделе
+        filteredSubordinates = filteredSubordinates.map((subNode) => {
+          // Создаем копию узла
+          const updatedNode = { ...subNode };
+
+          // Обновляем список сотрудников только для этого отдела
+          const deptEmployees = employees.filter(
+              (e) =>
+                  e.position_id === subNode.position.position_id &&
+                  e.department_id === departmentId &&
+                  !e.deleted,
+          );
+
+          // Всегда заменяем список сотрудников на отфильтрованных
+          // (даже если список пустой, это правильно - вакантная должность)
+          updatedNode.employees = deptEmployees;
+
+          // Добавляем привязку к отделу
+          const departmentInfo = departments.find(
+              (d) => d.department_id === departmentId,
+          );
+          if (departmentInfo) {
+            updatedNode.department = departmentInfo;
+          }
+
+          // Сохраняем лог, чтобы отследить, какие подчиненные добавляются
+          console.log(
+              `Добавлен подчиненный ${updatedNode.position.name} (ID: ${updatedNode.position.position_id}) для отдела ${departmentId} с ${deptEmployees.length} сотрудниками`,
+          );
+
+          return updatedNode;
+        });
+      }
+
+      // Показываем только выбранную должность и её отфильтрованных подчиненных
+      // ВАЖНО: используем selectedNodeCopy, а не selectedNode
+      // чтобы отфильтрованные сотрудники применились
+      const filteredNode = {
+        ...selectedNodeCopy,
+        subordinates: filteredSubordinates,
+      };
+
+      console.log("Итоговое отображение:", {
+        positionId: selectedPositionId,
+        departmentId: currentDepartmentId,
+        employeesCount: filteredNode.employees.length,
+        subordinatesCount: filteredSubordinates.length,
+      });
+
+      // Показываем только выбранный узел - его отфильтрованные подчиненные видны внутри него
+      setFilteredHierarchy([filteredNode]);
+    } else {
+      // Если должность не найдена, показываем только второй уровень иерархии
+      if (positionHierarchy[0] && positionHierarchy[0].subordinates) {
+        setFilteredHierarchy(positionHierarchy[0].subordinates);
+      } else {
+        setFilteredHierarchy([]);
+      }
+    }
+  }, [selectedPositionId, positionHierarchy]);
