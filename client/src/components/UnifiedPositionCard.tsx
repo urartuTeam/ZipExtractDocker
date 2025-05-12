@@ -171,15 +171,12 @@ const UnifiedPositionCard = ({
         </>
       )}
 
-      {/* Отображаем дочерние отделы для должности */}
+      {/* Отображаем индикатор, что есть подчиненные отделы, но сами отделы будут отображаться отдельно в дереве */}
       {node.childDepartments && node.childDepartments.length > 0 && (
-        <div className="child-departments">
-          <div className="child-departments-title">Подчиненные отделы:</div>
-          {node.childDepartments.map((dept) => (
-            <div key={dept.department_id} className="child-department-name">
-              {dept.name}
-            </div>
-          ))}
+        <div className="has-child-departments">
+          <div className="child-departments-count">
+            Управляет {node.childDepartments.length} {node.childDepartments.length === 1 ? 'отделом' : 'отделами'}
+          </div>
         </div>
       )}
 
