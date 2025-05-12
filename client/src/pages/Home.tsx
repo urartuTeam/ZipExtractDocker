@@ -1,12 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
 import OrganizationTree from "@/components/OrganizationTree";
 
+// Тип для хранения истории навигации
+type NavigationHistoryItem = {
+  positionId: number;
+  departmentId: number | null;
+};
+
 export default function Home() {
   const [selectedPositionId, setSelectedPositionId] = useState(0);
+  const [currentDepartmentId, setCurrentDepartmentId] = useState<number | null>(null);
+  const [navigationHistory, setNavigationHistory] = useState<NavigationHistoryItem[]>([]);
 
   // Запрос на получение общего количества отделов
   const { data: departmentsResponse, isLoading: isLoadingDepartments } = useQuery<{status: string, data: any[]}>({

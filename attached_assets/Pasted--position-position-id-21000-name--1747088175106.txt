@@ -1,0 +1,132 @@
+[
+    {
+        "position": {
+            "position_id": 21000,
+            "name": "Отдел координации аналитики ПО Аналитики и Мониторинга (отдел)",
+            "parent_position_id": 5,
+            "department_id": 21
+        },
+        "employees": [],
+        "subordinates": [
+            {
+                "position": {
+                    "position_id": 46,
+                    "name": "Руководитель проекта",
+                    "department_id": 21
+                },
+                "employees": [
+                    {
+                        "employee_id": 82,
+                        "full_name": "Коляндра Наталина Павловна",
+                        "position_id": 46,
+                        "phone": null,
+                        "email": null,
+                        "manager_id": null,
+                        "department_id": 21,
+                        "category_parent_id": null,
+                        "deleted": false,
+                        "deleted_at": null
+                    }
+                ],
+                "subordinates": [
+                    {
+                        "position": {
+                            "position_id": 70,
+                            "name": "Заместитель руководителя проекта",
+                            "department_id": 21
+                        },
+                        "employees": [
+                            {
+                                "employee_id": 83,
+                                "full_name": "Савченко Максим Павлович",
+                                "position_id": 70,
+                                "phone": null,
+                                "email": null,
+                                "manager_id": null,
+                                "department_id": 21,
+                                "category_parent_id": null,
+                                "deleted": false,
+                                "deleted_at": null
+                            }
+                        ],
+                        "subordinates": [],
+                        "childDepartments": []
+                    },
+                    {
+                        "position": {
+                            "position_id": 71,
+                            "name": "Главный аналитик",
+                            "department_id": 21
+                        },
+                        "employees": [],
+                        "subordinates": [],
+                        "childDepartments": []
+                    },
+                    {
+                        "position": {
+                            "position_id": 72,
+                            "name": "Ведущий аналитик",
+                            "department_id": 21
+                        },
+                        "employees": [],
+                        "subordinates": [],
+                        "childDepartments": []
+                    },
+                    {
+                        "position": {
+                            "position_id": 73,
+                            "name": "Старший аналитик",
+                            "department_id": 21
+                        },
+                        "employees": [],
+                        "subordinates": [],
+                        "childDepartments": []
+                    },
+                    {
+                        "position": {
+                            "position_id": 75,
+                            "name": "Аналитик",
+                            "department_id": 21
+                        },
+                        "employees": [],
+                        "subordinates": [],
+                        "childDepartments": []
+                    },
+                    {
+                        "position": {
+                            "position_id": 77,
+                            "name": "Младший аналитик",
+                            "department_id": 21
+                        },
+                        "employees": [],
+                        "subordinates": [],
+                        "childDepartments": []
+                    },
+                    {
+                        "position": {
+                            "position_id": 78,
+                            "name": "Аналитик-координатор",
+                            "department_id": 21
+                        },
+                        "employees": [],
+                        "subordinates": [],
+                        "childDepartments": []
+                    }
+                ],
+                "childDepartments": []
+            }
+        ],
+        "childDepartments": [],
+        "department": {
+            "department_id": 21,
+            "name": "Отдел координации аналитики ПО Аналитики и Мониторинга",
+            "parent_department_id": null,
+            "parent_position_id": 5,
+            "is_organization": false,
+            "logo_path": null,
+            "sort": 0,
+            "deleted": false,
+            "deleted_at": null
+        }
+    }
+]
