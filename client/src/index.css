@@ -658,6 +658,21 @@
   padding-top: 15px;
 }
 
+.department-tree-node {
+  margin-top: 40px;
+  background: #f9f9f9;
+  padding: 20px 0;
+  border-radius: 10px;
+}
+
+.tree-node-label {
+  font-weight: bold;
+  color: #a40000;
+  margin-bottom: 15px;
+  font-size: 1.1rem;
+  text-align: center;
+}
+
 .department-branch {
   min-width: 180px;
 }

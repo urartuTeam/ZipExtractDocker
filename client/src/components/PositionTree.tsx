@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import UnifiedPositionCard from "./UnifiedPositionCard";
 import { Department, PositionHierarchyNode } from "../types";
 
@@ -14,7 +14,7 @@ interface PositionTreeProps {
   showVacancies: boolean;
 }
 
-const PositionTree = ({
+const PositionTree: React.FC<PositionTreeProps> = ({
   nodes,
   onPositionClick,
   handleGoBack,
@@ -52,15 +52,6 @@ const PositionTree = ({
         }
       });
 
-      // Учитываем дочерние отделы, которые теперь отображаются отдельно
-      const childDepartmentsContainer = container.querySelector<HTMLElement>(
-        ".child-departments-container"
-      );
-      if (childDepartmentsContainer) {
-        const deptsWidth = calculateWidthsRecursively(childDepartmentsContainer);
-        totalWidth = Math.max(totalWidth, deptsWidth);
-      }
-
       // Устанавливаем минимальную ширину контейнера
       container.style.minWidth = `${totalWidth}px`;
 
@@ -94,163 +85,152 @@ const PositionTree = ({
     return () => window.removeEventListener("resize", recalc);
   }, [nodes, showThreeLevels]); // Добавили зависимость от showThreeLevels
 
-  // Вспомогательный компонент для отображения дочерних отделов как отдельных узлов дерева
-  const ChildDepartments = ({ departments }: { departments: Department[] }) => {
-    if (!departments || departments.length === 0) return null;
-    
-    return (
-      <div className="subordinates-container child-departments-container">
-        <div className="tree-branch-connections">
-          <div 
-            className="tree-branch-line"
-            style={{
-              width: `${Math.max(departments.length * 120, 100)}px`,
-            }}
-          ></div>
-        </div>
-        
-        {departments.map((dept) => (
-          <div 
-            key={`dept-${dept.department_id}`}
-            className="subordinate-branch department-branch"
-            data-is-organization={dept.is_organization ? "true" : "false"}
-          >
-            <div className={`department-card ${dept.is_organization ? 'organization-card' : ''}`}>
-              <div className="position-title">{dept.name}</div>
-              <div className="position-divider"></div>
-              <div className="department-type">Отдел</div>
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  };
-
   const isRootView = !selectedPositionId; // Если нет выбранной должности, это корневой вид
 
-  // Функция для рендеринга узла и его потомков рекурсивно
-  const renderNode = (node: PositionHierarchyNode) => {
-    return (
-      <div className="tree-node" key={`node-${node.position.position_id}`}>
-        <div className="tree-branch">
-          {/* Карточка должности */}
-          <div className="tree-node-container">
-            <UnifiedPositionCard
-              node={node}
-              onPositionClick={node === nodes[0] ? handleGoBack : onPositionClick}
-              isTopLevel={isRootView}
-              showVacancies={showVacancies}
-            />
-          </div>
-
-          {/* Дочерние отделы должности - отображаем как отдельные ветви */}
-          {node.childDepartments && node.childDepartments.length > 0 && (
-            <ChildDepartments departments={node.childDepartments} />
-          )}
-
-          {/* Подчиненные должности */}
-          {node.subordinates.length > 0 && (
-            <div
-              className="subordinates-container"
-              style={
-                node.department?.is_organization
-                  ? { minWidth: "750px" }
-                  : undefined
-              }
-            >
-              <div className="tree-branch-connections">
-                <div
-                  className="tree-branch-line"
-                  style={{
-                    width: `${Math.max(node.subordinates.length * 120, 100)}px`,
-                  }}
-                ></div>
-              </div>
-
-              {/* Отображаем подчиненных */}
-              {node.subordinates
-                .filter((sub) => sub && sub.position)
-                .map((subNode: PositionHierarchyNode, index: number) => (
-                  <div
-                    key={`${subNode.position.position_id}-${index}`}
-                    className="subordinate-branch"
-                    data-is-organization={
-                      subNode.department?.is_organization ? "true" : "false"
-                    }
-                  >
-                    <UnifiedPositionCard
-                      node={subNode}
-                      onPositionClick={onPositionClick}
-                      isTopLevel={isRootView}
-                      showVacancies={showVacancies}
-                    />
-
-                    {/* Дочерние отделы для подчиненной должности */}
-                    {subNode.childDepartments && subNode.childDepartments.length > 0 && (
-                      <ChildDepartments departments={subNode.childDepartments} />
-                    )}
-
-                    {/* Рекурсивное отображение подчиненных, если они есть И настройка позволяет (3 уровня) */}
-                    {subNode.subordinates.length > 0 && showThreeLevels && (
-                      <div
-                        className="subordinates-container"
-                        style={
-                          subNode.department?.is_organization
-                            ? { minWidth: "750px" }
-                            : undefined
-                        }
-                      >
-                        <div className="tree-branch-connections">
-                          <div
-                            className="tree-branch-line"
-                            style={{
-                              width: `${Math.max(subNode.subordinates.length * 120, 100)}px`,
-                            }}
-                          ></div>
-                        </div>
-
-                        {/* Отображаем только два уровня подчиненных (первый уровень + 2 вложенных) */}
-                        {subNode.subordinates
-                          .filter((grandSub) => grandSub && grandSub.position)
-                          .map(
-                            (grandChild: PositionHierarchyNode, subIndex: number) => (
-                              <div
-                                key={`${grandChild.position.position_id}-${subIndex}`}
-                                className="subordinate-branch"
-                                data-is-organization={
-                                  grandChild.department?.is_organization
-                                    ? "true"
-                                    : "false"
-                                }
-                              >
-                                <UnifiedPositionCard
-                                  node={grandChild}
-                                  onPositionClick={onPositionClick}
-                                  isTopLevel={false}
-                                  showVacancies={showVacancies}
-                                />
-                                
-                                {/* Дочерние отделы для подчиненной должности третьего уровня */}
-                                {grandChild.childDepartments && grandChild.childDepartments.length > 0 && (
-                                  <ChildDepartments departments={grandChild.childDepartments} />
-                                )}
-                              </div>
-                            ),
-                          )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
+  // Отрисовка иерархии
   return (
     <div className="position-hierarchy" ref={treeRef}>
-      {nodes.map(renderNode)}
+      {nodes.map((node, nodeIndex) => (
+        <React.Fragment key={`node-fragment-${node.position.position_id}-${nodeIndex}`}>
+          <div className="tree-node">
+            <div className="tree-branch">
+              {/* Карточка должности */}
+              <div className="tree-node-container">
+                <UnifiedPositionCard
+                  node={node}
+                  onPositionClick={node === nodes[0] ? handleGoBack : onPositionClick}
+                  isTopLevel={isRootView}
+                  showVacancies={showVacancies}
+                />
+              </div>
+
+              {/* Подчиненные текущего узла */}
+              {node.subordinates && node.subordinates.length > 0 && (
+                <div
+                  className="subordinates-container"
+                  style={
+                    node.department?.is_organization
+                      ? { minWidth: "750px" }
+                      : undefined
+                  }
+                >
+                  <div className="tree-branch-connections">
+                    <div
+                      className="tree-branch-line"
+                      style={{
+                        width: `${Math.max(node.subordinates.length * 120, 100)}px`,
+                      }}
+                    ></div>
+                  </div>
+
+                  {/* Отображаем подчиненных */}
+                  {node.subordinates
+                    .filter((sub) => sub && sub.position)
+                    .map((subNode: PositionHierarchyNode, index: number) => (
+                      <div
+                        key={`${subNode.position.position_id}-${index}`}
+                        className="subordinate-branch"
+                        data-is-organization={
+                          subNode.department?.is_organization ? "true" : "false"
+                        }
+                      >
+                        <UnifiedPositionCard
+                          node={subNode}
+                          onPositionClick={onPositionClick}
+                          isTopLevel={isRootView}
+                          showVacancies={showVacancies}
+                        />
+
+                        {/* Рекурсивное отображение подчиненных подчиненного, если они есть И настройка позволяет (3 уровня) */}
+                        {subNode.subordinates.length > 0 && showThreeLevels && (
+                          <div
+                            className="subordinates-container"
+                            style={
+                              subNode.department?.is_organization
+                                ? { minWidth: "750px" }
+                                : undefined
+                            }
+                          >
+                            <div className="tree-branch-connections">
+                              <div
+                                className="tree-branch-line"
+                                style={{
+                                  width: `${Math.max(subNode.subordinates.length * 120, 100)}px`,
+                                }}
+                              ></div>
+                            </div>
+
+                            {/* Отображаем только два уровня подчиненных (первый уровень + 2 вложенных) */}
+                            {subNode.subordinates
+                              .filter((grandSub) => grandSub && grandSub.position)
+                              .map(
+                                (grandChild: PositionHierarchyNode, subIndex: number) => (
+                                  <div
+                                    key={`${grandChild.position.position_id}-${subIndex}`}
+                                    className="subordinate-branch"
+                                    data-is-organization={
+                                      grandChild.department?.is_organization
+                                        ? "true"
+                                        : "false"
+                                    }
+                                  >
+                                    <UnifiedPositionCard
+                                      node={grandChild}
+                                      onPositionClick={onPositionClick}
+                                      isTopLevel={false}
+                                      showVacancies={showVacancies}
+                                    />
+                                  </div>
+                                ),
+                              )}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Дочерние отделы как отдельные ветви */}
+          {node.childDepartments && node.childDepartments.length > 0 && (
+            <div className="tree-node department-tree-node">
+              <div className="tree-branch">
+                <div
+                  className="subordinates-container child-departments-container"
+                  style={{ minWidth: "750px" }}
+                >
+                  <div className="tree-node-label">
+                    Отделы, подчиненные должности "{node.position.name}"
+                  </div>
+                  <div className="tree-branch-connections">
+                    <div
+                      className="tree-branch-line"
+                      style={{
+                        width: `${Math.max(node.childDepartments.length * 150, 100)}px`,
+                      }}
+                    ></div>
+                  </div>
+                  
+                  {node.childDepartments.map((dept, deptIndex) => (
+                    <div
+                      key={`dept-${dept.department_id}-${deptIndex}`}
+                      className="subordinate-branch department-branch"
+                      data-is-organization={dept.is_organization ? "true" : "false"}
+                    >
+                      <div className={`department-card ${dept.is_organization ? 'organization-card' : ''}`}>
+                        <div className="position-title">{dept.name}</div>
+                        <div className="position-divider"></div>
+                        <div className="department-type">Отдел</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </React.Fragment>
+      ))}
     </div>
   );
 };
