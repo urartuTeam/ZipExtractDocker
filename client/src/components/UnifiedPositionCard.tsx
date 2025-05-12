@@ -107,7 +107,9 @@ const UnifiedPositionCard = ({
       className={`position-card ${cardClass} ${isDepartment ? "department-card" : ""}`}
       onClick={() => {
         if (onPositionClick) {
-          const departmentId = department?.department_id || null;
+          // Приоритет отдаем явному контексту отдела, который мог быть передан в ноду
+          const departmentId = node.departmentContext || department?.department_id || null;
+          console.log(`Клик на должность ${node.position.name} (ID: ${node.position.position_id}) с контекстом отдела: ${departmentId}`);
           onPositionClick(node.position.position_id, departmentId);
         }
       }}
