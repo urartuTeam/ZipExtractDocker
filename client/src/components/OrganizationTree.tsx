@@ -2351,13 +2351,42 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         subordinates: filteredSubordinates,
       };
 
-      // Рекурсивно проходим по всем подчиненным и сохраняем их дочерние отделы
+      // Рекурсивно проходим по всем подчиненным и гарантируем отображение дочерних отделов
       const preserveChildDepartments = (node: PositionHierarchyNode) => {
         // Для каждого подчиненного...
+        if (!node.subordinates) {
+          node.subordinates = [];
+        }
+        
         node.subordinates.forEach(subordinate => {
-          // Сохраняем ссылку на подчиненные отделы
-          if (subordinate.childDepartments && subordinate.childDepartments.length > 0) {
-            console.log(`Сохраняем ${subordinate.childDepartments.length} дочерних отделов для ${subordinate.position.name}`);
+          // Гарантируем, что массив childDepartments существует
+          if (!subordinate.childDepartments) {
+            subordinate.childDepartments = [];
+          }
+          
+          // Для каждой должности проверяем, есть ли у неё дочерние отделы
+          if (subordinate.position) {
+            // Находим дочерние отделы для этой должности
+            const childDepts = departments.filter(
+              d => d.parent_position_id === subordinate.position.position_id
+            );
+            
+            // Если найдены дочерние отделы, сохраняем их
+            if (childDepts.length > 0) {
+              console.log(`Найдено ${childDepts.length} дочерних отделов для ${subordinate.position.name}`);
+              
+              // Устанавливаем или объединяем с существующими
+              childDepts.forEach(dept => {
+                // Проверяем, нет ли уже такого отдела
+                const existingDept = subordinate.childDepartments.find(
+                  d => d.department_id === dept.department_id
+                );
+                
+                if (!existingDept) {
+                  subordinate.childDepartments.push(dept);
+                }
+              });
+            }
           }
           
           // Рекурсивно обрабатываем подчиненных этого подчиненного
@@ -2367,7 +2396,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
         });
       };
       
-      // Применяем рекурсивную функцию к узлу
+      // Применяем рекурсивную функцию к отфильтрованному узлу
       preserveChildDepartments(filteredNode);
 
       console.log("Итоговое отображение:", {
