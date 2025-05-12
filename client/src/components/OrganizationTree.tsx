@@ -736,6 +736,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Реагируем на изменение настройки отображения уровней
     //  console.log("Обновленная настройка showThreeLevels:", showThreeLevels);
   }, [showThreeLevels]);
+  
+  // Эффект для отслеживания изменений текущего контекста отдела
+  useEffect(() => {
+    console.log(`Текущий контекст отдела изменился на: ${currentDepartmentContext}`);
+  }, [currentDepartmentContext]);
 
   // Обработчики для изменения настроек отображения
   const handleThreeLevelsChange = (value: boolean) => {
@@ -2121,45 +2126,82 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
     // Попытка найти департамент для выбранной должности
     let currentDepartmentId: number | null = null;
 
-    // Определяем департамент для отображения
-
-    // 1. Пытаемся найти сотрудника для этой должности
-    // Когда мы переходим напрямую к позиции (не через отдел), пытаемся найти сотрудника
-    const employeeForPosition = employees.find(
-      (e) => e.position_id === selectedPositionId && !e.deleted,
-    );
-
-    if (employeeForPosition && employeeForPosition.department_id) {
-      // Берем департамент сотрудника
-      currentDepartmentId = employeeForPosition.department_id;
-      console.log(
-        `Выбран департамент ${currentDepartmentId} по сотруднику ${employeeForPosition.full_name}`,
+    // 0. Приоритет отдаем сохраненному контексту отдела
+    if (currentDepartmentContext) {
+      // Проверяем, что должность действительно связана с этим отделом
+      // через position_department, position_position или через сотрудников
+      
+      // Проверяем связь с отделом через position_department
+      const hasPositionDepartmentLink = positionsWithDepartments
+        .find(p => p.position_id === selectedPositionId)
+        ?.departments?.some((d: any) => d.department_id === currentDepartmentContext);
+      
+      // Проверяем связь с отделом через position_position
+      const hasPositionRelation = positionRelations.some(
+        rel => (rel.position_id === selectedPositionId || rel.parent_position_id === selectedPositionId) && 
+              rel.department_id === currentDepartmentContext && 
+              !rel.deleted
       );
-    } else {
-      // 2. Если сотрудника нет, ищем департамент через positionWithDepartments
-      const positionWithDeptInfo = positionsWithDepartments.find(
-        (p) => p.position_id === selectedPositionId,
+      
+      // Проверяем наличие сотрудников в этом отделе
+      const hasEmployees = employees.some(
+        e => e.position_id === selectedPositionId && 
+            e.department_id === currentDepartmentContext && 
+            !e.deleted
+      );
+      
+      // Если должность связана с сохраненным контекстом, используем его
+      if (hasPositionDepartmentLink || hasPositionRelation || hasEmployees) {
+        currentDepartmentId = currentDepartmentContext;
+        console.log(`Используем сохраненный контекст отдела: ${currentDepartmentId}`);
+      }
+    }
+    
+    // Если контекст не был найден через сохраненное значение, продолжаем поиск
+    if (!currentDepartmentId) {
+      // 1. Пытаемся найти сотрудника для этой должности
+      // Когда мы переходим напрямую к позиции (не через отдел), пытаемся найти сотрудника
+      const employeeForPosition = employees.find(
+        (e) => e.position_id === selectedPositionId && !e.deleted,
       );
 
-      if (positionWithDeptInfo?.departments?.length > 0) {
-        // Берем первый департамент
-        currentDepartmentId = positionWithDeptInfo.departments[0].department_id;
+      if (employeeForPosition && employeeForPosition.department_id) {
+        // Берем департамент сотрудника
+        currentDepartmentId = employeeForPosition.department_id;
         console.log(
-          `Выбран департамент ${currentDepartmentId} из списка департаментов должности`,
+          `Выбран департамент ${currentDepartmentId} по сотруднику ${employeeForPosition.full_name}`,
         );
       } else {
-        // 3. Проверяем position_department связи
-        const pdRelation = positionRelations.find(
-          (rel) => rel.position_id === selectedPositionId && !rel.deleted,
+        // 2. Если сотрудника нет, ищем департамент через positionWithDepartments
+        const positionWithDeptInfo = positionsWithDepartments.find(
+          (p) => p.position_id === selectedPositionId,
         );
 
-        if (pdRelation && pdRelation.department_id) {
-          currentDepartmentId = pdRelation.department_id;
+        if (positionWithDeptInfo?.departments?.length > 0) {
+          // Берем первый департамент
+          currentDepartmentId = positionWithDeptInfo.departments[0].department_id;
           console.log(
-            `Выбран департамент ${currentDepartmentId} из связи в position_position`,
+            `Выбран департамент ${currentDepartmentId} из списка департаментов должности`,
           );
+        } else {
+          // 3. Проверяем position_department связи
+          const pdRelation = positionRelations.find(
+            (rel) => rel.position_id === selectedPositionId && !rel.deleted,
+          );
+
+          if (pdRelation && pdRelation.department_id) {
+            currentDepartmentId = pdRelation.department_id;
+            console.log(
+              `Выбран департамент ${currentDepartmentId} из связи в position_position`,
+            );
+          }
         }
       }
+    }
+
+    // После определения контекста отдела, сохраняем его в состоянии
+    if (currentDepartmentId && currentDepartmentId !== currentDepartmentContext) {
+      setCurrentDepartmentContext(currentDepartmentId);
     }
 
     console.log(
