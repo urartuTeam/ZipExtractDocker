@@ -1637,7 +1637,13 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
     // Рекурсивно обходим всех subordinates
     node.subordinates.forEach((childNode) => {
-      attachAllChildDepartmentsRecursively(childNode);
+      // Проверяем наличие позиции перед вызовом
+      if (childNode.position && childNode.position.position_id) {
+        console.log(`Рекурсивное присоединение отделов к ${childNode.position.name} (ID: ${childNode.position.position_id})`);
+        attachAllChildDepartmentsRecursively(childNode);
+      } else {
+        console.log("Пропуск узла без должности:", childNode);
+      }
     });
   };
 
@@ -2413,15 +2419,15 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       // Важно: при использовании [filteredNode] мы строим только один уровень вниз
       // Это означает, что вы увидите подчиненных, но не увидите связь генерального директора с его дочерними отделами
       
-      // При переходе на такие должности как генеральный директор, мы хотим показать все дерево
-      if (filteredNode.position && filteredNode.childDepartments && filteredNode.childDepartments.length > 0) {
-        console.log(`У ${filteredNode.position.name} есть дочерние отделы, показываем полное дерево`);
-        // Находим корень дерева и показываем полную иерархию
-        setFilteredHierarchy(positionHierarchy);
-      } else {
-        // Иначе показываем только выбранный узел и его подчиненных
-        setFilteredHierarchy([filteredNode]);
-      }
+      // ВАЖНОЕ ИСПРАВЛЕНИЕ: всегда показываем выбранный узел и его подчиненных
+      // Иначе информация о связях будет потеряна при использовании positionHierarchy
+      console.log(`Показываем узел ${filteredNode.position?.name} (ID: ${filteredNode.position?.position_id}) и его подчиненных`, {
+        subordinatesCount: filteredNode.subordinates?.length || 0,
+        childDeptCount: filteredNode.childDepartments?.length || 0
+      });
+      
+      // Всегда показываем отфильтрованный узел - внутри него уже есть вся необходимая структура
+      setFilteredHierarchy([filteredNode]);
     } else {
       // Если должность не найдена, показываем все уровни иерархии с корня
       // Это важно для построения правильного дерева
