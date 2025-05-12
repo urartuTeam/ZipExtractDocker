@@ -2125,9 +2125,15 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
 
     // Попытка найти департамент для выбранной должности
     let currentDepartmentId: number | null = null;
-
-    // 0. Приоритет отдаем сохраненному контексту отдела
-    if (currentDepartmentContext) {
+    
+    // Специальная обработка для позиции "Начальник управления" (ID=44)
+    if (selectedPositionId === 44) {
+      // Принудительно устанавливаем отдел "Управление цифрового развития" (ID=24)
+      currentDepartmentId = 24;
+      console.log(`Принудительно выбран департамент 24 для позиции "Начальник управления" (ID=44)`);
+    }
+    // 0. Если это не Начальник управления, приоритет отдаем сохраненному контексту отдела
+    else if (currentDepartmentContext) {
       // Проверяем, что должность действительно связана с этим отделом
       // через position_department, position_position или через сотрудников
       
@@ -2163,22 +2169,11 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       // Важно: для позиции "Начальник управления" (ID=44) проверяем контекст department_id
       let employeeForPosition;
       
-      // Для позиции "Начальник управления" (ID=44) или других проблемных позиций
-      // используем специальную логику, чтобы выбрать сотрудника из правильного отдела
-      if (selectedPositionId === 44) {
-        // Для "Начальник управления" ищем сотрудника, но выбираем только из отдела 24
-        // когда "Герц" привязан к должности в этом отделе
-        employeeForPosition = employees.find(
-          (e) => e.position_id === selectedPositionId && 
-                 e.department_id === 24 && // Принудительно выбираем отдел "Управление цифрового развития"
-                 !e.deleted,
-        );
-      } else {
-        // Для других должностей используем стандартную логику
-        employeeForPosition = employees.find(
-          (e) => e.position_id === selectedPositionId && !e.deleted,
-        );
-      }
+      // Для позиции "Начальник управления" (ID=44) мы уже обработали в начале useEffect
+      // Для других должностей используем стандартную логику
+      employeeForPosition = employees.find(
+        (e) => e.position_id === selectedPositionId && !e.deleted,
+      );
 
       if (employeeForPosition && employeeForPosition.department_id) {
         // Берем департамент сотрудника
