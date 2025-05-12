@@ -176,7 +176,48 @@ export default function Home() {
                         positionsData={positionsWithDepartments}
                         employeesData={employees}
                         showThreeLevels={true}
-                        onPositionClick={(id: number) => setSelectedPositionId(id)}
+                        currentDepartmentId={currentDepartmentId}
+                        onPositionClick={(id: number) => {
+                          // Обработка клика по позиции с сохранением контекста отдела
+                          if (id >= 1000 && id % 1000 === 0) {
+                            // Это отдел, извлекаем реальный ID отдела
+                            const departmentId = Math.floor(id / 1000);
+                            setSelectedPositionId(id);
+                            setCurrentDepartmentId(departmentId);
+                            
+                            // Добавляем в историю навигации
+                            setNavigationHistory(prev => [...prev, { positionId: id, departmentId }]);
+                            console.log(`Текущий контекст отдела изменился на: ${departmentId}`);
+                          } else {
+                            // Это обычная позиция
+                            setSelectedPositionId(id);
+                            
+                            // Ищем отдел, которому принадлежит эта позиция
+                            const position = positionsWithDepartments.find(p => p.position_id === id);
+                            if (position) {
+                              // Если позиция найдена и у нее есть контекст текущего отдела, сохраняем его
+                              if (currentDepartmentId && position.departments.some(d => d.department_id === currentDepartmentId)) {
+                                // Эта позиция присутствует в текущем отделе, оставляем контекст
+                                setNavigationHistory(prev => [...prev, { positionId: id, departmentId: currentDepartmentId }]);
+                                console.log(`Контекст отдела сохранен: ${currentDepartmentId} для позиции ${id}`);
+                              } else if (position.departments.length > 0) {
+                                // Берем первый отдел из списка отделов позиции
+                                const departmentId = position.departments[0].department_id;
+                                setCurrentDepartmentId(departmentId);
+                                setNavigationHistory(prev => [...prev, { positionId: id, departmentId }]);
+                                console.log(`Текущий контекст отдела изменился на: ${departmentId}`);
+                              } else {
+                                // Позиция не привязана к отделам
+                                setCurrentDepartmentId(null);
+                                setNavigationHistory(prev => [...prev, { positionId: id, departmentId: null }]);
+                                console.log(`Текущий контекст отдела изменился на: null`);
+                              }
+                            } else {
+                              // Позиция не найдена
+                              console.log(`Позиция ${id} не найдена`);
+                            }
+                          }
+                        }}
                     />
                   </div>
                 </div>
