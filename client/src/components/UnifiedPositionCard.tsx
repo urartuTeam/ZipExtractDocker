@@ -101,6 +101,14 @@ const UnifiedPositionCard = ({
       onClick={() => {
         if (onPositionClick) {
           const departmentId = department?.department_id || null;
+          
+          // Исправление для должностей с дочерними отделами
+          const positionHasChildDepartments = node.childDepartments && node.childDepartments.length > 0;
+          
+          if (positionHasChildDepartments) {
+            console.log(`Клик на должность ${node.position.name} с ${node.childDepartments.length} дочерними отделами`);
+          }
+          
           onPositionClick(node.position.position_id, departmentId);
         }
       }}

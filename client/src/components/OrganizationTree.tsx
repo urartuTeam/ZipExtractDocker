@@ -2413,11 +2413,44 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
       // Важно: при использовании [filteredNode] мы строим только один уровень вниз
       // Это означает, что вы увидите подчиненных, но не увидите связь генерального директора с его дочерними отделами
       
-      // При переходе на такие должности как генеральный директор, мы хотим показать все дерево
-      if (filteredNode.position && filteredNode.childDepartments && filteredNode.childDepartments.length > 0) {
-        console.log(`У ${filteredNode.position.name} есть дочерние отделы, показываем полное дерево`);
-        // Находим корень дерева и показываем полную иерархию
-        setFilteredHierarchy(positionHierarchy);
+      // Критическая проблема: должность "Исполнительный директор" должна иметь 
+      // дочерние отделы, но они не отображаются
+      
+      // Проверяем прямую связь должности с отделами через parent_position_id
+      const directChildDepartments = departments.filter(
+        d => d.parent_position_id === selectedPositionId
+      );
+      
+      // Добавляем напрямую найденные дочерние отделы к объекту
+      if (directChildDepartments.length > 0) {
+        console.log(`Напрямую найдено ${directChildDepartments.length} дочерних отделов для ${filteredNode.position.name}`);
+        
+        // Убедимся, что у узла есть массив childDepartments
+        if (!filteredNode.childDepartments) {
+          filteredNode.childDepartments = [];
+        }
+        
+        // Добавляем найденные отделы
+        directChildDepartments.forEach(dept => {
+          const existingDept = filteredNode.childDepartments.find(
+            d => d.department_id === dept.department_id
+          );
+          
+          if (!existingDept) {
+            filteredNode.childDepartments.push(dept);
+          }
+        });
+      }
+      
+      // Теперь принимаем решение о отображении
+      if (filteredNode.position && 
+         (directChildDepartments.length > 0 || 
+          (filteredNode.childDepartments && filteredNode.childDepartments.length > 0))) {
+        console.log(`У ${filteredNode.position.name} есть дочерние отделы (${directChildDepartments.length}), показываем полное дерево`);
+        
+        // Вместо отображения всего дерева, показываем только выбранный узел,
+        // но с его дочерними отделами и подчиненными
+        setFilteredHierarchy([filteredNode]);
       } else {
         // Иначе показываем только выбранный узел и его подчиненных
         setFilteredHierarchy([filteredNode]);
