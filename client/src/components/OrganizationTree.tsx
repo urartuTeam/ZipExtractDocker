@@ -2102,8 +2102,13 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = ({
             return true;
           }
           
-          // 2. Проверяем связь должность-отдел (если должность привязана к этому отделу)
-          const pdRelation = positionWithDeptInfo?.departments?.some(
+          // 2. Проверяем связь должность-отдел через связь "начальник-подчиненный"
+          // (для выбранной позиции и потенциального подчиненного)
+          const selectedPositionWithDeptInfo = positionsWithDepartments.find(
+            p => p.position_id === selectedPositionId
+          );
+          
+          const pdRelation = selectedPositionWithDeptInfo?.departments?.some(
             (dept: any) => 
               dept.department_id === departmentId && 
               dept.position_id === subPositionId
