@@ -364,7 +364,12 @@ const PositionTree = ({
   // Определяем, является ли это первичным показом организационного дерева с самой вершины
   const isRootView = !selectedPositionId;
 
-  // console.log(firstNode);
+  // Добавляем логирование параметров
+  console.log("PositionTree параметры:", {
+    showThreeLevels,
+    hierarchyInitialLevels,
+    nodesCount: nodes.length,
+  });
 
   useEffect(() => {
     const calculateWidthsRecursively = (container: HTMLElement): number => {
@@ -860,11 +865,12 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
       )?.data_value || defaultLevels
     : defaultLevels;
 
-  // console.log("Настройки уровней иерархии:", hierarchyInitialLevels);
+  console.log("Настройки уровней иерархии:", hierarchyInitialLevels);
 
   // Инициализируем состояние localShowThreeLevels на основе настроек
   useEffect(() => {
     const threeLevels = Number(hierarchyInitialLevels) === 3;
+    console.log("Состояние localShowThreeLevels:", threeLevels, "основано на hierarchyInitialLevels =", hierarchyInitialLevels);
     setLocalShowThreeLevels(threeLevels);
   }, [hierarchyInitialLevels]);
 
