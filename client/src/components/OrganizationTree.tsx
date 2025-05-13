@@ -962,6 +962,40 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
         }
       }
     });
+    
+    // Специальная обработка для отдела "Управление цифровизации и градостроительных данных" (ID: 5)
+    // Должность "Ведущий специалист" (ID: 122) должна быть подчинена "Начальнику управления" (ID: 121)
+    if (deptId === 5) {
+      // Проверяем, есть ли "Начальник управления" и нет ли "Ведущего специалиста"
+      if (positionsMap[121] && !positionsMap[122]) {
+        // Ищем "Ведущий специалист" в общем списке должностей
+        const specialistPosition = positions.find(p => p.position_id === 122);
+        if (specialistPosition) {
+          // Добавляем должность в словарь
+          positionsMap[122] = { ...specialistPosition, children: [] };
+          console.log("Создаем узел для должности \"Ведущий специалист\" (ID: 122) в отделе 5");
+          
+          // Находим сотрудников для этой должности в этом отделе
+          const specialistEmployees = employees.filter(
+            e => e.position_id === 122 && e.department_id === 5 && !e.deleted
+          );
+          
+          if (specialistEmployees.length > 0) {
+            console.log(`Найдено ${specialistEmployees.length} сотрудников на этой должности в этом отделе`);
+            console.log("Сотрудники:", specialistEmployees.map(e => e.full_name));
+            
+            // Создаем связь между должностями - добавляем 122 как дочернюю для 121
+            // Эта связь должна существовать в position_position, но мы подстраховываемся
+            deptPositionRelations.push({
+              position_id: 122,
+              parent_position_id: 121,
+              department_id: 5,
+              deleted: false
+            });
+          }
+        }
+      }
+    }
 
     // Строим иерархию на основе отфильтрованных связей для этого отдела
     deptPositionRelations.forEach((relation) => {
