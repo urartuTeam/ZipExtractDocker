@@ -332,6 +332,42 @@ export default function Home() {
       <div className="flex flex-col">
         {/* Основной контент */}
         <div className="flex-1 p-4 bg-gray-100 flex flex-col">
+          {/* Заголовок с текущим контекстом, если он есть */}
+          {currentContext.name && (
+            <div className="bg-white rounded-md shadow-sm px-6 py-4 mb-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold flex items-center">
+                  <span className={currentContext.isOrganization ? "text-[#a40000]" : "text-gray-700"}>
+                    {currentContext.isOrganization ? "Организация: " : "Отдел: "}
+                  </span>
+                  <span className="ml-2">{currentContext.name}</span>
+                </h2>
+                <button 
+                  onClick={() => {
+                    // Сбрасываем контекст
+                    setCurrentContext({
+                      positionId: null,
+                      departmentId: null,
+                      name: null,
+                      isOrganization: false
+                    });
+                    // Возвращаемся к начальному виду
+                    setSelectedPositionId(0);
+                    setCurrentDepartmentId(null);
+                    // Очищаем историю навигации
+                    setNavigationHistory([]);
+                  }}
+                  className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm hover:bg-gray-200 transition-colors"
+                >
+                  Вернуться к общему виду
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Показана статистика для выбранного {currentContext.isOrganization ? "подразделения" : "отдела"} и всех его дочерних структур
+              </p>
+            </div>
+          )}
+          
           {/* Дерево организации в гибком контейнере */}
           <div className="bg-white rounded-md shadow-sm p-6 mb-8 flex-grow-0 h-full">
             {isLoading ? (
