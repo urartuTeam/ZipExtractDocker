@@ -419,6 +419,29 @@ export default function Home() {
     }
   }
 
+  // Добавляем useEffect для загрузки статистики при изменении контекста
+  useEffect(() => {
+    // Функция для загрузки данных о вакансиях
+    const loadVacanciesData = async () => {
+      if (currentContext.departmentId) {
+        const stats = await getContextVacancies(currentContext.departmentId);
+        setContextVacancies(stats);
+        console.log("Загружена статистика вакансий для отдела:", currentContext.departmentId, stats);
+      } else {
+        // Без контекста используем общие цифры
+        setContextVacancies({
+          total: totalPositionsCount,
+          occupied: totalPositionsCount - vacantPositionsCount,
+          vacant: vacantPositionsCount
+        });
+        console.log("Загружена общая статистика вакансий:", totalPositionsCount, vacantPositionsCount);
+      }
+    };
+    
+    // Вызываем функцию загрузки
+    loadVacanciesData();
+  }, [currentContext.departmentId, totalPositionsCount, vacantPositionsCount]);
+
   const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects ||
       isLoadingPositionsWithDepartments || isLoadingPositionPositions || isLoadingOrganizations ||
       isLoadingSettings;
@@ -617,15 +640,10 @@ export default function Home() {
                       </svg>
                     </div>
                     <div className="text-2xl font-bold">
-                      {(() => {
-                        const vacancies = getContextVacancies(currentContext.departmentId);
-                        return (
-                          <>
-                            <span className="text-[#a40000]">{vacancies.total}</span>{' '}
-                            <span className="text-green-600">({vacancies.vacant})</span>
-                          </>
-                        );
-                      })()}
+                      <>
+                        <span className="text-[#a40000]">{contextVacancies.total}</span>{' '}
+                        <span className="text-green-600">({contextVacancies.vacant})</span>
+                      </>
                     </div>
                     <div className="text-sm text-gray-500">
                       {currentContext.name ? `Вакансии в "${currentContext.name}"` : "Всего мест / Вакантно"}
