@@ -65,7 +65,10 @@ export default function Home() {
   );
   
   // Определяем значение showThreeLevels на основе настройки
+  // Если настройка равна "3", то показываем 3 уровня, иначе показываем по умолчанию 2 уровня
   const showThreeLevels = hierarchyInitialLevelsSetting?.data_value === '3';
+  
+  console.log("Настройка hierarchy_initial_levels:", hierarchyInitialLevelsSetting?.data_value, "showThreeLevels:", showThreeLevels);
 
   // Записываем данные в глобальный объект для доступа из других компонентов
   if (positionsWithDepartments.length > 0) {

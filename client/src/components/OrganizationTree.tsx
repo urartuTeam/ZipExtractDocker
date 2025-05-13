@@ -338,7 +338,7 @@ const PositionTree = ({
   selectedPositionId,
   handleGoBack,
   hierarchyInitialLevels = 5, // По умолчанию 5 уровней для большей глубины
-  showThreeLevels = true, // Всегда показывать глубокие уровни
+  showThreeLevels = false, // По умолчанию не показывать глубокие уровни
   showVacancies = false, // Показывать индикаторы вакансий
 }: {
   nodes: PositionHierarchyNode[];
@@ -734,7 +734,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
     positionsData,
     employeesData,
     currentDepartmentId,
-    showThreeLevels = true,
+    showThreeLevels,
     showVacancies = false,
   } = props;
   // Загрузка данных из API (если не переданы через пропсы)
@@ -833,7 +833,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
   >(null);
 
   // Состояния для настроек отображения
-  const [localShowThreeLevels, setLocalShowThreeLevels] = useState<boolean>(showThreeLevels);
+  const [localShowThreeLevels, setLocalShowThreeLevels] = useState<boolean>(Boolean(showThreeLevels));
   const [localShowVacancies, setLocalShowVacancies] = useState<boolean>(showVacancies);
 
   // Запрос настроек для получения количества показываемых уровней иерархии
