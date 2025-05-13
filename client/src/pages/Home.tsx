@@ -45,6 +45,11 @@ export default function Home() {
   const { data: organizationsResponse, isLoading: isLoadingOrganizations } = useQuery<{status: string, data: any[]}>({
     queryKey: ['/api/organizations'],
   });
+  
+  // Запрос на получение настроек
+  const { data: settingsResponse, isLoading: isLoadingSettings } = useQuery<{status: string, data: any[]}>({
+    queryKey: ['/api/settings'],
+  });
 
   const departments = departmentsResponse?.data || [];
   const employees = employeesResponse?.data || [];
@@ -52,6 +57,15 @@ export default function Home() {
   const positionsWithDepartments = positionsWithDepartmentsResponse?.data || [];
   const positionPositions = positionPositionsResponse?.data || [];
   const organizations = organizationsResponse?.data || [];
+  const settings = settingsResponse?.data || [];
+  
+  // Получаем настройку количества уровней иерархии из settings
+  const hierarchyInitialLevelsSetting = settings.find(
+    (setting: any) => setting.data_key === 'hierarchy_initial_levels'
+  );
+  
+  // Определяем значение showThreeLevels на основе настройки
+  const showThreeLevels = hierarchyInitialLevelsSetting?.data_value === '3';
 
   // Записываем данные в глобальный объект для доступа из других компонентов
   if (positionsWithDepartments.length > 0) {
@@ -153,7 +167,8 @@ export default function Home() {
   console.log(`Общая статистика: всего вакансий=${totalPositionsCount}, сотрудников=${employeesCount}, свободно=${vacantPositionsCount}`);
 
   const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects ||
-      isLoadingPositionsWithDepartments || isLoadingPositionPositions || isLoadingOrganizations;
+      isLoadingPositionsWithDepartments || isLoadingPositionPositions || isLoadingOrganizations ||
+      isLoadingSettings;
 
   return (
       <div className="flex flex-col">
@@ -175,7 +190,7 @@ export default function Home() {
                         departmentsData={departments}
                         positionsData={positionsWithDepartments}
                         employeesData={employees}
-                        showThreeLevels={false}
+                        showThreeLevels={showThreeLevels}
                         currentDepartmentId={currentDepartmentId}
                         onPositionClick={(id: number) => {
                           // Обработка клика по позиции с сохранением контекста отдела
