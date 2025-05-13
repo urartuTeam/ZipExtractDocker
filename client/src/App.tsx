@@ -20,7 +20,7 @@ import AuthPage from "./pages/AuthPage";
 import Settings from "./pages/Settings";
 import OrganizationStructure from "./pages/OrganizationStructure";
 import Organizations from "./pages/Organizations";
-import Vacancies from "./pages/VacanciesRefactored";
+import Vacancies from "./pages/Vacancies";
 import { useLocation } from "wouter";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";

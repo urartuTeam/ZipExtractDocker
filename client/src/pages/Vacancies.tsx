@@ -233,51 +233,50 @@ export default function Vacancies() {
     [],
   );
 
-  // Эффект для начального раскрытия дерева - запускается всегда
+  // Эффект для начального раскрытия дерева
   useEffect(() => {
-    // Если данные еще не загружены, просто выходим
-    if (!deptData?.data || !posData?.data) return;
-    
-    const departments = deptData.data;
-    const positions = posData.data;
+    if (deptData?.data && posData?.data) {
+      const departments = deptData.data;
+      const positions = posData.data;
 
-    // Найдем организацию ООО "Цифролаб"
-    const cifroOrg = departments.find(
-      (d) => !d.deleted && d.name.includes("Цифролаб") && d.is_organization,
-    );
+      // Найдем организацию ООО "Цифролаб"
+      const cifroOrg = departments.find(
+        (d) => !d.deleted && d.name.includes("Цифролаб") && d.is_organization,
+      );
 
-    const allDepts = departments.reduce(
-      (acc, dept) => {
-        if (!dept.deleted) {
-          // Если это Цифролаб или его дочерний отдел, автоматически раскрываем
-          const isCifroDept =
-            cifroOrg &&
-            (dept.department_id === cifroOrg.department_id ||
-              dept.parent_department_id === cifroOrg.department_id);
+      const allDepts = departments.reduce(
+        (acc, dept) => {
+          if (!dept.deleted) {
+            // Если это Цифролаб или его дочерний отдел, автоматически раскрываем
+            const isCifroDept =
+              cifroOrg &&
+              (dept.department_id === cifroOrg.department_id ||
+                dept.parent_department_id === cifroOrg.department_id);
 
-          acc[dept.department_id] = isCifroDept || false;
-        }
-        return acc;
-      },
-      {} as { [k: number]: boolean },
-    );
+            acc[dept.department_id] = isCifroDept || false;
+          }
+          return acc;
+        },
+        {} as { [k: number]: boolean },
+      );
 
-    const allPos = positions.reduce(
-      (acc, pos) => {
-        pos.departments.forEach((dept) => {
-          const key = `${pos.position_id}-${dept.department_id}`;
-          // Если эта должность принадлежит отделу Цифролаб, автоматически раскрываем
-          const isCifroPos =
-            cifroOrg && dept.department_id === cifroOrg.department_id;
-          acc[key] = isCifroPos || false;
-        });
-        return acc;
-      },
-      {} as { [k: string]: boolean },
-    );
+      const allPos = positions.reduce(
+        (acc, pos) => {
+          pos.departments.forEach((dept) => {
+            const key = `${pos.position_id}-${dept.department_id}`;
+            // Если эта должность принадлежит отделу Цифролаб, автоматически раскрываем
+            const isCifroPos =
+              cifroOrg && dept.department_id === cifroOrg.department_id;
+            acc[key] = isCifroPos || false;
+          });
+          return acc;
+        },
+        {} as { [k: string]: boolean },
+      );
 
-    setExpDept(allDepts);
-    setExpPos(allPos);
+      setExpDept(allDepts);
+      setExpPos(allPos);
+    }
   }, [deptData, posData]);
 
   // Эффект для поиска
@@ -718,24 +717,23 @@ export default function Vacancies() {
   };
 
   // При монтировании компонента проверяем localStorage и настраиваем автоматическое раскрытие уровней
-  // Извлечем логику в константы, но выполним её только внутри useEffect для безопасности
-  const savedIdInStorage = typeof window !== "undefined" ? localStorage.getItem("selectedOrganizationId") : null;
-  const savedNameInStorage = typeof window !== "undefined" ? localStorage.getItem("selectedOrganizationName") : null;
-  
-  // Всегда вызываем useEffect, но внутри делаем проверки
   useEffect(() => {
+    // Убедимся, что хук вызывается только на клиентской стороне
     if (typeof window !== "undefined") {
-      if (savedIdInStorage) {
-        setStateOrgId(Number(savedIdInStorage));
+      const savedOrgId = localStorage.getItem("selectedOrganizationId");
+      const savedOrgName = localStorage.getItem("selectedOrganizationName");
+
+      if (savedOrgId) {
+        setStateOrgId(Number(savedOrgId));
         localStorage.removeItem("selectedOrganizationId");
       }
 
-      if (savedNameInStorage) {
-        setStateOrgName(savedNameInStorage);
+      if (savedOrgName) {
+        setStateOrgName(savedOrgName);
         localStorage.removeItem("selectedOrganizationName");
       }
     }
-  }, [savedIdInStorage, savedNameInStorage]);
+  }, []);
 
   const renderFromRoute = () => {
     const department = departments.filter(
@@ -773,49 +771,50 @@ export default function Vacancies() {
   // Определяем, показывать только выбранную организацию или все организации
   const showOnlyTarget = Boolean(targetDepartmentId);
 
-  // Вычисляем глубину отдела - функция вынесена за пределы useEffect
-  const getDepthForDepartment = useCallback((dept: Department, depts: Department[]): number => {
-    if (!dept.parent_department_id) return 0;
-
-    const parent = depts.find(
-      (d) => d.department_id === dept.parent_department_id,
-    );
-    if (!parent) return 1; // Если родитель не найден, считаем глубину 1
-
-    return getDepthForDepartment(parent, depts) + 1;
-  }, []);
-
   // Эффект для авто-раскрытия первых двух уровней дерева при загрузке данных
   useEffect(() => {
-    // Выполняем только если есть данные и дерево ещё не было развернуто
-    if (!departments.length || !positions.length || Object.keys(expDept).length > 0) {
-      return;
+    if (
+      departments.length &&
+      positions.length &&
+      !Object.keys(expDept).length
+    ) {
+      console.log("Авто-раскрытие первых 2-х уровней дерева...");
+
+      // Вычисляем глубину каждого отдела
+      const getDepthForDepartment = (dept: Department): number => {
+        if (!dept.parent_department_id) return 0;
+
+        const parent = departments.find(
+          (d) => d.department_id === dept.parent_department_id,
+        );
+        if (!parent) return 1; // Если родитель не найден, считаем глубину 1
+
+        return getDepthForDepartment(parent) + 1;
+      };
+
+      // Определяем отделы с глубиной не более 2 (0, 1, 2)
+      const deptsToExpand = departments.filter((d) => {
+        if (d.deleted) return false;
+
+        const depth = getDepthForDepartment(d);
+        return depth <= 2;
+      });
+
+      // Создаем объект для экспандированных отделов
+      const newExpDept = deptsToExpand.reduce(
+        (acc, dept) => {
+          acc[dept.department_id] = true;
+          return acc;
+        },
+        {} as { [k: number]: boolean },
+      );
+
+      console.log(
+        `Автоматически раскрываем ${Object.keys(newExpDept).length} отделов`,
+      );
+      setExpDept(newExpDept);
     }
-    
-    console.log("Авто-раскрытие первых 2-х уровней дерева...");
-
-    // Определяем отделы с глубиной не более 2 (0, 1, 2)
-    const deptsToExpand = departments.filter((d) => {
-      if (d.deleted) return false;
-
-      const depth = getDepthForDepartment(d, departments);
-      return depth <= 2;
-    });
-
-    // Создаем объект для экспандированных отделов
-    const newExpDept = deptsToExpand.reduce(
-      (acc, dept) => {
-        acc[dept.department_id] = true;
-        return acc;
-      },
-      {} as { [k: number]: boolean },
-    );
-
-    console.log(
-      `Автоматически раскрываем ${Object.keys(newExpDept).length} отделов`,
-    );
-    setExpDept(newExpDept);
-  }, [departments, positions, expDept, getDepthForDepartment]);
+  }, [departments, positions, expDept]);
 
   // Фильтруем корневые отделы в соответствии с поисковым запросом
   const roots = departments.filter(

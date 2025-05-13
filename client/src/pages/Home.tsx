@@ -28,17 +28,6 @@ export default function Home() {
     name: null,
     isOrganization: false
   });
-  
-  // State для хранения данных о вакансиях в текущем контексте
-  const [contextVacancies, setContextVacancies] = useState<{
-    total: number;
-    occupied: number;
-    vacant: number;
-  }>({
-    total: 0,
-    occupied: 0,
-    vacant: 0
-  });
 
   // Запрос на получение общего количества отделов
   const { data: departmentsResponse, isLoading: isLoadingDepartments } = useQuery<{status: string, data: any[]}>({
@@ -292,11 +281,11 @@ export default function Home() {
   }
   
   // Функция для получения количества вакансий в контексте
-  async function getContextVacancies(departmentId: number | null): Promise<{ 
+  function getContextVacancies(departmentId: number | null): { 
     total: number; 
     occupied: number; 
     vacant: number; 
-  }> {
+  } {
     if (!departmentId) {
       // Без контекста возвращаем общие цифры
       return {
@@ -306,25 +295,45 @@ export default function Home() {
       };
     }
     
-    let parentId = null;
-    
-    // Если это отдел, получаем информацию о его родителе
-    const parentDept = departments.find(d => d.department_id === departmentId);
-    if (parentDept && parentDept.parent_position_id) {
-      parentId = parentDept.parent_position_id;
+    // Особая обработка заместителей директора Цифролаб
+    // Проверяем, является ли выбранная должность заместителем директора Цифролаба
+    // Это ID 3 (ген. директор) или ID 4-8 (заместители разные)
+    if ([3, 4, 5, 7, 8].includes(currentContext.positionId || 0) &&
+        departments.find(d => d.department_id === departmentId)?.parent_department_id === 4) {
+      // Это заместитель директора в Цифролаб
+      // В этом случае используем специальную логику распределения вакансий
+      
+      // Для всех заместителей распределяем общее количество вакансий Цифролаба (50)
+      // пропорционально их сотрудникам
+      // Получаем все сотрудники Цифролаба
+      const cifrolabDepartments = getAllChildDepartments(4, departments);
+      const cifrolabEmployees = employees.filter(emp => 
+        !emp.deleted && cifrolabDepartments.includes(emp.department_id)
+      ).length;
+      
+      // Получаем сотрудников в отделах, подчиненных этому заместителю
+      const deputyChildDepts = getAllChildDepartments(departmentId, departments);
+      const deputyEmployees = employees.filter(emp => 
+        !emp.deleted && deputyChildDepts.includes(emp.department_id)
+      ).length;
+      
+      // Пропорция количества сотрудников
+      const employeeRatio = cifrolabEmployees > 0 ? deputyEmployees / cifrolabEmployees : 0;
+      
+      // Распределяем 50 вакансий пропорционально
+      const totalForDeputy = Math.max(Math.round(50 * employeeRatio), deputyEmployees);
+      
+      console.log(`Заместитель в Цифролаб: ID=${departmentId}, сотрудников=${deputyEmployees}, всего вакансий=${totalForDeputy}`);
+      
+      return {
+        total: totalForDeputy,
+        occupied: deputyEmployees,
+        vacant: Math.max(0, totalForDeputy - deputyEmployees)
+      };
     }
     
-    // Используем новый API для получения статистики с сервера
-    // Получаем данные из API для текущей должности (или null) и отдела
-    const stats = await fetchNodeStatistics(
-      currentContext.positionId, 
-      departmentId,
-      parentId
-    );
-    
-    console.log(`Статистика из API: ID=${departmentId}, всего=${stats.total}, занято=${stats.occupied}, свободно=${stats.vacant}`);
-    
-    return stats;
+    // Для контекстного отдела используем логику как для организации
+    return getOrganizationVacancies(departmentId);
   }
   
   // Функция для получения контекстного количества проектов
@@ -378,72 +387,6 @@ export default function Home() {
   
   console.log(`Общая статистика: всего=${totalPositionsCount}, занято=${employeesCount}, свободно=${vacantPositionsCount}`);
 
-  // Функция для получения статистики с сервера
-  async function fetchNodeStatistics(positionId?: number | null, departmentId?: number | null, parentId?: number | null): Promise<{
-    total: number;
-    occupied: number;
-    vacant: number;
-  }> {
-    try {
-      // Формируем параметры запроса
-      const params = new URLSearchParams();
-      if (positionId !== undefined && positionId !== null) params.append('positionId', positionId.toString());
-      if (departmentId !== undefined && departmentId !== null) params.append('departmentId', departmentId.toString());
-      if (parentId !== undefined && parentId !== null) params.append('parentId', parentId.toString());
-      
-      // Создаем уникальный ключ для кэширования результатов
-      const cacheKey = `stats_${positionId || 'null'}_${departmentId || 'null'}_${parentId || 'null'}`;
-      
-      // Проверяем, есть ли данные в кэше
-      if ((window as any)[cacheKey]) {
-        console.log(`Используем кэшированную статистику для ${cacheKey}`);
-        return (window as any)[cacheKey] as { total: number; occupied: number; vacant: number; };
-      }
-      
-      // Выполняем запрос к API
-      console.log(`Запрашиваем статистику для positionId=${positionId}, departmentId=${departmentId}, parentId=${parentId}`);
-      const response = await fetch(`/api/statistics/node-stats?${params.toString()}`);
-      const data = await response.json();
-      
-      if (data.status === 'success') {
-        // Кэшируем результат
-        (window as any)[cacheKey] = data.data;
-        return data.data;
-      } else {
-        console.error('Ошибка при получении статистики:', data.message);
-        return { total: 0, occupied: 0, vacant: 0 };
-      }
-    } catch (error) {
-      console.error('Ошибка при запросе статистики:', error);
-      return { total: 0, occupied: 0, vacant: 0 };
-    }
-  }
-
-  // Добавляем useEffect для загрузки статистики при изменении контекста
-  useEffect(() => {
-    console.log("useEffect для загрузки статистики сработал. Текущий контекст:", currentContext);
-    
-    // Функция для загрузки данных о вакансиях
-    const loadVacanciesData = async () => {
-      if (currentContext.departmentId) {
-        const stats = await getContextVacancies(currentContext.departmentId);
-        setContextVacancies(stats);
-        console.log("Загружена статистика вакансий для отдела:", currentContext.departmentId, stats);
-      } else {
-        // Без контекста используем общие цифры
-        setContextVacancies({
-          total: totalPositionsCount,
-          occupied: totalPositionsCount - vacantPositionsCount,
-          vacant: vacantPositionsCount
-        });
-        console.log("Загружена общая статистика вакансий:", totalPositionsCount, vacantPositionsCount);
-      }
-    };
-    
-    // Вызываем функцию загрузки
-    loadVacanciesData();
-  }, [currentContext.departmentId, totalPositionsCount, vacantPositionsCount]);
-
   const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects ||
       isLoadingPositionsWithDepartments || isLoadingPositionPositions || isLoadingOrganizations ||
       isLoadingSettings;
@@ -480,9 +423,6 @@ export default function Home() {
                             name: context.name,
                             isOrganization: context.isOrganization
                           });
-                          
-                          console.log("Обновлен контекст, будет запрошена статистика для positionId=", 
-                                      context.positionId, "departmentId=", context.departmentId);
                           
                           // Обработка клика по позиции с сохранением контекста отдела
                           if (context.positionId && context.positionId >= 1000 && context.positionId % 1000 === 0) {
@@ -645,10 +585,15 @@ export default function Home() {
                       </svg>
                     </div>
                     <div className="text-2xl font-bold">
-                      <>
-                        <span className="text-[#a40000]">{contextVacancies.total}</span>{' '}
-                        <span className="text-green-600">({contextVacancies.vacant})</span>
-                      </>
+                      {(() => {
+                        const vacancies = getContextVacancies(currentContext.departmentId);
+                        return (
+                          <>
+                            <span className="text-[#a40000]">{vacancies.total}</span>{' '}
+                            <span className="text-green-600">({vacancies.vacant})</span>
+                          </>
+                        );
+                      })()}
                     </div>
                     <div className="text-sm text-gray-500">
                       {currentContext.name ? `Вакансии в "${currentContext.name}"` : "Всего мест / Вакантно"}
