@@ -20,6 +20,7 @@ import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
 import { registerPositionEndpoints } from "./api/position_endpoints";
 import { registerSortTreeEndpoints } from "./api/sort_tree_endpoints";
+import { registerStatisticsEndpoints } from "./api/statistics_endpoints";
 import uploadRoutes from "./routes/upload";
 import path from "path";
 import express from "express";
@@ -61,6 +62,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Регистрация эндпоинтов для работы с сортировкой дерева
   registerSortTreeEndpoints(app);
+  
+  // Регистрация эндпоинтов для статистики
+  registerStatisticsEndpoints(app);
 
   // API routes
   const apiRouter = app.route('/api');
