@@ -15,6 +15,19 @@ export default function Home() {
   const [selectedPositionId, setSelectedPositionId] = useState(0);
   const [currentDepartmentId, setCurrentDepartmentId] = useState<number | null>(null);
   const [navigationHistory, setNavigationHistory] = useState<NavigationHistoryItem[]>([]);
+  
+  // Состояние для отслеживания текущего контекста (выбранной позиции/отдела)
+  const [currentContext, setCurrentContext] = useState<{
+    positionId: number | null;
+    departmentId: number | null;
+    name: string | null;
+    isOrganization: boolean;
+  }>({
+    positionId: null,
+    departmentId: null,
+    name: null,
+    isOrganization: false
+  });
 
   // Запрос на получение общего количества отделов
   const { data: departmentsResponse, isLoading: isLoadingDepartments } = useQuery<{status: string, data: any[]}>({
