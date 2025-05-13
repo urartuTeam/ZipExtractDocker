@@ -357,6 +357,12 @@ const PositionTree = ({
 
   // Берем первую должность для основной ветви (если есть)
   const firstNode = validNodes.length > 0 ? validNodes[0] : null;
+  
+  console.log("PositionTree параметры:", {
+    showThreeLevels,
+    hierarchyInitialLevels,
+    nodesCount: nodes.length
+  });
 
   // Остальные должности верхнего уровня
   const otherNodes = validNodes.length > 0 ? validNodes.slice(1) : [];
@@ -483,8 +489,8 @@ const PositionTree = ({
                       showVacancies={showVacancies}
                     />
 
-                    {/* Рекурсивное отображение подчиненных подчиненного, всегда показываем все уровни */}
-                    {subNode.subordinates.length > 0 && (
+                    {/* Рекурсивное отображение подчиненных подчиненного, показываем только если включено showThreeLevels */}
+                    {subNode.subordinates.length > 0 && showThreeLevels && (
                       <div
                         className="subordinates-container"
                         style={
@@ -2968,8 +2974,8 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
           handleGoBack={handleGoBack}
           selectedPositionId={selectedPositionId}
           hierarchyInitialLevels={Number(hierarchyInitialLevels)}
-          showThreeLevels={Boolean(showThreeLevels)}
-          showVacancies={showVacancies}
+          showThreeLevels={localShowThreeLevels}
+          showVacancies={localShowVacancies}
         />
       </div>
     </div>
