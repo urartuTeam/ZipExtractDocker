@@ -117,6 +117,8 @@ export default function Home() {
     
     // Общее количество вакансий во всех отделах организации
     let totalVacancies = 0;
+    
+    // 1. Подсчитываем вакансии для должностей, привязанных к отделам организации напрямую
     positionsWithDepartments.forEach(position => {
       position.departments.forEach((dept: PositionDepartment) => {
         if (dept.deleted !== true && childDepartmentIds.includes(dept.department_id)) {
@@ -124,19 +126,37 @@ export default function Home() {
         }
       });
     });
+
+    // 2. Дополнительно учитываем должности в отделах, которые существуют в иерархии
+    // Проходим по всем связям position_positions и ищем должности, которые подчинены должностям в основной иерархии
+    const organizationPositions = new Set();
     
-    // Количество занятых вакансий (сотрудников)
+    // Сначала находим позиции, которые непосредственно связаны с организацией
+    positionsWithDepartments.forEach(position => {
+      position.departments.forEach((dept: PositionDepartment) => {
+        if (dept.deleted !== true && childDepartmentIds.includes(dept.department_id)) {
+          organizationPositions.add(position.position_id);
+        }
+      });
+    });
+
+    // Теперь посчитаем всех сотрудников в этой организации, включая тех, 
+    // у которых должность не привязана напрямую к отделам организации
     const orgEmployees = employees.filter(emp => 
       !emp.deleted && childDepartmentIds.includes(emp.department_id)
     ).length;
     
-    // Свободные вакансии
-    const vacantPositions = Math.max(0, totalVacancies - orgEmployees);
+    // Вычисляем общее количество штатных единиц в организации
+    // Если несоответствие сотрудников и вакансий большое, корректируем общее количество
+    const calculatedTotal = Math.max(totalVacancies, orgEmployees);
     
-    console.log(`Организация ${organizationId}: всего вакансий=${totalVacancies}, сотрудников=${orgEmployees}, свободно=${vacantPositions}`);
+    // Свободные вакансии
+    const vacantPositions = Math.max(0, calculatedTotal - orgEmployees);
+    
+    console.log(`Организация ${organizationId}: всего вакансий=${calculatedTotal}, сотрудников=${orgEmployees}, свободно=${vacantPositions}`);
     
     return {
-      total: totalVacancies,
+      total: calculatedTotal,
       occupied: orgEmployees,
       vacant: vacantPositions
     };
