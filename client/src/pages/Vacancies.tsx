@@ -85,7 +85,7 @@ type SearchMatch = {
 };
 
 export default function Vacancies() {
-  // State для UI
+  // State
   const [expDept, setExpDept] = useState<{ [k: number]: boolean }>({});
   const [expPos, setExpPos] = useState<{ [k: string]: boolean }>({});
   const [allExpanded, setAllExpanded] = useState(false);
@@ -95,7 +95,6 @@ export default function Vacancies() {
     positions: new Set<number>(),
   });
 
-  // State для фильтрации и страницы
   const [vacantSort, setVacantSort] = useState(false);
   const [busySort, setBusySort] = useState(false);
   const [, routeParams] = useRoute("/vacancies/:id");
@@ -524,7 +523,7 @@ export default function Vacancies() {
       (e) => e.position_id === posId && e.department_id === deptId,
     );
 
-  // Функция для получения информации о вакансиях для одиночной должности
+  // Функция для получения информации о вакансиях
   const getPositionDepartmentInfo = (posId: number, deptId: number) => {
     const positionDept = positionDepartments?.find(
       (pd) =>
@@ -550,6 +549,9 @@ export default function Vacancies() {
     const totalCount = positionDept.vacancies || 0;
     const vacancies = Math.max(0, totalCount - currentCount);
 
+    console.log(
+      `Позиция в отделе ${positionDept?.department_id}, всего (vacancies из БД): ${totalCount}, занято: ${currentCount}, вакансий: ${vacancies}`,
+    );
     return {
       staffUnits: totalCount,
       vacancies: vacancies,
@@ -577,72 +579,23 @@ export default function Vacancies() {
 
     const key = `${p.position_id}-${deptId}`;
     const rowId = parentId ? `${parentId}-${key}` : key;
+    const emps = getEmps(p.position_id, deptId);
     const childPositions = p.children || [];
     const childDepts = getChildDeptsByPosition(p.position_id);
+    const { staffUnits, vacancies } = getPositionDepartmentInfo(
+      p.position_id,
+      deptId,
+    );
     const ex = expPos[key] ? expPos[key] : lvl < 2;
     const rows = [];
-    
-    // Получаем информацию о должности
-    const positionDept = positionDepartments?.find(
-      (pd) => pd.position_id === p.position_id && pd.department_id === deptId && !pd.deleted,
-    );
-    
-    // Получаем список сотрудников
-    const emps = employees.filter(
-      (e) => e.position_id === p.position_id && e.department_id === deptId,
-    );
-    
-    // Базовая статистика для текущей должности
-    const currentCount = emps.length;
-    const totalCount = positionDept?.vacancies || 0;
-    const vacancies = Math.max(0, totalCount - currentCount);
-    
-    let staffUnits = totalCount;
-    let displayCurrentCount = currentCount;
-    let displayVacancies = vacancies;
-    
-    // Если узел свернут и имеет дочерние элементы, добавляем их статистику
-    if (!ex && (childPositions.length > 0 || childDepts.length > 0)) {
-      // Для дочерних должностей
-      childPositions.forEach(child => {
-        const childEmps = employees.filter(
-          (e) => e.position_id === child.position_id && e.department_id === deptId,
-        );
-        const childPd = positionDepartments?.find(
-          (pd) => pd.position_id === child.position_id && pd.department_id === deptId && !pd.deleted,
-        );
-        staffUnits += childPd?.vacancies || 0;
-        displayCurrentCount += childEmps.length;
-        displayVacancies += Math.max(0, (childPd?.vacancies || 0) - childEmps.length);
-      });
-      
-      // Для дочерних отделов
-      childDepts.forEach(dept => {
-        const deptPositions = positions.filter(pos => 
-          pos.departments.some(d => d.department_id === dept.department_id)
-        );
-        
-        deptPositions.forEach(pos => {
-          const posEmps = employees.filter(
-            (e) => e.position_id === pos.position_id && e.department_id === dept.department_id,
-          );
-          const posPd = positionDepartments?.find(
-            (pd) => pd.position_id === pos.position_id && pd.department_id === dept.department_id && !pd.deleted,
-          );
-          staffUnits += posPd?.vacancies || 0;
-          displayCurrentCount += posEmps.length;
-          displayVacancies += Math.max(0, (posPd?.vacancies || 0) - posEmps.length);
-        });
-      });
-    }
 
     // Определяем цвет фона в зависимости от наличия вакансий
     let bgClass = "";
     if (staffUnits > 0) {
-      bgClass = displayCurrentCount < staffUnits ? "bg-red-100" : "bg-green-100";
+      bgClass = emps.length < staffUnits ? "bg-red-100" : "bg-green-100";
     }
 
-    if ((displayVacancies === 0 && vacantSort) || (displayVacancies > 0 && busySort)) {
+    if ((vacancies === 0 && vacantSort) || (vacancies > 0 && busySort)) {
       bgClass += " opacity-30";
     }
 
@@ -670,12 +623,12 @@ export default function Vacancies() {
           </div>
         </TableCell>
         <TableCell className="text-center">{staffUnits}</TableCell>
-        <TableCell className="text-center">{displayCurrentCount}</TableCell>
+        <TableCell className="text-center">{emps.length}</TableCell>
         <TableCell className="text-center">
-          {displayVacancies > 0 ? (
-            <span className="text-green-600 font-medium">+{displayVacancies}</span>
+          {vacancies > 0 ? (
+            <span className="text-green-600 font-medium">+{vacancies}</span>
           ) : (
-            displayVacancies
+            vacancies
           )}
         </TableCell>
       </TableRow>,
