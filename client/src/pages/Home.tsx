@@ -199,7 +199,7 @@ export default function Home() {
   // Незанятых вакансий = ВСЕГО - Занятых мест
   const vacantPositionsCount = Math.max(0, totalPositionsCount - employeesCount);
   
-  console.log(`Общая статистика: всего вакансий=${totalPositionsCount} (${totalPositionsFromDb} + ${cifrolabFixedValue} Цифролаб), сотрудников=${employeesCount}, свободно=${vacantPositionsCount}`);
+  console.log(`Общая статистика: всего=${totalPositionsCount}, занято=${employeesCount}, свободно=${vacantPositionsCount}`);
 
   const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects ||
       isLoadingPositionsWithDepartments || isLoadingPositionPositions || isLoadingOrganizations ||
@@ -382,7 +382,7 @@ export default function Home() {
                     </div>
                     <div className="text-2xl font-bold">
                       <span className="text-[#a40000]">Всего: {totalPositionsCount}</span>{' '}
-                      <span className="text-green-600">({vacantPositionsCount})</span>
+                      <span className="text-green-600">Свободно: {vacantPositionsCount}</span>
                     </div>
                     <div className="text-sm text-gray-500">Отчет по вакансиям организации</div>
                   </div>
