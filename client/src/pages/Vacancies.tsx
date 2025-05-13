@@ -85,7 +85,7 @@ type SearchMatch = {
 };
 
 export default function Vacancies() {
-  // State
+  // State для UI
   const [expDept, setExpDept] = useState<{ [k: number]: boolean }>({});
   const [expPos, setExpPos] = useState<{ [k: string]: boolean }>({});
   const [allExpanded, setAllExpanded] = useState(false);
@@ -95,6 +95,7 @@ export default function Vacancies() {
     positions: new Set<number>(),
   });
 
+  // State для фильтрации и страницы
   const [vacantSort, setVacantSort] = useState(false);
   const [busySort, setBusySort] = useState(false);
   const [, routeParams] = useRoute("/vacancies/:id");
@@ -523,171 +524,36 @@ export default function Vacancies() {
       (e) => e.position_id === posId && e.department_id === deptId,
     );
 
-  // Функция для получения информации о вакансиях
-  // Рекурсивная функция для подсчета суммарной статистики должностей
-  const calculateRecursiveStats = (
-    position: any,
-    deptId: number
-  ): { staffUnits: number; currentCount: number; vacancies: number } => {
-    // Получаем статистику текущей должности
-    const emps = getEmps(position.position_id, deptId);
-    const basePosInfo = positionDepartments?.find(
+  // Функция для получения информации о вакансиях для одиночной должности
+  const getPositionDepartmentInfo = (posId: number, deptId: number) => {
+    const positionDept = positionDepartments?.find(
       (pd) =>
-        pd.position_id === position.position_id && 
-        pd.department_id === deptId && 
-        !pd.deleted,
+        pd.position_id === posId && pd.department_id === deptId && !pd.deleted,
     );
-    
-    // Базовая статистика для текущей должности
-    const currentCount = emps.length;
-    const totalCount = basePosInfo?.vacancies || 0;
-    const baseVacancies = Math.max(0, totalCount - currentCount);
-    
-    let stats = {
-      staffUnits: totalCount,
-      currentCount: currentCount,
-      vacancies: baseVacancies,
-    };
-    
-    // Рекурсивно добавляем статистику от дочерних должностей
-    if (position.children && position.children.length > 0) {
-      position.children.forEach((child: any) => {
-        if (child) {
-          const childStats = calculateRecursiveStats(child, deptId);
-          stats.staffUnits += childStats.staffUnits;
-          stats.currentCount += childStats.currentCount;
-          stats.vacancies += childStats.vacancies;
-        }
-      });
-    }
-    
-    // Добавляем статистику от дочерних отделов для этой должности
-    const childDepts = getChildDeptsByPosition(position.position_id);
-    childDepts.forEach((dept) => {
-      // Для каждого дочернего отдела получаем его должности
-      const deptPositions = getDeptPositions(dept.department_id);
-      
-      // Для каждой должности в дочернем отделе считаем статистику
-      deptPositions.forEach((deptPos) => {
-        if (deptPos) {
-          const deptPosStats = calculateRecursiveStats(deptPos, dept.department_id);
-          stats.staffUnits += deptPosStats.staffUnits;
-          stats.currentCount += deptPosStats.currentCount;
-          stats.vacancies += deptPosStats.vacancies;
-        }
-      });
-    });
-    
-    return stats;
-  };
 
-  // Рекурсивная функция для подсчета статистики отдела
-  const calculateDepartmentStats = (
-    deptId: number
-  ): { staffUnits: number; currentCount: number; vacancies: number } => {
-    let stats = {
-      staffUnits: 0,
-      currentCount: 0,
-      vacancies: 0,
-    };
-    
-    // Получаем все должности в отделе
-    const deptPositions = getDeptPositions(deptId);
-    
-    // Для каждой должности в отделе считаем статистику
-    deptPositions.forEach((position) => {
-      if (position) {
-        const posStats = calculateRecursiveStats(position, deptId);
-        stats.staffUnits += posStats.staffUnits;
-        stats.currentCount += posStats.currentCount;
-        stats.vacancies += posStats.vacancies;
-      }
-    });
-    
-    // Добавляем статистику от дочерних отделов
-    const childDepts = getChildDeptsByDept(deptId);
-    childDepts.forEach((childDept) => {
-      if (childDept) {
-        const childDeptStats = calculateDepartmentStats(childDept.department_id);
-        stats.staffUnits += childDeptStats.staffUnits;
-        stats.currentCount += childDeptStats.currentCount;
-        stats.vacancies += childDeptStats.vacancies;
-      }
-    });
-    
-    return stats;
-  };
+    const emps = getEmps(posId, deptId);
 
-  const getPositionDepartmentInfo = (posId: number, deptId: number, isExpanded = true) => {
-    // Если позиция развернута, возвращаем только её собственную статистику
-    if (isExpanded) {
-      const positionDept = positionDepartments?.find(
-        (pd) =>
-          pd.position_id === posId && pd.department_id === deptId && !pd.deleted,
-      );
-
-      const emps = getEmps(posId, deptId);
-
-      if (!positionDept) {
-        return {
-          staffUnits: 0,
-          vacancies: 0,
-          currentCount: emps.length,
-        };
-      }
-
-      // ПРЕДЕЛЬНО ПРОСТАЯ ЛОГИКА ПО УКАЗАНИЮ:
-      // 1. ВСЕГО - значение из БД (поле vacancies)
-      // 2. Занято - количество сотрудников (emps.length)
-      // 3. Вакансии = ВСЕГО - Занято (если получается отрицательное, то 0)
-
-      const currentCount = emps.length;
-      const totalCount = positionDept.vacancies || 0;
-      const vacancies = Math.max(0, totalCount - currentCount);
-
-      console.log(
-        `Позиция в отделе ${positionDept?.department_id}, всего (vacancies из БД): ${totalCount}, занято: ${currentCount}, вакансий: ${vacancies}`,
-      );
-      return {
-        staffUnits: totalCount,
-        vacancies: vacancies,
-        currentCount: currentCount,
-      };
-    }
-    
-    // Если позиция свернута, считаем суммарную статистику
-    // с учетом всех дочерних позиций и отделов
-    const position = positions.find(p => p.position_id === posId);
-    if (!position) {
+    if (!positionDept) {
       return {
         staffUnits: 0,
         vacancies: 0,
-        currentCount: 0,
+        currentCount: emps.length,
       };
     }
-    
-    // Ищем дочерние позиции через positionRelations
-    const childPositionIds = positionRelations
-      .filter(rel => !rel.deleted && rel.parent_position_id === posId)
-      .map(rel => rel.position_id);
-    
-    const childPositions = positions.filter(p => 
-      childPositionIds.includes(p.position_id)
-    );
-    
-    // Создаем копию позиции с её дочерними элементами для расчета
-    const positionWithChildren = {
-      ...position,
-      children: childPositions
-    };
-    
-    // Рассчитываем статистику для этой позиции и всех её дочерних элементов
-    const stats = calculateRecursiveStats(positionWithChildren, deptId);
-    
+
+    // ПРЕДЕЛЬНО ПРОСТАЯ ЛОГИКА ПО УКАЗАНИЮ:
+    // 1. ВСЕГО - значение из БД (поле vacancies)
+    // 2. Занято - количество сотрудников (emps.length)
+    // 3. Вакансии = ВСЕГО - Занято (если получается отрицательное, то 0)
+
+    const currentCount = emps.length;
+    const totalCount = positionDept.vacancies || 0;
+    const vacancies = Math.max(0, totalCount - currentCount);
+
     return {
-      staffUnits: stats.staffUnits,
-      currentCount: stats.currentCount,
-      vacancies: stats.vacancies,
+      staffUnits: totalCount,
+      vacancies: vacancies,
+      currentCount: currentCount,
     };
   };
 
@@ -711,23 +577,72 @@ export default function Vacancies() {
 
     const key = `${p.position_id}-${deptId}`;
     const rowId = parentId ? `${parentId}-${key}` : key;
-    const emps = getEmps(p.position_id, deptId);
     const childPositions = p.children || [];
     const childDepts = getChildDeptsByPosition(p.position_id);
-    const { staffUnits, vacancies } = getPositionDepartmentInfo(
-      p.position_id,
-      deptId,
-    );
     const ex = expPos[key] ? expPos[key] : lvl < 2;
     const rows = [];
+    
+    // Получаем информацию о должности
+    const positionDept = positionDepartments?.find(
+      (pd) => pd.position_id === p.position_id && pd.department_id === deptId && !pd.deleted,
+    );
+    
+    // Получаем список сотрудников
+    const emps = employees.filter(
+      (e) => e.position_id === p.position_id && e.department_id === deptId,
+    );
+    
+    // Базовая статистика для текущей должности
+    const currentCount = emps.length;
+    const totalCount = positionDept?.vacancies || 0;
+    const vacancies = Math.max(0, totalCount - currentCount);
+    
+    let staffUnits = totalCount;
+    let displayCurrentCount = currentCount;
+    let displayVacancies = vacancies;
+    
+    // Если узел свернут и имеет дочерние элементы, добавляем их статистику
+    if (!ex && (childPositions.length > 0 || childDepts.length > 0)) {
+      // Для дочерних должностей
+      childPositions.forEach(child => {
+        const childEmps = employees.filter(
+          (e) => e.position_id === child.position_id && e.department_id === deptId,
+        );
+        const childPd = positionDepartments?.find(
+          (pd) => pd.position_id === child.position_id && pd.department_id === deptId && !pd.deleted,
+        );
+        staffUnits += childPd?.vacancies || 0;
+        displayCurrentCount += childEmps.length;
+        displayVacancies += Math.max(0, (childPd?.vacancies || 0) - childEmps.length);
+      });
+      
+      // Для дочерних отделов
+      childDepts.forEach(dept => {
+        const deptPositions = positions.filter(pos => 
+          pos.departments.some(d => d.department_id === dept.department_id)
+        );
+        
+        deptPositions.forEach(pos => {
+          const posEmps = employees.filter(
+            (e) => e.position_id === pos.position_id && e.department_id === dept.department_id,
+          );
+          const posPd = positionDepartments?.find(
+            (pd) => pd.position_id === pos.position_id && pd.department_id === dept.department_id && !pd.deleted,
+          );
+          staffUnits += posPd?.vacancies || 0;
+          displayCurrentCount += posEmps.length;
+          displayVacancies += Math.max(0, (posPd?.vacancies || 0) - posEmps.length);
+        });
+      });
+    }
 
     // Определяем цвет фона в зависимости от наличия вакансий
     let bgClass = "";
     if (staffUnits > 0) {
-      bgClass = emps.length < staffUnits ? "bg-red-100" : "bg-green-100";
+      bgClass = displayCurrentCount < staffUnits ? "bg-red-100" : "bg-green-100";
     }
 
-    if ((vacancies === 0 && vacantSort) || (vacancies > 0 && busySort)) {
+    if ((displayVacancies === 0 && vacantSort) || (displayVacancies > 0 && busySort)) {
       bgClass += " opacity-30";
     }
 
@@ -755,12 +670,12 @@ export default function Vacancies() {
           </div>
         </TableCell>
         <TableCell className="text-center">{staffUnits}</TableCell>
-        <TableCell className="text-center">{emps.length}</TableCell>
+        <TableCell className="text-center">{displayCurrentCount}</TableCell>
         <TableCell className="text-center">
-          {vacancies > 0 ? (
-            <span className="text-green-600 font-medium">+{vacancies}</span>
+          {displayVacancies > 0 ? (
+            <span className="text-green-600 font-medium">+{displayVacancies}</span>
           ) : (
-            vacancies
+            displayVacancies
           )}
         </TableCell>
       </TableRow>,
