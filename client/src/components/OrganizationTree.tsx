@@ -2615,9 +2615,60 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
             updatedNode.department = departmentInfo;
           }
 
+          // Находим все подчиненные должности для текущей должности из всех отделов
+          // Это нужно, чтобы при клике на должность "Руководитель проекта" отображались все его подчиненные
+          if (updatedNode.subordinates.length === 0) {
+            // Проверяем связи position_position для этой должности во всех отделах
+            const childPositions = positionRelations.filter(
+              (rel) => 
+                rel.parent_position_id === subNode.position.position_id && 
+                !rel.deleted
+            );
+            
+            if (childPositions.length > 0) {
+              console.log(`Найдено ${childPositions.length} дочерних должностей для должности ${subNode.position.name} (ID: ${subNode.position.position_id})`);
+              
+              // Добавляем дочерние должности
+              childPositions.forEach(childRel => {
+                const posInfo = positions.find(p => p.position_id === childRel.position_id);
+                if (posInfo) {
+                  // Находим сотрудников на этой должности в том же отделе, что и родительская должность
+                  const childEmployees = employees.filter(
+                    (e) =>
+                      e.position_id === childRel.position_id &&
+                      e.department_id === childRel.department_id &&
+                      !e.deleted,
+                  );
+                  
+                  // Находим отдел
+                  const childDeptInfo = departments.find(d => d.department_id === childRel.department_id);
+                  
+                  // Создаем узел
+                  const childNode: PositionHierarchyNode = {
+                    position: {
+                      position_id: childRel.position_id,
+                      name: posInfo.name,
+                      parent_position_id: subNode.position.position_id,
+                      department_id: childRel.department_id,
+                      sort: posInfo.sort
+                    },
+                    employees: childEmployees,
+                    subordinates: [],
+                    childDepartments: [],
+                    department: childDeptInfo,
+                    departmentContext: childRel.department_id,
+                  };
+                  
+                  // Добавляем в подчиненные
+                  updatedNode.subordinates.push(childNode);
+                }
+              });
+            }
+          }
+
           // Сохраняем лог, чтобы отследить, какие подчиненные добавляются
           console.log(
-            `Добавлен подчиненный ${updatedNode.position.name} (ID: ${updatedNode.position.position_id}) для отдела ${departmentId} с ${deptEmployees.length} сотрудниками`,
+            `Добавлен подчиненный ${updatedNode.position.name} (ID: ${updatedNode.position.position_id}) для отдела ${departmentId} с ${deptEmployees.length} сотрудниками и ${updatedNode.subordinates.length} подчиненными должностями`,
           );
 
           return updatedNode;
@@ -2627,10 +2678,63 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
       // Показываем только выбранную должность и её отфильтрованных подчиненных
       // ВАЖНО: используем selectedNodeCopy, а не selectedNode
       // чтобы отфильтрованные сотрудники применились
-      const filteredNode = {
+      let filteredNode = {
         ...selectedNodeCopy,
         subordinates: filteredSubordinates,
       };
+      
+      // Специальная обработка для должности "Руководитель проекта" (ID: 46)
+      // Добавляем подчиненных для всех отделов, где есть эта должность
+      if (selectedPositionId === 46 && filteredNode.subordinates.length === 0) {
+        console.log("Специальная обработка для должности 'Руководитель проекта'");
+        
+        // Ищем все связи для должности "Руководитель проекта" во всех отделах
+        const projectManagerLinks = positionRelations.filter(
+          (rel) => 
+            rel.parent_position_id === 46 && 
+            !rel.deleted
+        );
+        
+        if (projectManagerLinks.length > 0) {
+          console.log(`Найдено ${projectManagerLinks.length} дочерних должностей для 'Руководителя проекта'`);
+          
+          // Добавляем дочерние должности
+          projectManagerLinks.forEach(childRel => {
+            const posInfo = positions.find(p => p.position_id === childRel.position_id);
+            if (posInfo) {
+              // Находим сотрудников на этой должности
+              const childEmployees = employees.filter(
+                (e) =>
+                  e.position_id === childRel.position_id &&
+                  e.department_id === childRel.department_id &&
+                  !e.deleted,
+              );
+              
+              // Находим отдел
+              const childDeptInfo = departments.find(d => d.department_id === childRel.department_id);
+              
+              // Создаем узел
+              const childNode: PositionHierarchyNode = {
+                position: {
+                  position_id: childRel.position_id,
+                  name: posInfo.name,
+                  parent_position_id: 46,
+                  department_id: childRel.department_id,
+                  sort: posInfo.sort
+                },
+                employees: childEmployees,
+                subordinates: [],
+                childDepartments: [],
+                department: childDeptInfo,
+                departmentContext: childRel.department_id,
+              };
+              
+              // Добавляем в подчиненные
+              filteredNode.subordinates.push(childNode);
+            }
+          });
+        }
+      }
 
       // Проверяем, были ли добавлены все необходимые подчиненные должности
       // Ищем должность "Ведущий специалист" (ID: 122) среди подчиненных, если мы в отделе 5
