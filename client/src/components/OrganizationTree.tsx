@@ -2684,14 +2684,19 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
       };
       
       // Специальная обработка для должности "Руководитель проекта" (ID: 46)
-      // Добавляем подчиненных для всех отделов, где есть эта должность
+      // Добавляем подчиненных только для текущего отдела
       if (selectedPositionId === 46 && filteredNode.subordinates.length === 0) {
         console.log("Специальная обработка для должности 'Руководитель проекта'");
         
-        // Ищем все связи для должности "Руководитель проекта" во всех отделах
+        // Получаем контекст отдела
+        const contextDepartmentId = departmentId || currentDepartmentContext;
+        console.log(`Текущий контекст отдела: ${contextDepartmentId}`);
+        
+        // Ищем связи для должности "Руководитель проекта" только в текущем отделе
         const projectManagerLinks = positionRelations.filter(
           (rel) => 
             rel.parent_position_id === 46 && 
+            (rel.department_id === contextDepartmentId || contextDepartmentId === null) && 
             !rel.deleted
         );
         
@@ -2703,15 +2708,17 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
             const posInfo = positions.find(p => p.position_id === childRel.position_id);
             if (posInfo) {
               // Находим сотрудников на этой должности
+              // Если мы находимся в конкретном отделе, показываем только сотрудников этого отдела
               const childEmployees = employees.filter(
                 (e) =>
                   e.position_id === childRel.position_id &&
-                  e.department_id === childRel.department_id &&
+                  (contextDepartmentId ? e.department_id === contextDepartmentId : e.department_id === childRel.department_id) &&
                   !e.deleted,
               );
               
-              // Находим отдел
-              const childDeptInfo = departments.find(d => d.department_id === childRel.department_id);
+              // Находим отдел - используем контекстный отдел, если он задан
+              const childDeptId = contextDepartmentId || childRel.department_id;
+              const childDeptInfo = departments.find(d => d.department_id === childDeptId);
               
               // Создаем узел
               const childNode: PositionHierarchyNode = {
@@ -2719,14 +2726,14 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
                   position_id: childRel.position_id,
                   name: posInfo.name,
                   parent_position_id: 46,
-                  department_id: childRel.department_id,
+                  department_id: childDeptId, // Используем идентификатор отдела из контекста
                   sort: posInfo.sort
                 },
                 employees: childEmployees,
                 subordinates: [],
                 childDepartments: [],
                 department: childDeptInfo,
-                departmentContext: childRel.department_id,
+                departmentContext: childDeptId,
               };
               
               // Добавляем в подчиненные
