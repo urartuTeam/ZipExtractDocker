@@ -234,6 +234,60 @@ export default function Home() {
   // 1. ВСЕГО - сумма значений vacancies из БД по всем должностям
   // 2. Занято - количество сотрудников
   // 3. Незанятых вакансий = ВСЕГО - Занято (если получается отрицательное, то 0)
+  
+  // Функция для получения контекстного количества сотрудников
+  function getContextEmployeesCount(departmentId: number | null): number {
+    if (!departmentId) return employees.length; // Если нет контекста, возвращаем общее количество
+    
+    // Получаем все дочерние отделы
+    const childDepartments = getAllChildDepartments(departmentId, departments);
+    
+    // Считаем сотрудников в этих отделах
+    return employees.filter(emp => childDepartments.includes(emp.department_id)).length;
+  }
+  
+  // Функция для получения контекстного количества отделов
+  function getContextDepartmentsCount(departmentId: number | null): number {
+    if (!departmentId) return departments.length; // Если нет контекста, возвращаем общее количество
+    
+    // Возвращаем количество дочерних отделов + 1 (текущий отдел)
+    return getAllChildDepartments(departmentId, departments).length;
+  }
+  
+  // Функция для получения количества вакансий в контексте
+  function getContextVacancies(departmentId: number | null): { 
+    total: number; 
+    occupied: number; 
+    vacant: number; 
+  } {
+    if (!departmentId) {
+      // Без контекста возвращаем общие цифры
+      return {
+        total: totalPositionsCount, 
+        occupied: totalPositionsCount - vacantPositionsCount,
+        vacant: vacantPositionsCount
+      };
+    }
+    
+    // Для контекстного отдела используем логику как для организации
+    return getOrganizationVacancies(departmentId);
+  }
+  
+  // Функция для получения контекстного количества проектов
+  function getContextProjectsCount(departmentId: number | null): number {
+    if (!departmentId) return projects.length; // Если нет контекста, возвращаем общее количество
+    
+    // Получаем все дочерние отделы
+    const childDepartments = getAllChildDepartments(departmentId, departments);
+    
+    // Получаем всех сотрудников в этих отделах
+    const departmentEmployees = employees.filter(emp => childDepartments.includes(emp.department_id));
+    const employeeIds = departmentEmployees.map(emp => emp.employee_id);
+    
+    // Так как у нас нет прямого доступа к связям сотрудник-проект,
+    // возвращаем пока общее количество проектов
+    return projects.length;
+  }
 
   // Подсчет общего количества ВСЕГО (vacancies из БД) для всех организаций кроме Цифролаб
   const totalPositionsFromDb = positionsWithDepartments.reduce((total, position) => {
@@ -421,8 +475,10 @@ export default function Home() {
                             d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                     </svg>
                   </div>
-                  <div className="text-2xl font-bold">{departments.length}</div>
-                  <div className="text-sm text-gray-500">Всего отделов в организации</div>
+                  <div className="text-2xl font-bold">{getContextDepartmentsCount(currentContext.departmentId)}</div>
+                  <div className="text-sm text-gray-500">
+                    {currentContext.name ? `Отделов в "${currentContext.name}"` : "Всего отделов в организации"}
+                  </div>
                 </div>
 
                 <div className="bg-white p-4 rounded-md shadow-sm">
@@ -433,8 +489,10 @@ export default function Home() {
                             d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
                   </div>
-                  <div className="text-2xl font-bold">{employees.length}</div>
-                  <div className="text-sm text-gray-500">Всего сотрудников в системе</div>
+                  <div className="text-2xl font-bold">{getContextEmployeesCount(currentContext.departmentId)}</div>
+                  <div className="text-sm text-gray-500">
+                    {currentContext.name ? `Сотрудников в "${currentContext.name}"` : "Всего сотрудников в системе"}
+                  </div>
                 </div>
 
                 <Link href="/projects">
@@ -446,8 +504,10 @@ export default function Home() {
                               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                       </svg>
                     </div>
-                    <div className="text-2xl font-bold">{projects.length}</div>
-                    <div className="text-sm text-gray-500">Активных проектов</div>
+                    <div className="text-2xl font-bold">{getContextProjectsCount(currentContext.departmentId)}</div>
+                    <div className="text-sm text-gray-500">
+                      {currentContext.name ? `Проектов в "${currentContext.name}"` : "Активных проектов"}
+                    </div>
                   </div>
                 </Link>
 
@@ -462,10 +522,19 @@ export default function Home() {
                       </svg>
                     </div>
                     <div className="text-2xl font-bold">
-                      <span className="text-[#a40000]">{totalPositionsCount}</span>{' '}
-                      <span className="text-green-600">({vacantPositionsCount})</span>
+                      {(() => {
+                        const vacancies = getContextVacancies(currentContext.departmentId);
+                        return (
+                          <>
+                            <span className="text-[#a40000]">{vacancies.total}</span>{' '}
+                            <span className="text-green-600">({vacancies.vacant})</span>
+                          </>
+                        );
+                      })()}
                     </div>
-                    <div className="text-sm text-gray-500">Всего мест / Вакантно</div>
+                    <div className="text-sm text-gray-500">
+                      {currentContext.name ? `Вакансии в "${currentContext.name}"` : "Всего мест / Вакантно"}
+                    </div>
                   </div>
                 </Link>
               </div>
