@@ -296,29 +296,41 @@ export default function Home() {
                         employeesData={employees}
                         showThreeLevels={showThreeLevels}
                         currentDepartmentId={currentDepartmentId}
-                        onPositionClick={(id: number) => {
+                        onPositionClick={(context) => {
+                          console.log("Выбран элемент:", context);
+                          
+                          // Обновляем состояние контекста
+                          setCurrentContext({
+                            positionId: context.positionId,
+                            departmentId: context.departmentId,
+                            name: context.name,
+                            isOrganization: context.isOrganization
+                          });
+                          
                           // Обработка клика по позиции с сохранением контекста отдела
-                          if (id >= 1000 && id % 1000 === 0) {
+                          if (context.positionId && context.positionId >= 1000 && context.positionId % 1000 === 0) {
                             // Это отдел, извлекаем реальный ID отдела
-                            const departmentId = Math.floor(id / 1000);
-                            setSelectedPositionId(id);
+                            const departmentId = Math.floor(context.positionId / 1000);
+                            setSelectedPositionId(context.positionId);
                             setCurrentDepartmentId(departmentId);
                             
                             // Добавляем в историю навигации
-                            setNavigationHistory(prev => [...prev, { positionId: id, departmentId }]);
+                            setNavigationHistory(prev => [...prev, { 
+                              positionId: context.positionId, 
+                              departmentId 
+                            }]);
                             console.log(`Текущий контекст отдела изменился на: ${departmentId}`);
-                          } else {
-                            // Это обычная позиция
-                            setSelectedPositionId(id);
+                          } else if (context.positionId) {
+                            // Это обычная должность
+                            setSelectedPositionId(context.positionId);
                             
                             // Ищем отдел, которому принадлежит эта позиция
-                            const position = positionsWithDepartments.find(p => p.position_id === id);
+                            const position = positionsWithDepartments.find(p => p.position_id === context.positionId);
                             if (position) {
-                              // Если позиция найдена и у нее есть контекст текущего отдела, сохраняем его
-                              if (currentDepartmentId && position.departments.some((d: any) => d.department_id === currentDepartmentId)) {
-                                // Эта позиция присутствует в текущем отделе, оставляем контекст
-                                setNavigationHistory(prev => [...prev, { positionId: id, departmentId: currentDepartmentId }]);
-                                console.log(`Контекст отдела сохранен: ${currentDepartmentId} для позиции ${id}`);
+                              // Если у нас есть контекст отдела из переданного контекста, используем его
+                              if (context.departmentId) {
+                                setNavigationHistory(prev => [...prev, { positionId: context.positionId, departmentId: context.departmentId }]);
+                                console.log(`Контекст отдела сохранен: ${context.departmentId} для позиции ${context.positionId}`);
                               } else if (position.departments.length > 0) {
                                 // Берем первый отдел из списка отделов позиции
                                 const departmentId = position.departments[0].department_id;

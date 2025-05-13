@@ -2304,7 +2304,24 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
 
     // Если передан внешний обработчик, вызываем его
     if (onPositionClick) {
-      onPositionClick(positionId);
+      // Находим информацию о позиции
+      const position = props.positionsData?.find(p => p.position_id === positionId);
+      const name = position?.name || "Неизвестная должность";
+      
+      // Проверяем, является ли отдел организацией
+      let isOrganization = false;
+      if (departmentContext) {
+        const department = props.departmentsData?.find(d => d.department_id === departmentContext);
+        isOrganization = department?.is_organization || false;
+      }
+      
+      // Передаем полный контекст
+      onPositionClick({
+        positionId,
+        departmentId: departmentContext || null,
+        name,
+        isOrganization
+      });
     }
   };
 
@@ -2330,7 +2347,24 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
       setSelectedPositionId(positionId);
 
       if (onPositionClick) {
-        onPositionClick(positionId);
+        // Находим информацию о позиции
+        const position = props.positionsData?.find(p => p.position_id === positionId);
+        const name = position?.name || "Неизвестная должность";
+        
+        // Проверяем, является ли отдел организацией
+        let isOrganization = false;
+        if (prevItem.departmentId) {
+          const department = props.departmentsData?.find(d => d.department_id === prevItem.departmentId);
+          isOrganization = department?.is_organization || false;
+        }
+        
+        // Передаем полный контекст
+        onPositionClick({
+          positionId,
+          departmentId: prevItem.departmentId,
+          name,
+          isOrganization
+        });
       }
     } else {
       // Если история пуста, возвращаемся к корню
