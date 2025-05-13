@@ -1515,12 +1515,24 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
       const parentId = relation.parent_position_id;
       const deptId = relation.department_id;
 
+      // Специальный лог для отслеживания связи между Начальником управления и Ведущим специалистом
+      if (parentId === 121 && childId === 122) {
+        console.log(`НАЙДЕНА СВЯЗЬ: Начальник управления (ID: 121) -> Ведущий специалист (ID: 122) в отделе ${deptId}`);
+      }
+
       // Находим родительскую должность
       const parentNode = positionNodes[parentId];
       // Находим узел текущей должности
       const currentNode = positionNodes[childId];
 
       if (parentNode && currentNode) {
+        // Для связи Начальник управления -> Ведущий специалист добавляем подробный лог
+        if (parentId === 121 && childId === 122) {
+          console.log("ПОСТРОЕНИЕ ИЕРАРХИИ для Начальник управления -> Ведущий специалист:");
+          console.log("  parentNode:", parentNode.position.name, "ID:", parentNode.position.position_id);
+          console.log("  currentNode:", currentNode.position.name, "ID:", currentNode.position.position_id);
+        }
+
         // Добавляем текущую должность как подчиненную к родительской
         // Проверяем, не добавлен ли уже этот узел
         if (
@@ -1529,17 +1541,29 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
               sub.position.position_id === currentNode.position.position_id,
           )
         ) {
-          parentNode.subordinates.push(currentNode);
+          // Клонируем узел, чтобы не было ссылок на один и тот же объект
+          const clonedNode = JSON.parse(JSON.stringify(currentNode));
+          
+          // Устанавливаем контекст отдела для узла, чтобы можно было фильтровать по отделу
+          clonedNode.departmentContext = deptId;
+          
+          parentNode.subordinates.push(clonedNode);
+          
           // Помечаем, что это дочерняя должность
           childPositions.add(childId);
-          // console.log(
-          //   `Создана связь: "${currentNode.position.name}" (ID: ${childId}) подчиняется "${parentNode.position.name}" (ID: ${parentId}) в отделе ${deptId}`,
-          // );
+          
+          // Специальный лог для связи Начальник управления -> Ведущий специалист
+          if (parentId === 121 && childId === 122) {
+            console.log(`СОЗДАНА СВЯЗЬ в иерархии: "${currentNode.position.name}" (ID: ${childId}) подчиняется "${parentNode.position.name}" (ID: ${parentId}) в отделе ${deptId}`);
+          }
         }
       } else {
-        // console.log(
-        //   `Не найдена родительская или дочерняя должность для связи: childId=${childId}, parentId=${parentId}, deptId=${deptId}`,
-        // );
+        // Специальный лог для отладки, если не найдены узлы
+        if (parentId === 121 && childId === 122) {
+          console.log(`ОШИБКА: Не найдена родительская или дочерняя должность для связи: childId=${childId}, parentId=${parentId}, deptId=${deptId}`);
+          console.log(`  parentNode существует: ${!!parentNode}`);
+          console.log(`  currentNode существует: ${!!currentNode}`);
+        }
       }
     });
 
