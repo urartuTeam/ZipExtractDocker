@@ -728,7 +728,12 @@ const PositionTree = ({
 
 type OrganizationTreeProps = {
   initialPositionId?: number;
-  onPositionClick?: (positionId: number) => void;
+  onPositionClick?: (context: {
+    positionId: number | null;
+    departmentId: number | null;
+    name: string;
+    isOrganization: boolean;
+  }) => void;
   departmentsData?: Department[];
   positionsData?: any[];
   employeesData?: Employee[];
