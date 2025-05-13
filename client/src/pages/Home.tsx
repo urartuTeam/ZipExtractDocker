@@ -7,7 +7,7 @@ import OrganizationTree from "@/components/OrganizationTree";
 
 // Тип для хранения истории навигации
 type NavigationHistoryItem = {
-  positionId: number;
+  positionId: number | null;
   departmentId: number | null;
 };
 
@@ -335,17 +335,17 @@ export default function Home() {
                                 // Берем первый отдел из списка отделов позиции
                                 const departmentId = position.departments[0].department_id;
                                 setCurrentDepartmentId(departmentId);
-                                setNavigationHistory(prev => [...prev, { positionId: id, departmentId }]);
+                                setNavigationHistory(prev => [...prev, { positionId: context.positionId as number, departmentId }]);
                                 console.log(`Текущий контекст отдела изменился на: ${departmentId}`);
                               } else {
                                 // Позиция не привязана к отделам
                                 setCurrentDepartmentId(null);
-                                setNavigationHistory(prev => [...prev, { positionId: id, departmentId: null }]);
+                                setNavigationHistory(prev => [...prev, { positionId: context.positionId as number, departmentId: null }]);
                                 console.log(`Текущий контекст отдела изменился на: null`);
                               }
                             } else {
                               // Позиция не найдена
-                              console.log(`Позиция ${id} не найдена`);
+                              console.log(`Позиция ${context.positionId} не найдена`);
                             }
                           }
                         }}
