@@ -717,23 +717,24 @@ export default function Vacancies() {
   };
 
   // При монтировании компонента проверяем localStorage и настраиваем автоматическое раскрытие уровней
+  // Извлечем логику в константы, но выполним её только внутри useEffect для безопасности
+  const savedIdInStorage = typeof window !== "undefined" ? localStorage.getItem("selectedOrganizationId") : null;
+  const savedNameInStorage = typeof window !== "undefined" ? localStorage.getItem("selectedOrganizationName") : null;
+  
+  // Всегда вызываем useEffect, но внутри делаем проверки
   useEffect(() => {
-    // Убедимся, что хук вызывается только на клиентской стороне
     if (typeof window !== "undefined") {
-      const savedOrgId = localStorage.getItem("selectedOrganizationId");
-      const savedOrgName = localStorage.getItem("selectedOrganizationName");
-
-      if (savedOrgId) {
-        setStateOrgId(Number(savedOrgId));
+      if (savedIdInStorage) {
+        setStateOrgId(Number(savedIdInStorage));
         localStorage.removeItem("selectedOrganizationId");
       }
 
-      if (savedOrgName) {
-        setStateOrgName(savedOrgName);
+      if (savedNameInStorage) {
+        setStateOrgName(savedNameInStorage);
         localStorage.removeItem("selectedOrganizationName");
       }
     }
-  }, []);
+  }, [savedIdInStorage, savedNameInStorage]);
 
   const renderFromRoute = () => {
     const department = departments.filter(
