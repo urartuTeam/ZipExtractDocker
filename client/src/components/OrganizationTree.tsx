@@ -1068,56 +1068,66 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
     return node;
   };
 
-  // Рекурсивно ищем узел должности по ID
-  // Добавлен параметр currentDepartmentId для сохранения контекста отдела
+  // Рекурсивно ищем узел должности по ID, учитывая контекст отдела
+  // Параметр currentDepartmentId необходим для точного поиска в контексте конкретного отдела
   const findPositionNodeById = (
     nodes: PositionHierarchyNode[],
     positionId: number,
     currentDepartmentId?: number | null,
   ): PositionHierarchyNode | null => {
+    // Специальный лог для отслеживания поиска важных должностей
+    if (positionId === 121 || positionId === 122) {
+      console.log(`ПОИСК: Должность ID ${positionId} в отделе ${currentDepartmentId || 'любом'}`);
+    }
+    
     for (const node of nodes) {
       if (node.position.position_id === positionId) {
+        // Если у узла есть departmentContext и он не совпадает с искомым контекстом,
+        // и контекст задан явно - это, возможно, неправильный узел
+        if (currentDepartmentId && node.departmentContext && 
+            node.departmentContext !== currentDepartmentId) {
+          if (positionId === 121 || positionId === 122) {
+            console.log(`ПРОПУСК: Должность ${node.position.name} (ID ${positionId}) найдена, но в другом отделе: ${node.departmentContext} вместо ${currentDepartmentId}`);
+          }
+          continue; // Пропускаем этот узел, ищем должность в правильном контексте
+        }
+                
         // Когда находим нужную должность, создаем глубокую копию узла,
         // чтобы избежать изменения исходного объекта
         let result = JSON.parse(JSON.stringify(node));
 
         // Если передан ID отдела, проверяем связь с этим отделом
         if (currentDepartmentId) {
-          // Проверяем связь должности с отделом
+          // Проверяем связь должности с отделом через position_department
           const hasPositionDepartmentLink = positionsWithDepartments
             .find((p) => p.position_id === positionId)
             ?.departments?.some(
               (d: any) => d.department_id === currentDepartmentId,
             );
 
-          // Если должность не связана с указанным отделом, но имеет связь с другими,
-          // и у нас нет явных признаков, что она относится к указанному отделу (сотрудники, связи),
-          // то это может быть неверный контекст - продолжаем поиск
-          if (!hasPositionDepartmentLink) {
-            // Проверяем есть ли сотрудники в этом отделе
-            const hasEmployees = employees.some(
-              (e) =>
-                e.position_id === positionId &&
-                e.department_id === currentDepartmentId &&
-                !e.deleted,
-            );
+          // Проверяем есть ли сотрудники в этом отделе
+          const hasEmployees = employees.some(
+            (e) =>
+              e.position_id === positionId &&
+              e.department_id === currentDepartmentId &&
+              !e.deleted,
+          );
 
-            // Проверяем наличие связей в positionRelations
-            const hasPositionRelation = positionRelations.some(
-              (rel) =>
-                (rel.position_id === positionId ||
-                  rel.parent_position_id === positionId) &&
-                rel.department_id === currentDepartmentId &&
-                !rel.deleted,
-            );
+          // Проверяем наличие связей position_position в этом отделе
+          const hasPositionRelation = positionRelations.some(
+            (rel) =>
+              (rel.position_id === positionId ||
+                rel.parent_position_id === positionId) &&
+              rel.department_id === currentDepartmentId &&
+              !rel.deleted,
+          );
 
-            if (!hasEmployees && !hasPositionRelation) {
-              // У этой должности нет связи с указанным отделом,
-              // продолжаем искать другие экземпляры должности с правильным контекстом
-              continue;
-            }
+          if (!hasEmployees && !hasPositionRelation) {
+            // У этой должности нет связи с указанным отделом,
+            // продолжаем искать другие экземпляры должности с правильным контекстом
+            continue;
           }
-
+          
           // Добавляем информацию об отделе
           const departmentInfo = departments.find(
             (d) => d.department_id === currentDepartmentId,
@@ -1134,6 +1144,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
               e.department_id === currentDepartmentId &&
               !e.deleted, // Только не удаленные сотрудники
           );
+        }
 
           // Фильтруем подчиненных, которые связаны с этим отделом
           result.subordinates = result.subordinates.filter((subNode: any) => {
@@ -2632,52 +2643,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
         subordinates: filteredSubordinates,
       };
 
-      // Специальная обработка для должности "Начальник управления" (ID: 121) в отделе "Управление цифровизации..." (ID: 5)
-      if (selectedPositionId === 121 && currentDepartmentId === 5) {
-        console.log("Обнаружена должность 'Начальник управления' в отделе ID 5 - добавляем 'Ведущий специалист'");
-        
-        // Проверяем, есть ли уже должность "Ведущий специалист" среди подчиненных
-        const hasLeadSpecialist = filteredNode.subordinates.some(sub => sub.position.position_id === 122);
-        
-        if (!hasLeadSpecialist) {
-          // Находим сотрудников на должности "Ведущий специалист" в отделе 5
-          const specialistEmployees = employees.filter(e => 
-            e.position_id === 122 && 
-            e.department_id === 5 && 
-            !e.deleted
-          );
-          
-          // Находим информацию о должности "Ведущий специалист"
-          const specialistPosition = positions.find(p => p.position_id === 122);
-          
-          if (specialistPosition) {
-            // Находим информацию об отделе 5
-            const departmentInfo = departments.find(d => d.department_id === 5);
-            
-            // Создаем узел должности "Ведущий специалист"
-            const specialistNode: PositionHierarchyNode = {
-              position: {
-                position_id: 122,
-                name: specialistPosition.name,
-                parent_position_id: 121,
-                department_id: 5,
-              },
-              employees: specialistEmployees,
-              subordinates: [],
-              childDepartments: [],
-              department: departmentInfo,
-              departmentContext: 5,
-            };
-            
-            console.log("Создан узел для должности 'Ведущий специалист':", specialistNode);
-            console.log("Найдено сотрудников:", specialistEmployees.length);
-            
-            // Добавляем созданный узел в список подчиненных
-            filteredNode.subordinates.push(specialistNode);
-          }
-        }
-      }
-
       console.log("[DEBUG] filteredNode:", filteredNode);
 
       console.log("Итоговое отображение:", {
@@ -2692,68 +2657,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
     } else {
       // Если должность не найдена, показываем только второй уровень иерархии
       if (positionHierarchy[0] && positionHierarchy[0].subordinates) {
-        // Создаем копию иерархии, чтобы не изменять оригинальный объект
-        const hierarchyCopy = JSON.parse(JSON.stringify(positionHierarchy[0].subordinates));
-        
-        // Ищем в иерархии Управление цифровизации (отдел 5000) и его дочерние элементы
-        const dept5 = hierarchyCopy.find((node: any) => node.position.position_id === 5000);
-        
-        if (dept5) {
-          console.log("Найден отдел 'Управление цифровизации и градостроительных данных'");
-          
-          // Ищем должность "Начальник управления" внутри этого отдела
-          const managerNode = dept5.subordinates.find((node: any) => node.position.position_id === 121);
-          
-          if (managerNode) {
-            console.log("Найдена должность 'Начальник управления' в отделе 5");
-            
-            // Проверяем, есть ли уже "Ведущий специалист" среди подчиненных
-            const hasLeadSpecialist = managerNode.subordinates.some((node: any) => 
-              node.position.position_id === 122
-            );
-            
-            if (!hasLeadSpecialist) {
-              console.log("Добавляем 'Ведущий специалист' к 'Начальник управления' в отделе 5");
-              
-              // Находим сотрудников на должности "Ведущий специалист" в отделе 5
-              const specialistEmployees = employees.filter(e => 
-                e.position_id === 122 && 
-                e.department_id === 5 && 
-                !e.deleted
-              );
-              
-              // Находим информацию о должности "Ведущий специалист"
-              const specialistPosition = positions.find(p => p.position_id === 122);
-              
-              if (specialistPosition) {
-                // Находим информацию об отделе 5
-                const departmentInfo = departments.find(d => d.department_id === 5);
-                
-                // Создаем узел должности "Ведущий специалист"
-                const specialistNode: any = {
-                  position: {
-                    position_id: 122,
-                    name: specialistPosition.name,
-                    parent_position_id: 121,
-                    department_id: 5,
-                  },
-                  employees: specialistEmployees,
-                  subordinates: [],
-                  childDepartments: [],
-                  department: departmentInfo,
-                };
-                
-                console.log("Создан узел для должности 'Ведущий специалист':", specialistNode);
-                console.log("Найдено сотрудников:", specialistEmployees.length);
-                
-                // Добавляем созданный узел в список подчиненных начальника управления
-                managerNode.subordinates.push(specialistNode);
-              }
-            }
-          }
-        }
-        
-        setFilteredHierarchy(hierarchyCopy);
+        setFilteredHierarchy(positionHierarchy[0].subordinates);
       } else {
         setFilteredHierarchy([]);
       }
@@ -2763,6 +2667,12 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
   console.log("departments:", departments);
   console.log("positions:", positions);
   console.log("positionsWithDepartments:", positionsWithDepartments);
+  
+  // Находим корневой отдел (без родительских отделов и позиций)
+  const rootDept = departments.find(
+    (d) => d.parent_department_id === null && d.parent_position_id === null,
+  );
+  
   // Если данные еще не загружены, показываем загрузку
   if (
     departments.length === 0 ||
@@ -2780,11 +2690,6 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
       </div>
     );
   }
-
-  // Находим корневой отдел (без родительских отделов и позиций)
-  const rootDept = departments.find(
-    (d) => d.parent_department_id === null && d.parent_position_id === null,
-  );
 
   return (
     <div className="org-tree-container">
