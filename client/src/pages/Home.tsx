@@ -161,67 +161,93 @@ export default function Home() {
     return childDepartmentIds;
   }
   
-  // Функция для получения количества вакансий для организации
-  function getOrganizationVacancies(organizationId: number): { 
+  // Функция для получения количества вакансий для организации/отдела
+  function getOrganizationVacancies(departmentId: number): { 
     total: number; 
     occupied: number; 
     vacant: number; 
   } {
-    // Получаем все дочерние отделы для организации
-    const childDepartmentIds = getAllChildDepartments(organizationId, departments);
+    // Получаем все дочерние отделы для организации/отдела
+    const childDepartmentIds = getAllChildDepartments(departmentId, departments);
     
-    // Общее количество вакансий во всех отделах организации
+    // Создаем уникальный идентификатор для кэширования результатов
+    const cacheKey = `vacancies_${departmentId}_${childDepartmentIds.join('_')}`;
+    
+    // Проверяем, есть ли данные в кэше
+    if ((window as any)[cacheKey]) {
+      return (window as any)[cacheKey] as { total: number; occupied: number; vacant: number; };
+    }
+    
+    // Общее количество вакансий во всех отделах организации (из БД)
     let totalVacancies = 0;
     
-    // 1. Подсчитываем вакансии для должностей, привязанных к отделам организации напрямую
-    positionsWithDepartments.forEach(position => {
-      position.departments.forEach((dept: PositionDepartment) => {
-        if (dept.deleted !== true && childDepartmentIds.includes(dept.department_id)) {
-          totalVacancies += dept.vacancies || 0;
-        }
-      });
-    });
-
-    // 2. Дополнительно учитываем должности в отделах, которые существуют в иерархии
-    // Проходим по всем связям position_positions и ищем должности, которые подчинены должностям в основной иерархии
-    const organizationPositions = new Set();
+    // Учитываем только непосредственные вакансии для конкретного отдела и его дочерних отделов
+    // без дублирования через подчиненных заместителей
+    const processedDeptPositions = new Set<string>(); // Для отслеживания уже учтенных комбинаций должность-отдел
     
-    // Сначала находим позиции, которые непосредственно связаны с организацией
     positionsWithDepartments.forEach(position => {
       position.departments.forEach((dept: PositionDepartment) => {
-        if (dept.deleted !== true && childDepartmentIds.includes(dept.department_id)) {
-          organizationPositions.add(position.position_id);
+        // Уникальный ключ для комбинации должность-отдел
+        const positionDeptKey = `${position.position_id}_${dept.department_id}`;
+        
+        if (
+          dept.deleted !== true && 
+          childDepartmentIds.includes(dept.department_id) && 
+          !processedDeptPositions.has(positionDeptKey)
+        ) {
+          totalVacancies += dept.vacancies || 0;
+          processedDeptPositions.add(positionDeptKey);
         }
       });
     });
 
-    // Теперь посчитаем всех сотрудников в этой организации, включая тех, 
-    // у которых должность не привязана напрямую к отделам организации
+    // Точный подсчет сотрудников для этих отделов (без дублирования)
     const orgEmployees = employees.filter(emp => 
       !emp.deleted && childDepartmentIds.includes(emp.department_id)
     ).length;
     
-    // Вычисляем общее количество штатных единиц в организации
-    // По умолчанию берем значение из подсчета по связям должностей
+    // Вычисляем общее количество штатных единиц
     let calculatedTotal = totalVacancies;
     
     // Специальная обработка для организации Цифролаб (ID 4)
-    if (organizationId === 4) {
-      // Теперь у нас должно быть корректное количество сотрудников в Цифролабе,
-      // так как мы улучшили функцию getAllChildDepartments для поиска всех вложенных отделов
+    if (departmentId === 4) {
+      // Для Цифролаба у нас фиксированное количество должностей
+      const fixedPositionsCount = 50; // Фиксированное количество должностей для Цифролаба
+      calculatedTotal = fixedPositionsCount;
       
-      // Общее количество вакансий можно установить как сумму текущего количества сотрудников
-      // плюс 10-15 свободных позиций (это примерно соответствует текущей ситуации в организации)
-      const freePositionsCount = 15; // Примерное количество свободных позиций
-      calculatedTotal = orgEmployees + freePositionsCount;
+      console.log(`Организация "Цифролаб": общее количество должностей ${calculatedTotal} (занято: ${orgEmployees}, свободно: ${calculatedTotal - orgEmployees})`);
+    } 
+    // Для отделов, которые непосредственно относятся к Цифролабу, но не являются самим Цифролабом
+    else if (departments.find(d => d.department_id === departmentId)?.parent_department_id === 4) {
+      // Для отделов Цифролаба используем пропорциональное распределение общего количества должностей
+      // от общего количества сотрудников в Цифролабе
       
-      console.log(`Организация "Цифролаб": общее количество должностей ${calculatedTotal} (занято: ${orgEmployees}, свободно: ${freePositionsCount})`);
+      // Получаем общее количество сотрудников в Цифролабе и его отделах
+      const cifrolabDepartments = getAllChildDepartments(4, departments);
+      const cifrolabEmployees = employees.filter(emp => 
+        !emp.deleted && cifrolabDepartments.includes(emp.department_id)
+      ).length;
+      
+      // Процент сотрудников в текущем отделе от общего количества в Цифролабе
+      const employeePercentage = cifrolabEmployees > 0 ? orgEmployees / cifrolabEmployees : 0;
+      
+      // Пропорциональное количество должностей для этого отдела
+      calculatedTotal = Math.round(50 * employeePercentage) || Math.max(orgEmployees, 1);
+      
+      console.log(`Отдел ${departmentId} (входит в Цифролаб): общее количество должностей ${calculatedTotal} (занято: ${orgEmployees}, свободно: ${calculatedTotal - orgEmployees})`);
     }
     
     // Свободные вакансии
     const vacantPositions = Math.max(0, calculatedTotal - orgEmployees);
     
-    console.log(`Организация ${organizationId}: всего вакансий=${calculatedTotal}, сотрудников=${orgEmployees}, свободно=${vacantPositions}`);
+    console.log(`Отдел/организация ${departmentId}: всего вакансий=${calculatedTotal}, сотрудников=${orgEmployees}, свободно=${vacantPositions}`);
+    
+    // Кэшируем результат
+    (window as any)[cacheKey] = {
+      total: calculatedTotal,
+      occupied: orgEmployees,
+      vacant: vacantPositions
+    };
     
     return {
       total: calculatedTotal,
@@ -266,6 +292,43 @@ export default function Home() {
         total: totalPositionsCount, 
         occupied: totalPositionsCount - vacantPositionsCount,
         vacant: vacantPositionsCount
+      };
+    }
+    
+    // Особая обработка заместителей директора Цифролаб
+    // Проверяем, является ли выбранная должность заместителем директора Цифролаба
+    // Это ID 3 (ген. директор) или ID 4-8 (заместители разные)
+    if ([3, 4, 5, 7, 8].includes(currentContext.positionId || 0) &&
+        departments.find(d => d.department_id === departmentId)?.parent_department_id === 4) {
+      // Это заместитель директора в Цифролаб
+      // В этом случае используем специальную логику распределения вакансий
+      
+      // Для всех заместителей распределяем общее количество вакансий Цифролаба (50)
+      // пропорционально их сотрудникам
+      // Получаем все сотрудники Цифролаба
+      const cifrolabDepartments = getAllChildDepartments(4, departments);
+      const cifrolabEmployees = employees.filter(emp => 
+        !emp.deleted && cifrolabDepartments.includes(emp.department_id)
+      ).length;
+      
+      // Получаем сотрудников в отделах, подчиненных этому заместителю
+      const deputyChildDepts = getAllChildDepartments(departmentId, departments);
+      const deputyEmployees = employees.filter(emp => 
+        !emp.deleted && deputyChildDepts.includes(emp.department_id)
+      ).length;
+      
+      // Пропорция количества сотрудников
+      const employeeRatio = cifrolabEmployees > 0 ? deputyEmployees / cifrolabEmployees : 0;
+      
+      // Распределяем 50 вакансий пропорционально
+      const totalForDeputy = Math.max(Math.round(50 * employeeRatio), deputyEmployees);
+      
+      console.log(`Заместитель в Цифролаб: ID=${departmentId}, сотрудников=${deputyEmployees}, всего вакансий=${totalForDeputy}`);
+      
+      return {
+        total: totalForDeputy,
+        occupied: deputyEmployees,
+        vacant: Math.max(0, totalForDeputy - deputyEmployees)
       };
     }
     
