@@ -533,8 +533,8 @@ const PositionTree = ({
                       </div>
                     )}
                     
-                    {/* Дочерние отделы подузла, отображаются как элементы дерева */}
-                    {subNode.childDepartments && subNode.childDepartments.length > 0 && (
+                    {/* Дочерние отделы подузла, отображаются как элементы дерева только если включен третий уровень */}
+                    {subNode.childDepartments && subNode.childDepartments.length > 0 && showThreeLevels && (
                       <div className="subordinates-container">
                         <div className="tree-branch-connections">
                           <div
