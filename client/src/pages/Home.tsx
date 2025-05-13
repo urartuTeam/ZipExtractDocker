@@ -317,12 +317,12 @@ export default function Home() {
                               const vacancies = getOrganizationVacancies(org.department_id);
                               return (
                                 <div className="text-2xl font-bold">
-                                  <span className="text-[#a40000]">Всего: {vacancies.total}</span>{' '}
+                                  <span className="text-[#a40000]">{vacancies.total}</span>{' '}
                                   <span className="text-green-600">({vacancies.vacant})</span>
                                 </div>
                               );
                             })()}
-                            <div className="text-sm text-gray-500">Отчет по вакансиям</div>
+                            <div className="text-sm text-gray-500">Всего мест / Вакантно</div>
                           </div>
                         </Link>
                       </div>
@@ -381,10 +381,10 @@ export default function Home() {
                       </svg>
                     </div>
                     <div className="text-2xl font-bold">
-                      <span className="text-[#a40000]">Всего: {totalPositionsCount}</span>{' '}
-                      <span className="text-green-600">Свободно: {vacantPositionsCount}</span>
+                      <span className="text-[#a40000]">{totalPositionsCount}</span>{' '}
+                      <span className="text-green-600">({vacantPositionsCount})</span>
                     </div>
-                    <div className="text-sm text-gray-500">Отчет по вакансиям организации</div>
+                    <div className="text-sm text-gray-500">Всего мест / Вакантно</div>
                   </div>
                 </Link>
               </div>
