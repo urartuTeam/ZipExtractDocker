@@ -421,6 +421,8 @@ export default function Home() {
 
   // Добавляем useEffect для загрузки статистики при изменении контекста
   useEffect(() => {
+    console.log("useEffect для загрузки статистики сработал. Текущий контекст:", currentContext);
+    
     // Функция для загрузки данных о вакансиях
     const loadVacanciesData = async () => {
       if (currentContext.departmentId) {
@@ -478,6 +480,9 @@ export default function Home() {
                             name: context.name,
                             isOrganization: context.isOrganization
                           });
+                          
+                          console.log("Обновлен контекст, будет запрошена статистика для positionId=", 
+                                      context.positionId, "departmentId=", context.departmentId);
                           
                           // Обработка клика по позиции с сохранением контекста отдела
                           if (context.positionId && context.positionId >= 1000 && context.positionId % 1000 === 0) {
