@@ -74,33 +74,56 @@ const UnifiedPositionCard = ({
     );
   }
 
-  // Стандартный рендер для других типов карточек
-  const countEmployees = (position: PositionHierarchyNode) => {
-    let count = 0;
-
-    console.log(position.employees);
-
-    // Считаем сотрудников в текущем объекте
-    if (position.employees && Array.isArray(position.employees)) {
-      count += position.employees.length;
+  // Рекурсивный подсчет статистики для узла и всех его дочерних узлов
+  const calculateNodeStats = (position: PositionHierarchyNode): { 
+    total: number; 
+    occupied: number; 
+    vacant: number; 
+  } => {
+    // Начальное значение статистики для текущего узла
+    let currentNodeStats = {
+      total: 0,      // Общее количество должностей
+      occupied: 0,   // Занятые должности
+      vacant: 0      // Вакантные должности
+    };
+    
+    // Считаем текущий узел/позицию
+    // Считаем минимум 1 должность для текущей позиции
+    currentNodeStats.total = 1;
+    
+    // Если у узла есть сотрудники, считаем его занятым, иначе - вакантным
+    if (position.employees && position.employees.length > 0) {
+      currentNodeStats.occupied = 1;
+    } else {
+      currentNodeStats.vacant = 1;
     }
-
-    // Рекурсивно обрабатываем всех подчиненных
+    
+    // Рекурсивно обрабатываем всех подчиненных и добавляем их статистику
     if (position.subordinates && Array.isArray(position.subordinates)) {
       for (const subordinate of position.subordinates) {
-        count += countEmployees(subordinate);
+        const subordinateStats = calculateNodeStats(subordinate);
+        currentNodeStats.total += subordinateStats.total;
+        currentNodeStats.occupied += subordinateStats.occupied;
+        currentNodeStats.vacant += subordinateStats.vacant;
       }
     }
-
-    return count;
+    
+    // Возвращаем общую статистику для этого узла и всех его дочерних узлов
+    return currentNodeStats;
   };
 
-  // if (isTopLevel) {
-  //   console.log(countEmployees(node));
-  // }
-
+  // Вычисляем статистику текущего узла и всех его дочерних узлов
+  const nodeStats = calculateNodeStats(node);
+  
+  // Получаем количество вакансий для индикаторов
+  // Если узел раскрыт (subordinates показываются отдельно), показываем только его собственную статистику
+  // Если узел свернут, показываем общую статистику включая все дочерние узлы
+  const isExpanded = false; // В будущем можно добавить проп для определения, раскрыт ли узел
+  
   // Вычисляем количество вакансий для индикаторов
-  const vacanciesCount = topIndicator;
+  const totalPositions = isExpanded ? 1 : nodeStats.total;
+  const occupiedPositions = isExpanded ? (node.employees && node.employees.length > 0 ? 1 : 0) : nodeStats.occupied;
+  const vacanciesCount = totalPositions - occupiedPositions;
 
   return (
     <div
@@ -118,26 +141,32 @@ const UnifiedPositionCard = ({
         position: "relative", // Добавляем позиционирование для абсолютных элементов
       }}
     >
-      {/* Индикатор в правом верхнем углу, показывается только если включены вакансии */}
+      {/* Статистический блок в правом верхнем углу, показывается только если включены вакансии */}
       {showVacancies && (
         <div
           style={{
             position: "absolute",
             top: "5px",
             right: "5px",
-            background: "#a40000",
-            color: "white",
-            borderRadius: "50%",
-            width: "20px",
-            height: "20px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: "12px",
+            fontSize: "11px",
             fontWeight: "bold",
+            background: "rgba(255,255,255,0.9)",
+            borderRadius: "4px",
+            padding: "4px 6px",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
           }}
         >
-          {vacanciesCount}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+            <span style={{ color: "#666", fontSize: "9px", marginBottom: "2px" }}>Всего / Занято / Вакантно</span>
+            <div style={{ display: "flex", gap: "4px" }}>
+              <span style={{ color: "#333" }}>{totalPositions}</span>
+              <span style={{ color: "#0984e3" }}>{occupiedPositions}</span>
+              <span style={{ color: "#a40000" }}>{vacanciesCount}</span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -172,28 +201,7 @@ const UnifiedPositionCard = ({
         </>
       )}
 
-      {/* Индикатор в правом нижнем углу, показывается только если включены вакансии */}
-      {showVacancies && (
-        <div
-          style={{
-            position: "absolute",
-            bottom: "5px",
-            right: "5px",
-            background: "#4b7bec",
-            color: "white",
-            borderRadius: "50%",
-            width: "20px",
-            height: "20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "12px",
-            fontWeight: "bold",
-          }}
-        >
-          {bottomIndicator}
-        </div>
-      )}
+
     </div>
   );
 };
