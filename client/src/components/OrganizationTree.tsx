@@ -2946,7 +2946,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
 
           <div className="display-settings-wrapper">
             <DisplaySettings
-              showThreeLevels={showThreeLevels}
+              showThreeLevels={Boolean(showThreeLevels)}
               showVacancies={showVacancies}
               onShowThreeLevelsChange={handleThreeLevelsChange}
               onShowVacanciesChange={handleShowVacanciesChange}
@@ -2962,7 +2962,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
           handleGoBack={handleGoBack}
           selectedPositionId={selectedPositionId}
           hierarchyInitialLevels={Number(hierarchyInitialLevels)}
-          showThreeLevels={showThreeLevels}
+          showThreeLevels={Boolean(showThreeLevels)}
           showVacancies={showVacancies}
         />
       </div>
