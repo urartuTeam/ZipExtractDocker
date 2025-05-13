@@ -337,8 +337,8 @@ const PositionTree = ({
   onPositionClick,
   selectedPositionId,
   handleGoBack,
-  hierarchyInitialLevels = 3, // По умолчанию 3 уровня
-  showThreeLevels = false, // Показывать третий уровень
+  hierarchyInitialLevels = 5, // По умолчанию 5 уровней для большей глубины
+  showThreeLevels = true, // Всегда показывать глубокие уровни
   showVacancies = false, // Показывать индикаторы вакансий
 }: {
   nodes: PositionHierarchyNode[];
@@ -478,8 +478,8 @@ const PositionTree = ({
                       showVacancies={showVacancies}
                     />
 
-                    {/* Рекурсивное отображение подчиненных подчиненного, если они есть И настройка позволяет (3 уровня) */}
-                    {subNode.subordinates.length > 0 && showThreeLevels && (
+                    {/* Рекурсивное отображение подчиненных подчиненного, всегда показываем все уровни */}
+                    {subNode.subordinates.length > 0 && (
                       <div
                         className="subordinates-container"
                         style={
@@ -734,7 +734,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
     positionsData,
     employeesData,
     currentDepartmentId,
-    showThreeLevels = false,
+    showThreeLevels = true,
     showVacancies = false,
   } = props;
   // Загрузка данных из API (если не переданы через пропсы)
@@ -851,7 +851,7 @@ const OrganizationTree: React.FC<OrganizationTreeProps> = (props) => {
   }
 
   // Получаем настройки из ответа или используем значение по умолчанию
-  const defaultLevels = 2; // По умолчанию 2 уровня
+  const defaultLevels = 5; // По умолчанию 5 уровней, чтобы показать более глубокую иерархию
 
   // Пытаемся получить настройку из ответа API
   const hierarchyInitialLevels = settingsResponse?.data
