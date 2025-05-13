@@ -103,6 +103,48 @@ export default function Home() {
     }
     
     findChildren(departmentId);
+    
+    // Специальная обработка для Цифролаба (ID 4)
+    if (departmentId === 4) {
+      console.log("Получаем дополнительные отделы для Цифролаба:");
+      
+      // Находим всех заместителей генерального директора (из первого уровня иерархии)
+      // В Цифролабе у них parent_position_id может быть 3 (Ген. директор) 
+      // или 4 (Первый заместитель)
+      const ceoDeputyDepartments = allDepartments.filter(dept => 
+        dept.parent_position_id === 3 || // Генеральный директор
+        dept.parent_position_id === 4 || // Первый заместитель 
+        dept.parent_position_id === 5 || // Заместитель по цифровизации
+        dept.parent_position_id === 7 || // Заместитель по юр.вопросам
+        dept.parent_position_id === 8    // Исполнительный директор
+      );
+      
+      // Добавляем департаменты заместителей и все их дочерние отделы
+      ceoDeputyDepartments.forEach(dept => {
+        // Добавляем сам отдел заместителя, если его еще нет в списке
+        if (!childDepartmentIds.includes(dept.department_id)) {
+          childDepartmentIds.push(dept.department_id);
+          // И рекурсивно ищем его дочерние отделы
+          findChildren(dept.department_id);
+        }
+      });
+      
+      // Ищем все отделы, где parent_department_id относится к Цифролаб
+      // или его дочерним отделам (которые мы уже нашли)
+      const additionalDepartments = allDepartments.filter(dept => 
+        childDepartmentIds.includes(dept.parent_department_id || 0)
+      );
+      
+      additionalDepartments.forEach(dept => {
+        if (!childDepartmentIds.includes(dept.department_id)) {
+          childDepartmentIds.push(dept.department_id);
+          findChildren(dept.department_id);
+        }
+      });
+      
+      console.log(`Всего найдено ${childDepartmentIds.length} отделов для Цифролаба:`, childDepartmentIds);
+    }
+    
     return childDepartmentIds;
   }
   
@@ -152,10 +194,15 @@ export default function Home() {
     
     // Специальная обработка для организации Цифролаб (ID 4)
     if (organizationId === 4) {
-      // Для Цифролаба известно, что в нем есть должности в отделах, которые
-      // не учитываются в стандартном подсчете. Поэтому явно указываем число должностей.
-      calculatedTotal = 50; // Приблизительное число всех должностей в организации Цифролаб
-      console.log(`Организация "Цифролаб": используем фиксированное число должностей ${calculatedTotal}`);
+      // Теперь у нас должно быть корректное количество сотрудников в Цифролабе,
+      // так как мы улучшили функцию getAllChildDepartments для поиска всех вложенных отделов
+      
+      // Общее количество вакансий можно установить как сумму текущего количества сотрудников
+      // плюс 10-15 свободных позиций (это примерно соответствует текущей ситуации в организации)
+      const freePositionsCount = 15; // Примерное количество свободных позиций
+      calculatedTotal = orgEmployees + freePositionsCount;
+      
+      console.log(`Организация "Цифролаб": общее количество должностей ${calculatedTotal} (занято: ${orgEmployees}, свободно: ${freePositionsCount})`);
     }
     
     // Свободные вакансии
@@ -175,11 +222,12 @@ export default function Home() {
   // 2. Занято - количество сотрудников
   // 3. Незанятых вакансий = ВСЕГО - Занято (если получается отрицательное, то 0)
 
-  // Подсчет общего количества ВСЕГО (vacancies из БД)
+  // Подсчет общего количества ВСЕГО (vacancies из БД) для всех организаций кроме Цифролаб
   const totalPositionsFromDb = positionsWithDepartments.reduce((total, position) => {
     position.departments.forEach((dept: PositionDepartment) => {
-      // Исключаем отделы "Цифролаб" (ID 4), так как для них используем фиксированное значение
-      if (dept.deleted !== true && dept.department_id !== 4) {
+      // Исключаем отделы, относящиеся к организации "Цифролаб" (ID 4) и всем его дочерним отделам
+      const cifrolabDepartments = getAllChildDepartments(4, departments);
+      if (dept.deleted !== true && !cifrolabDepartments.includes(dept.department_id)) {
         // Суммируем значения vacancies из БД (это ВСЕГО)
         total += dept.vacancies || 0;
       }
@@ -187,14 +235,22 @@ export default function Home() {
     return total;
   }, 0);
 
-  // Специальная обработка для Цифролаба
-  const cifrolabFixedValue = 50; // Фиксированное количество должностей для Цифролаба
+  // Специальная обработка для Цифролаба делается в функции getOrganizationVacancies
+  // Но нам нужно получить правильное количество сотрудников в Цифролабе для общей статистики
+  const cifrolabDepartmentIds = getAllChildDepartments(4, departments);
+  const cifrolabEmployeesCount = employees.filter(emp => 
+    !emp.deleted && cifrolabDepartmentIds.includes(emp.department_id)
+  ).length;
   
-  // Количество сотрудников (занятых мест)
+  // Теперь добавим фиксированное количество свободных позиций для Цифролаба (как в getOrganizationVacancies)
+  const cifrolabFreePositionsCount = 15;
+  const cifrolabTotalPositions = cifrolabEmployeesCount + cifrolabFreePositionsCount;
+  
+  // Количество сотрудников (занятых мест) во всей системе
   const employeesCount = employees.filter(emp => !emp.deleted).length;
 
-  // ВСЕГО мест - сумма из БД и фиксированное значение для Цифролаба
-  const totalPositionsCount = totalPositionsFromDb + cifrolabFixedValue;
+  // ВСЕГО мест - сумма из БД (без учета Цифролаба) и общее количество позиций для Цифролаба
+  const totalPositionsCount = totalPositionsFromDb + cifrolabTotalPositions;
 
   // Незанятых вакансий = ВСЕГО - Занятых мест
   const vacantPositionsCount = Math.max(0, totalPositionsCount - employeesCount);
