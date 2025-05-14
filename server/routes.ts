@@ -1,6 +1,8 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { db } from "./db";
+import { and, eq } from "drizzle-orm";
 import {
   insertUserSchema,
   insertDepartmentSchema,
@@ -10,10 +12,9 @@ import {
   insertProjectSchema,
   insertEmployeeProjectSchema,
   insertLeaveSchema,
-  departments
+  departments,
+  positions
 } from "@shared/schema";
-import { db } from "./db";
-import { eq } from "drizzle-orm";
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth } from "./auth";
@@ -242,6 +243,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ status: 'error', message: 'Failed to delete department' });
     }
   });
+  
+  // Обновление порядка сортировки отделов
+  app.post('/api/departments/sort', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { updates } = req.body;
+      
+      if (!Array.isArray(updates)) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Ожидается массив обновлений' 
+        });
+      }
+      
+      // Проверяем валидность данных
+      for (const update of updates) {
+        if (!update.department_id || typeof update.sort !== 'number') {
+          return res.status(400).json({ 
+            status: 'error', 
+            message: 'Неверный формат данных обновления' 
+          });
+        }
+      }
+      
+      // Выполняем обновления
+      for (const update of updates) {
+        await db
+          .update(departments)
+          .set({ sort: update.sort })
+          .where(eq(departments.department_id, update.department_id))
+          .execute();
+      }
+      
+      res.status(200).json({ 
+        status: 'success', 
+        message: 'Порядок сортировки отделов успешно обновлен' 
+      });
+    } catch (error) {
+      console.error('Error updating departments sort order:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Ошибка при обновлении порядка сортировки отделов' 
+      });
+    }
+  });
 
   // Organizations endpoints
   app.get('/api/organizations', async (req: Request, res: Response) => {
@@ -345,6 +390,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (positionData.is_category === undefined) {
         positionData.is_category = false;
       }
+      
+      // Создаем новую должность - внутри storage.createPosition будет
+      // проверка и удаление старых должностей с тем же именем
       const position = await storage.createPosition(positionData);
       res.status(201).json({ status: 'success', data: position });
     } catch (error) {
@@ -395,6 +443,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error('Error deleting position:', error);
       res.status(500).json({ status: 'error', message: 'Failed to delete position' });
+    }
+  });
+  
+  // Обновление порядка сортировки должностей
+  app.post('/api/positions/sort', isAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const { updates } = req.body;
+      
+      if (!Array.isArray(updates)) {
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Ожидается массив обновлений' 
+        });
+      }
+      
+      // Проверяем валидность данных
+      for (const update of updates) {
+        if (!update.position_id || typeof update.sort !== 'number') {
+          return res.status(400).json({ 
+            status: 'error', 
+            message: 'Неверный формат данных обновления' 
+          });
+        }
+      }
+      
+      // Выполняем обновления 
+      for (const update of updates) {
+        await db
+          .update(positions)
+          .set({ sort: update.sort })
+          .where(eq(positions.position_id, update.position_id))
+          .execute();
+      }
+      
+      res.status(200).json({ 
+        status: 'success', 
+        message: 'Порядок сортировки должностей успешно обновлен' 
+      });
+    } catch (error) {
+      console.error('Error updating positions sort order:', error);
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Ошибка при обновлении порядка сортировки должностей' 
+      });
     }
   });
 
@@ -542,7 +634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!project) {
         return res.status(404).json({ status: 'error', message: 'Project not found' });
       }
-
+      
       // Отладочный вывод для проверки полей проекта
       console.log("Полный объект проекта из БД:", project);
       console.log("Поля проекта:", Object.keys(project));
@@ -615,62 +707,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ status: 'error', message: 'Failed to delete project' });
     }
   });
-
+  
   // Обновление порядка сортировки проектов
   app.post('/api/projects/sort', async (req: Request, res: Response) => {
     try {
       const updates = req.body;
-
+      
       if (!Array.isArray(updates)) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Неверный формат данных. Ожидается массив обновлений.'
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Неверный формат данных. Ожидается массив обновлений.' 
         });
       }
-
+      
       // Проверяем, что все элементы имеют необходимые поля
-      const isValid = updates.every(item =>
-          typeof item === 'object' &&
-          item !== null &&
-          'project_id' in item &&
-          'sort' in item &&
-          typeof item.project_id === 'number' &&
-          typeof item.sort === 'number'
+      const isValid = updates.every(item => 
+        typeof item === 'object' && 
+        item !== null && 
+        'project_id' in item && 
+        'sort' in item &&
+        typeof item.project_id === 'number' &&
+        typeof item.sort === 'number'
       );
-
+      
       if (!isValid) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Неверный формат данных. Каждый элемент должен содержать project_id и sort.'
+        return res.status(400).json({ 
+          status: 'error', 
+          message: 'Неверный формат данных. Каждый элемент должен содержать project_id и sort.' 
         });
       }
-
+      
       // Обновляем порядок сортировки для каждого проекта
       const results = await Promise.all(
-          updates.map(update =>
-              storage.updateProject(update.project_id, { sort: update.sort })
-          )
+        updates.map(update => 
+          storage.updateProject(update.project_id, { sort: update.sort })
+        )
       );
-
+      
       // Проверяем, были ли обновлены все проекты
       const allUpdated = results.every(result => result !== null);
-
+      
       if (!allUpdated) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Не все проекты были обновлены. Некоторые проекты не найдены.'
+        return res.status(404).json({ 
+          status: 'error', 
+          message: 'Не все проекты были обновлены. Некоторые проекты не найдены.' 
         });
       }
-
-      res.json({
-        status: 'success',
-        message: 'Порядок сортировки проектов успешно обновлен'
+      
+      res.json({ 
+        status: 'success', 
+        message: 'Порядок сортировки проектов успешно обновлен' 
       });
     } catch (error) {
       console.error('Error updating projects sort order:', error);
-      res.status(500).json({
-        status: 'error',
-        message: 'Ошибка при обновлении порядка сортировки проектов'
+      res.status(500).json({ 
+        status: 'error', 
+        message: 'Ошибка при обновлении порядка сортировки проектов' 
       });
     }
   });

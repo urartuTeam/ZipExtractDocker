@@ -1,153 +1,211 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
-import OrganizationTree from "@/components/OrganizationTree";
-import { useState } from "react";
+import {useState, useEffect, useMemo} from "react";
 import { CardHeader, CardTitle } from "@/components/ui/card";
+import OrganizationTree from "@/components/OrganizationTree";
+import { VacancyCounter, VacancyCount } from '../VacancyCounter';
+
+declare global {
+  interface Window {
+    departmentsData: any[];
+    employeesData: any[];
+    positionsWithDepartmentsData: any[];
+    positionPositionsData: any[];
+  }
+}
+// Типы данных
+type NavigationHistoryItem = {
+  positionId: number | null;
+  departmentId: number | null;
+};
+
+type ContextType = {
+  positionId: number | null;
+  departmentId: number | null;
+  name: string | null;
+  isOrganization: boolean;
+};
+
+type VacancyCount = {
+  total: number;
+  occupied: number;
+  vacant: number
+};
 
 export default function Home() {
+  // Состояния
   const [selectedPositionId, setSelectedPositionId] = useState(0);
+  const [currentDepartmentId, setCurrentDepartmentId] = useState<number | null>(null);
+  const [navigationHistory, setNavigationHistory] = useState<NavigationHistoryItem[]>([]);
+  const [currentContext, setCurrentContext] = useState<ContextType>({
+    positionId: null,
+    departmentId: null,
+    name: null,
+    isOrganization: false
+  });
 
-  // Запрос на получение общего количества отделов
-  const { data: departmentsResponse, isLoading: isLoadingDepartments } = useQuery<{status: string, data: any[]}>({
+  // Запросы данных
+  const { data: departmentsResponse, isLoading: isLoadingDepartments } = useQuery({
     queryKey: ['/api/departments'],
   });
 
-  // Запрос на получение общего количества сотрудников
-  const { data: employeesResponse, isLoading: isLoadingEmployees } = useQuery<{status: string, data: any[]}>({
+  const { data: employeesResponse, isLoading: isLoadingEmployees } = useQuery({
     queryKey: ['/api/employees'],
   });
 
-  // Запрос на получение общего количества проектов
-  const { data: projectsResponse, isLoading: isLoadingProjects } = useQuery<{status: string, data: any[]}>({
+  const { data: projectsResponse, isLoading: isLoadingProjects } = useQuery({
     queryKey: ['/api/projects'],
   });
 
-  // Запрос на получение должностей с отделами
-  const { data: positionsWithDepartmentsResponse, isLoading: isLoadingPositionsWithDepartments } = useQuery<{status: string, data: any[]}>({
+  const { data: positionsWithDepartmentsResponse, isLoading: isLoadingPositionsWithDepartments } = useQuery({
     queryKey: ['/api/positions/with-departments'],
   });
 
-  // Запрос на получение связей между должностями
-  const { data: positionPositionsResponse, isLoading: isLoadingPositionPositions } = useQuery<{status: string, data: any[]}>({
+  const { data: positionPositionsResponse, isLoading: isLoadingPositionPositions } = useQuery({
     queryKey: ['/api/positionpositions'],
   });
-  
-  // Запрос на получение организаций
-  const { data: organizationsResponse, isLoading: isLoadingOrganizations } = useQuery<{status: string, data: any[]}>({
+
+  const { data: organizationsResponse, isLoading: isLoadingOrganizations } = useQuery({
     queryKey: ['/api/organizations'],
   });
 
+  const { data: settingsResponse, isLoading: isLoadingSettings } = useQuery({
+    queryKey: ['/api/settings'],
+  });
+
+  // Подготовка данных
   const departments = departmentsResponse?.data || [];
   const employees = employeesResponse?.data || [];
   const projects = projectsResponse?.data || [];
   const positionsWithDepartments = positionsWithDepartmentsResponse?.data || [];
   const positionPositions = positionPositionsResponse?.data || [];
   const organizations = organizationsResponse?.data || [];
+  const settings = settingsResponse?.data || [];
 
-  // Записываем данные в глобальный объект для доступа из других компонентов
-  if (positionsWithDepartments.length > 0) {
+  useEffect(() => {
+    window.departmentsData = departments;
+    window.employeesData = employees;
     window.positionsWithDepartmentsData = positionsWithDepartments;
-    console.log("Данные positionsWithDepartmentsData инициализированы:", positionsWithDepartments.length);
-  }
+    window.positionPositionsData = positionPositions;
+  }, [departments, employees, positionsWithDepartments, positionPositions]);
 
-  // Определение типа для записи department в должности
-  type PositionDepartment = {
-    department_id: number;
-    department_name: string;
-    deleted?: boolean;
-    vacancies?: number;
-    staff_units?: number;
-    position_link_id: number;
-    sort: number;
+  const vacancyCounter = useMemo(
+      () => new VacancyCounter(
+          departments,
+          employees,
+          positionsWithDepartments,
+          positionPositions
+      ),
+      [departments, employees, positionsWithDepartments, positionPositions]
+  );
+
+  // Получение настроек
+  const hierarchyInitialLevelsSetting = settings.find(
+      (setting: any) => setting.data_key === 'hierarchy_initial_levels'
+  );
+  const showThreeLevels = hierarchyInitialLevelsSetting?.data_value === '3';
+
+  // Функции для работы с вакансиями
+  const getContextVacancies = (departmentId: number | null, positionId: number | null): VacancyCount => {
+    return vacancyCounter.getVacancyCount({ departmentId, positionId });
   };
 
-  // Функция для получения всех дочерних отделов для заданного отдела
-  function getAllChildDepartments(departmentId: number, allDepartments: any[]): number[] {
-    const childDepartmentIds = [departmentId];
-    
-    // Рекурсивная функция для поиска дочерних отделов
-    function findChildren(parentId: number) {
-      const children = allDepartments.filter(dept => dept.parent_department_id === parentId);
-      if (children.length > 0) {
-        children.forEach(child => {
-          childDepartmentIds.push(child.department_id);
-          findChildren(child.department_id);
-        });
-      }
-    }
-    
-    findChildren(departmentId);
-    return childDepartmentIds;
-  }
-  
-  // Функция для получения количества вакансий для организации
-  function getOrganizationVacancies(organizationId: number): { 
-    total: number; 
-    occupied: number; 
-    vacant: number; 
-  } {
-    // Получаем все дочерние отделы для организации
-    const childDepartmentIds = getAllChildDepartments(organizationId, departments);
-    
-    // Общее количество вакансий во всех отделах организации
-    let totalVacancies = 0;
-    positionsWithDepartments.forEach(position => {
-      position.departments.forEach((dept: PositionDepartment) => {
-        if (dept.deleted !== true && childDepartmentIds.includes(dept.department_id)) {
-          totalVacancies += dept.vacancies || 0;
+  const getOrganizationVacancies = (departmentId: number): VacancyCount => {
+    return vacancyCounter.getVacancyCount({ departmentId });
+  };
+
+  // Функции для подсчета количества
+  const getContextEmployeesCount = (departmentId: number | null): number => {
+    if (!departmentId) return employees.filter(e => !e.deleted).length;
+    const childDepartments = getAllChildDepartments(departmentId);
+    return employees.filter(e =>
+        !e.deleted && childDepartments.includes(e.department_id)
+    ).length;
+  };
+
+  const getContextDepartmentsCount = (departmentId: number | null): number => {
+    if (!departmentId) return departments.length;
+    return getAllChildDepartments(departmentId).length;
+  };
+
+  const getContextProjectsCount = (departmentId: number | null): number => {
+    if (!departmentId) return projects.length;
+    const childDepartments = getAllChildDepartments(departmentId);
+    const departmentEmployees = employees.filter(e =>
+        !e.deleted && childDepartments.includes(e.department_id)
+    );
+    const employeeIds = departmentEmployees.map(e => e.employee_id);
+    return projects.length; // Упрощенно, можно добавить связь с сотрудниками
+  };
+
+  // Вспомогательная функция для получения дочерних отделов
+  const getAllChildDepartments = (departmentId: number): number[] => {
+    const result: number[] = [departmentId];
+    const queue: number[] = [departmentId];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      const children = departments.filter(d => d.parent_department_id === currentId);
+
+      children.forEach(child => {
+        if (!result.includes(child.department_id)) {
+          result.push(child.department_id);
+          queue.push(child.department_id);
         }
       });
+    }
+
+    return result;
+  };
+
+  // Обработчик клика по элементу дерева
+  const handlePositionClick = (context: {
+    positionId: number | null;
+    departmentId: number | null;
+    name: string | null;
+    isOrganization: boolean;
+  }) => {
+    console.log('33333333333333333333333333333')
+    setCurrentContext({
+      positionId: context.positionId,
+      departmentId: context.departmentId,
+      name: context.name,
+      isOrganization: context.isOrganization
     });
-    
-    // Количество занятых вакансий (сотрудников)
-    const orgEmployees = employees.filter(emp => 
-      childDepartmentIds.includes(emp.department_id)
-    ).length;
-    
-    // Свободные вакансии
-    const vacantPositions = Math.max(0, totalVacancies - orgEmployees);
-    
-    return {
-      total: totalVacancies,
-      occupied: orgEmployees,
-      vacant: vacantPositions
-    };
-  }
 
-  // ПРЕДЕЛЬНО ПРОСТАЯ ЛОГИКА ПО УКАЗАНИЮ:
-  // 1. ВСЕГО - сумма значений vacancies из БД по всем должностям
-  // 2. Занято - количество сотрудников
-  // 3. Незанятых вакансий = ВСЕГО - Занято (если получается отрицательное, то 0)
+    if (context.positionId) {
+      setSelectedPositionId(context.positionId);
 
-  // Подсчет общего количества ВСЕГО (vacancies из БД)
-  const totalPositionsFromDb = positionsWithDepartments.reduce((total, position) => {
-    position.departments.forEach((dept: PositionDepartment) => {
-      if (dept.deleted !== true) {
-        // Суммируем значения vacancies из БД (это ВСЕГО)
-        total += dept.vacancies || 0;
+      if (context.departmentId) {
+        setCurrentDepartmentId(context.departmentId);
+        setNavigationHistory(prev => [...prev, {
+          positionId: context.positionId,
+          departmentId: context.departmentId
+        }]);
       }
-    });
-    return total;
-  }, 0);
+    }
+  };
+  const [isRootView, setIsRootView] = useState(false);
 
-  // Количество сотрудников (занятых мест)
-  const employeesCount = employees.length;
+  const handleRootViewChange = (value: boolean) => {
+    console.log('Changing root view:', value);
+    setIsRootView(value);
+  };
 
-  // ВСЕГО мест - прямо из БД (vacancies)
-  const totalPositionsCount = totalPositionsFromDb;
-
-  // Незанятых вакансий = ВСЕГО - Занятых мест
-  const vacantPositionsCount = Math.max(0, totalPositionsCount - employeesCount);
+  const handleGoBack = () => {
+    // Логика для перехода назад
+    console.log("Going back...");
+  };
 
   const isLoading = isLoadingDepartments || isLoadingEmployees || isLoadingProjects ||
-      isLoadingPositionsWithDepartments || isLoadingPositionPositions || isLoadingOrganizations;
+      isLoadingPositionsWithDepartments || isLoadingPositionPositions || isLoadingOrganizations ||
+      isLoadingSettings;
 
   return (
       <div className="flex flex-col">
-        {/* Основной контент */}
         <div className="flex-1 p-4 bg-gray-100 flex flex-col">
-          {/* Дерево организации в гибком контейнере */}
+          {/* Дерево организации */}
           <div className="bg-white rounded-md shadow-sm p-6 mb-8 flex-grow-0 h-full">
             {isLoading ? (
                 <div className="space-y-4">
@@ -163,18 +221,25 @@ export default function Home() {
                         departmentsData={departments}
                         positionsData={positionsWithDepartments}
                         employeesData={employees}
-                        onPositionClick={(id) => setSelectedPositionId(id)}
+                        showThreeLevels={showThreeLevels}
+                        currentDepartmentId={currentDepartmentId}
+                        onPositionClick={handlePositionClick}
+                        onRootViewChange={handleRootViewChange}
+                        handleGoBack={handleGoBack}  // Функция для навигации назад
+                        hierarchyInitialLevels={showThreeLevels ? 3 : 2}  // Количество уровней иерархии
+                        nodes={departments}  // Данные узлов для дерева
+                        selectedPositionId={selectedPositionId}  // ID выбранной позиции
+                        showVacancies={false}  // Показывать ли вакансии
                     />
                   </div>
                 </div>
             )}
           </div>
 
-          {/* Статистика в нижней части страницы, прижатая к низу */}
-          {selectedPositionId === 0 ? (
-              <>
-                <div className="flex flex-wrap gap-4">
-                  {organizations.map((org) => (
+          {/* Статистика */}
+          {selectedPositionId === 0 || isRootView ? (
+              <div className="flex flex-wrap gap-4">
+                {organizations.map((org) => (
                     <div key={org.department_id} className="bg-white p-4 rounded-md shadow-md flex-1 min-w-[300px]">
                       <CardTitle className="mb-4 text-center">{org.name}</CardTitle>
                       <div className="grid gap-4 grid-cols-2">
@@ -193,12 +258,12 @@ export default function Home() {
                             <div className="text-sm text-gray-500">Активных проектов</div>
                           </div>
                         </Link>
-                        
-                        <Link href="/vacancies" 
-                          onClick={() => {
-                            localStorage.setItem('selectedOrganizationId', org.department_id.toString());
-                            localStorage.setItem('selectedOrganizationName', org.name);
-                          }}>
+
+                        <Link href="/vacancies"
+                              onClick={() => {
+                                localStorage.setItem('selectedOrganizationId', org.department_id.toString());
+                                localStorage.setItem('selectedOrganizationName', org.name);
+                              }}>
                           <div className="bg-gray-50 p-4 rounded-md shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-center mb-2">
                               <h3 className="font-medium text-lg">Учет вакансий</h3>
@@ -208,24 +273,17 @@ export default function Home() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6M9 16h6"/>
                               </svg>
                             </div>
-                            {(() => {
-                              // Получаем данные вакансий для текущей организации
-                              const vacancies = getOrganizationVacancies(org.department_id);
-                              return (
-                                <div className="text-2xl font-bold">
-                                  <span className="text-[#a40000]">Всего: {vacancies.total}</span>{' '}
-                                  <span className="text-green-600">({vacancies.vacant})</span>
-                                </div>
-                              );
-                            })()}
-                            <div className="text-sm text-gray-500">Отчет по вакансиям</div>
+                            <div className="text-2xl font-bold">
+                              <span className="text-[#a40000]">{getOrganizationVacancies(org.department_id).total}</span>{' '}
+                              <span className="text-green-600">({getOrganizationVacancies(org.department_id).vacant})</span>
+                            </div>
+                            <div className="text-sm text-gray-500">Всего мест / Вакантно</div>
                           </div>
                         </Link>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </>
+                ))}
+              </div>
           ) : (
               <div className="grid gap-4 md:grid-cols-4 flex-shrink-0">
                 <div className="bg-white p-4 rounded-md shadow-sm">
@@ -236,8 +294,8 @@ export default function Home() {
                             d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
                     </svg>
                   </div>
-                  <div className="text-2xl font-bold">{departments.length}</div>
-                  <div className="text-sm text-gray-500">Всего отделов в организации</div>
+                  <div className="text-2xl font-bold">{getContextDepartmentsCount(currentContext.departmentId)}</div>
+                  <div className="text-sm text-gray-500">Всего отделов</div>
                 </div>
 
                 <div className="bg-white p-4 rounded-md shadow-sm">
@@ -248,8 +306,8 @@ export default function Home() {
                             d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
                     </svg>
                   </div>
-                  <div className="text-2xl font-bold">{employees.length}</div>
-                  <div className="text-sm text-gray-500">Всего сотрудников в системе</div>
+                  <div className="text-2xl font-bold">{getContextEmployeesCount(currentContext.departmentId)}</div>
+                  <div className="text-sm text-gray-500">Всего сотрудников</div>
                 </div>
 
                 <Link href="/projects">
@@ -261,7 +319,7 @@ export default function Home() {
                               d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                       </svg>
                     </div>
-                    <div className="text-2xl font-bold">{projects.length}</div>
+                    <div className="text-2xl font-bold">{getContextProjectsCount(currentContext.departmentId)}</div>
                     <div className="text-sm text-gray-500">Активных проектов</div>
                   </div>
                 </Link>
@@ -277,16 +335,19 @@ export default function Home() {
                       </svg>
                     </div>
                     <div className="text-2xl font-bold">
-                      <span className="text-[#a40000]">Всего: {totalPositionsCount}</span>{' '}
-                      <span className="text-green-600">({vacantPositionsCount})</span>
+                  <span className="text-[#a40000]">
+                    {getContextVacancies(currentContext.departmentId, currentContext.positionId).total}
+                  </span>{' '}
+                      <span className="text-green-600">
+                    ({getContextVacancies(currentContext.departmentId, currentContext.positionId).vacant})
+                  </span>
                     </div>
-                    <div className="text-sm text-gray-500">Отчет по вакансиям организации</div>
+                    <div className="text-sm text-gray-500">Всего мест / Вакантно</div>
                   </div>
                 </Link>
               </div>
           )}
         </div>
       </div>
-
   );
 }

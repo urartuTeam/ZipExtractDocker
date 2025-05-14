@@ -157,7 +157,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllDepartments(): Promise<Department[]> {
-    return await db.select().from(departments).where(eq(departments.deleted, false)).orderBy(departments.department_id);
+    const results = await db.select()
+      .from(departments)
+      .where(eq(departments.deleted, false));
+    
+    // Sort by sort field first, then by department_id
+    return results.sort((a, b) => {
+      const aSort = a.sort ?? 0;
+      const bSort = b.sort ?? 0;
+      
+      // If sort values are different, sort by sort
+      if (aSort !== bSort) {
+        return aSort - bSort;
+      }
+      // If sort values are the same, sort by department_id
+      return a.department_id - b.department_id;
+    });
   }
 
   async createDepartment(insertDepartment: InsertDepartment): Promise<Department> {
@@ -201,7 +216,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAllPositions(): Promise<Position[]> {
-    return await db.select().from(positions).where(eq(positions.deleted, false));
+    const results = await db.select()
+      .from(positions)
+      .where(eq(positions.deleted, false));
+    
+    // Sort by sort field first, then by position_id
+    return results.sort((a, b) => {
+      const aSort = a.sort ?? 0;
+      const bSort = b.sort ?? 0;
+      
+      // If sort values are different, sort by sort
+      if (aSort !== bSort) {
+        return aSort - bSort;
+      }
+      // If sort values are the same, sort by position_id
+      return a.position_id - b.position_id;
+    });
   }
 
   async getPositionCategories(): Promise<Position[]> {
@@ -214,10 +244,31 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createPosition(insertPosition: InsertPosition): Promise<Position> {
+    // Сначала проверяем, существует ли должность с таким именем, которая помечена как удаленная
+    const existingPositions = await db
+      .select()
+      .from(positions)
+      .where(
+        and(
+          eq(positions.name, insertPosition.name),
+          eq(positions.deleted, true)
+        )
+      );
+
+    if (existingPositions.length > 0) {
+      // Для избежания конфликтов primary key, физически удаляем старую запись
+      console.log(`Обнаружена удаленная должность "${insertPosition.name}". Удаляем её физически перед созданием новой.`);
+      await db
+        .delete(positions)
+        .where(eq(positions.position_id, existingPositions[0].position_id));
+    }
+
+    // Теперь создаем новую должность
     const [position] = await db
-        .insert(positions)
-        .values(insertPosition)
-        .returning();
+      .insert(positions)
+      .values(insertPosition)
+      .returning();
+      
     return position;
   }
 
@@ -700,19 +751,19 @@ export class DatabaseStorage implements IStorage {
   // Методы для работы с организациями
   async getAllOrganizations(): Promise<Department[]> {
     return await db.select().from(departments).where(
-        and(
-            eq(departments.deleted, false),
-            eq(departments.is_organization, true)
-        )
+      and(
+        eq(departments.deleted, false),
+        eq(departments.is_organization, true)
+      )
     ).orderBy(departments.name);
   }
 
   async setOrganizationStatus(departmentId: number, isOrganization: boolean): Promise<Department | undefined> {
     const [department] = await db
-        .update(departments)
-        .set({ is_organization: isOrganization })
-        .where(eq(departments.department_id, departmentId))
-        .returning();
+      .update(departments)
+      .set({ is_organization: isOrganization })
+      .where(eq(departments.department_id, departmentId))
+      .returning();
     return department || undefined;
   }
 }

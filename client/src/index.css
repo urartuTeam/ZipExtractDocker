@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+
+
+
 /* Стили для тонкого скроллбара */
 .custom-scrollbar {
   scrollbar-width: thin;

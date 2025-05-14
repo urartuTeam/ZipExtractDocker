@@ -17,6 +17,7 @@ export type Position = {
   department_id?: number | null;
   is_category?: boolean;
   deleted?: boolean;
+  sort?: number | null;
   deleted_at?: string | null;
 };
 

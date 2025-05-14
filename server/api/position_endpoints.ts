@@ -48,7 +48,7 @@ export function registerPositionEndpoints(app: Express) {
 
         // Теперь найдем все родительские должности для этой должности
         const positionRelations = positionPositions.filter(
-            pp => pp.position_id === position.position_id
+            (pp) => pp.position_id !== null && pp.position_id === position.position_id
         );
 
         // Для каждой родительской связи, обновим соответствующую запись в linkMap
@@ -60,7 +60,7 @@ export function registerPositionEndpoints(app: Express) {
 
           // Найдем родительскую должность
           const parentPosition = positions.find(
-              p => p.position_id === relation.parent_position_id
+              (p: { position_id: number }) => p.position_id === relation.parent_position_id
           );
 
           if (!parentPosition) return;
@@ -72,7 +72,7 @@ export function registerPositionEndpoints(app: Express) {
 
             // Проверим, не добавлена ли уже эта родительская должность
             const alreadyHasParent = linkInfo.parent_positions.some(
-                p => p.position_id === parentPosition.position_id
+                (p: { position_id: number }) => p.position_id === parentPosition.position_id
             );
 
             if (!alreadyHasParent) {
@@ -94,13 +94,21 @@ export function registerPositionEndpoints(app: Express) {
           });
         });
 
-        // Преобразуем Map обратно в массив для результата
-        const linkedDepartments = Array.from(linkMap.values());
+        // Преобразуем Map обратно в массив для результата и сортируем по полю sort
+        const linkedDepartments = Array.from(linkMap.values())
+            .sort((a, b) => {
+                // Если sort отсутствует, считаем его равным 0
+                const aSort = a.sort ?? 0;
+                const bSort = b.sort ?? 0;
+                
+                // Сортировка только по полю sort
+                return aSort - bSort;
+            });
 
         // Соберем информацию о родительских и дочерних должностях
         const parentPositionsInfo = positionRelations
             .map(relation => {
-              const parentPosition = positions.find(p => p.position_id === relation.parent_position_id);
+              const parentPosition = positions.find((p: { position_id: number }) => p.position_id === relation.parent_position_id);
               return parentPosition ? {
                 position_id: parentPosition.position_id,
                 name: parentPosition.name,
@@ -110,12 +118,12 @@ export function registerPositionEndpoints(app: Express) {
             .filter(Boolean);
 
         const childrenRelations = positionPositions.filter(
-            pp => pp.parent_position_id === position.position_id
+            pp => pp.parent_position_id !== null && pp.parent_position_id === position.position_id
         );
 
         const childrenPositionsInfo = childrenRelations
             .map(relation => {
-              const childPosition = positions.find(p => p.position_id === relation.position_id);
+              const childPosition = positions.find((p: { position_id: number }) => p.position_id === relation.position_id);
               return childPosition ? {
                 position_id: childPosition.position_id,
                 name: childPosition.name,
@@ -134,18 +142,28 @@ export function registerPositionEndpoints(app: Express) {
         };
       });
 
+      // Сортируем результаты ТОЛЬКО по полю sort
+      const sortedPositions = positionsWithDepts.sort((a, b) => {
+        // Если sort отсутствует, считаем его равным 0
+        const aSort = a.sort ?? 0;
+        const bSort = b.sort ?? 0;
+        
+        // Сортировка только по полю sort
+        return aSort - bSort;
+      });
+
       // Вывод отладочной информации
-      if (positionsWithDepts.length > 0) {
+      if (sortedPositions.length > 0) {
         console.log("Пример обработанной должности:",
             JSON.stringify({
-              position_id: positionsWithDepts[0].position_id,
-              name: positionsWithDepts[0].name,
-              departments: positionsWithDepts[0].departments
+              position_id: sortedPositions[0].position_id,
+              name: sortedPositions[0].name,
+              departments: sortedPositions[0].departments
             }, null, 2)
         );
       }
 
-      res.json({ status: 'success', data: positionsWithDepts });
+      res.json({ status: 'success', data: sortedPositions });
     } catch (error) {
       console.error('Ошибка при получении должностей с отделами:', error);
       res.status(500).json({

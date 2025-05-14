@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDataRefresh } from "@/hooks/use-data-refresh";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -43,13 +43,15 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { apiRequest } from "@/lib/queryClient";
-import {Plus} from "lucide-react";
+import {Plus, MoveVertical} from "lucide-react";
+import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 
 interface Department {
   department_id: number;
   name: string;
   parent_position_id: number | null;
   parent_department_id: number | null;
+  sort?: number;
 }
 
 // Схема валидации для формы
@@ -82,6 +84,7 @@ export default function Departments() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedDepartment, setSelectedDepartment] = useState<Department | null>(null);
+  const [isSortMode, setIsSortMode] = useState(false);
   const queryClient = useQueryClient();
 
   // Form для создания
@@ -189,6 +192,32 @@ export default function Departments() {
     },
   });
 
+  // Mutation для обновления порядка сортировки отделов
+  const updateDepartmentSort = useMutation({
+    mutationFn: async (updates: { department_id: number, sort: number }[]) => {
+      const res = await apiRequest("POST", `/api/departments/sort`, { updates });
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Ошибка при обновлении порядка сортировки");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Порядок сортировки обновлен",
+        description: "Новый порядок сортировки отделов был сохранен",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/departments'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Ошибка при обновлении порядка сортировки",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Запрос на получение отделов
   const { data: departmentsData, isLoading, error } = useQuery<{ status: string, data: Department[] }>({
     queryKey: ['/api/departments'],
@@ -264,6 +293,33 @@ export default function Departments() {
       (dept) => dept.parent_department_id === departmentId
     );
   };
+  
+  // Обработчик для завершения перетаскивания
+  const handleDragEnd = useCallback((result: DropResult) => {
+    const { source, destination } = result;
+    
+    // Если элемент не был перемещен никуда
+    if (!destination) return;
+    
+    // Если это внутри одного и того же droppable
+    if (source.droppableId === destination.droppableId && source.index !== destination.index) {
+      // Создаем копию отделов
+      const sortedDepartments = [...filteredDepartments];
+      
+      // Перемещаем отдел в копии массива
+      const [removed] = sortedDepartments.splice(source.index, 1);
+      sortedDepartments.splice(destination.index, 0, removed);
+      
+      // Обновляем индексы сортировки
+      const updates = sortedDepartments.map((department, index) => ({
+        department_id: department.department_id,
+        sort: index,
+      }));
+      
+      // Отправляем обновления на сервер
+      updateDepartmentSort.mutate(updates);
+    }
+  }, [filteredDepartments, updateDepartmentSort]);
 
   return (
       <div className="space-y-6">
@@ -278,6 +334,14 @@ export default function Departments() {
                   className="max-w-sm"
               />
             </div>
+            <Button 
+              variant={isSortMode ? "destructive" : "outline"}
+              onClick={() => setIsSortMode(!isSortMode)}
+              className="flex items-center gap-2"
+            >
+              <MoveVertical size={18} />
+              {isSortMode ? "Выключить режим сортировки" : "Режим установки сортировки"}
+            </Button>
             <Button onClick={() => setIsAddDialogOpen(true)}>Добавить отдел</Button>
           </div>
         </div>
@@ -300,82 +364,114 @@ export default function Departments() {
                 </div>
             ) : (
                 <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[80px]">ID</TableHead>
-                        <TableHead>Название</TableHead>
-                        <TableHead>Родительская должность</TableHead>
-                        <TableHead>Родительский отдел</TableHead>
-                        <TableHead className="w-[150px]">Действия</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredDepartments.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={5} className="text-center h-24">
-                              Отделы не найдены
-                            </TableCell>
-                          </TableRow>
-                      ) : (
-                          filteredDepartments.map((department) => {
-                            // Найдем имя родительской должности
-                            const parentPosition = department.parent_position_id
-                                ? positionsData?.data.find(p => p.position_id === department.parent_position_id)
-                                : null;
-
-                            // Найдем имя родительского отдела
-                            const parentDepartment = department.parent_department_id
-                                ? departmentsData?.data.find(d => d.department_id === department.parent_department_id)
-                                : null;
-
-                            // Проверка зависимостей для предупреждения
-                            const hasEmployees = hasDependentEmployees(department.department_id);
-                            const hasChildDepartments = hasDependentDepartments(department.department_id);
-
-                            return (
-                                <TableRow key={department.department_id}>
-                                  <TableCell>{department.department_id}</TableCell>
-                                  <TableCell className="font-medium">{department.name}</TableCell>
-                                  <TableCell>
-                                    {parentPosition ? parentPosition.name : '—'}
-                                  </TableCell>
-                                  <TableCell>
-                                    {parentDepartment ? parentDepartment.name : '—'}
-                                  </TableCell>
-                                  <TableCell>
-                                    <div className="flex space-x-2">
-                                      <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() => handleEdit(department)}
-                                      >
-                                        Изменить
-                                      </Button>
-                                      <Button
-                                          variant="destructive"
-                                          size="sm"
-                                          onClick={() => handleDelete(department)}
-                                          title={
-                                            hasEmployees && hasChildDepartments
-                                                ? "В отделе имеются сотрудники и дочерние отделы"
-                                                : hasEmployees
-                                                    ? "В отделе имеются сотрудники"
-                                                    : hasChildDepartments
-                                                        ? "В отделе имеются дочерние отделы"
-                                                        : ""
-                                          }
-                                      >
-                                        Удалить
-                                      </Button>
-                                    </div>
+                  <DragDropContext onDragEnd={handleDragEnd}>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[80px]">ID</TableHead>
+                          <TableHead>Название</TableHead>
+                          <TableHead>Родительская должность</TableHead>
+                          <TableHead>Родительский отдел</TableHead>
+                          <TableHead className="w-[150px]">Действия</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      
+                      <Droppable droppableId="departments" isDropDisabled={!isSortMode}>
+                        {(provided) => (
+                          <TableBody 
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                          >
+                            {filteredDepartments.length === 0 ? (
+                                <TableRow>
+                                  <TableCell colSpan={5} className="text-center h-24">
+                                    Отделы не найдены
                                   </TableCell>
                                 </TableRow>
-                            );
-                          })
-                      )}
-                    </TableBody>
-                  </Table>
+                            ) : (
+                                filteredDepartments.map((department, index) => {
+                                  // Найдем имя родительской должности
+                                  const parentPosition = department.parent_position_id
+                                      ? positionsData?.data.find(p => p.position_id === department.parent_position_id)
+                                      : null;
+
+                                  // Найдем имя родительского отдела
+                                  const parentDepartment = department.parent_department_id
+                                      ? departmentsData?.data.find(d => d.department_id === department.parent_department_id)
+                                      : null;
+
+                                  // Проверка зависимостей для предупреждения
+                                  const hasEmployees = hasDependentEmployees(department.department_id);
+                                  const hasChildDepartments = hasDependentDepartments(department.department_id);
+
+                                  return (
+                                    <Draggable 
+                                      key={department.department_id.toString()} 
+                                      draggableId={department.department_id.toString()} 
+                                      index={index}
+                                      isDragDisabled={!isSortMode}
+                                    >
+                                      {(provided, snapshot) => (
+                                        <TableRow 
+                                          ref={provided.innerRef}
+                                          {...provided.draggableProps}
+                                          {...provided.dragHandleProps}
+                                          className={snapshot.isDragging ? "bg-muted" : ""}
+                                        >
+                                          <TableCell>{department.department_id}</TableCell>
+                                          <TableCell className="font-medium">
+                                            <div className="flex items-center gap-2">
+                                              {isSortMode && <MoveVertical size={16} className="text-muted-foreground" />}
+                                              {department.name}
+                                            </div>
+                                          </TableCell>
+                                          <TableCell>
+                                            {parentPosition ? parentPosition.name : '—'}
+                                          </TableCell>
+                                          <TableCell>
+                                            {parentDepartment ? parentDepartment.name : '—'}
+                                          </TableCell>
+                                          <TableCell>
+                                            <div className="flex space-x-2">
+                                              <Button
+                                                  variant="outline"
+                                                  size="sm"
+                                                  onClick={() => handleEdit(department)}
+                                                  disabled={isSortMode}
+                                              >
+                                                Изменить
+                                              </Button>
+                                              <Button
+                                                  variant="destructive"
+                                                  size="sm"
+                                                  onClick={() => handleDelete(department)}
+                                                  disabled={isSortMode}
+                                                  title={
+                                                    hasEmployees && hasChildDepartments
+                                                        ? "В отделе имеются сотрудники и дочерние отделы"
+                                                        : hasEmployees
+                                                            ? "В отделе имеются сотрудники"
+                                                            : hasChildDepartments
+                                                                ? "В отделе имеются дочерние отделы"
+                                                                : ""
+                                                  }
+                                              >
+                                                Удалить
+                                              </Button>
+                                            </div>
+                                          </TableCell>
+                                        </TableRow>
+                                      )}
+                                    </Draggable>
+                                  );
+                                })
+                            )}
+                            {provided.placeholder}
+                          </TableBody>
+                        )}
+                      </Droppable>
+                    </Table>
+                  </DragDropContext>
                 </div>
             )}
           </CardContent>
