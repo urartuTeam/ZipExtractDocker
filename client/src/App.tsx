@@ -35,9 +35,7 @@ function Router() {
             <ProtectedRoute path="/positions" component={Positions} />
             <ProtectedRoute path="/employees" component={Employees} />
             <Route path="/projects" component={UserProjects} />
-            <Route path="/projects/:id">
-                {(params) => <UserProjectDetails params={params} />}
-            </Route>
+            <Route path="/projects/:projectId" component={UserProjectDetails} />
             <ProtectedRoute path="/admin/projects" component={AdminProjects} />
             <ProtectedRoute path="/admin/projects/:id">
                 {(params) => <AdminProjectDetails params={params} />}
@@ -51,6 +49,7 @@ function Router() {
             <ProtectedRoute path="/settings" component={Settings} />
             <Route path="/vacancies" component={Vacancies} />
             <Route path="/vacancies/:id" component={Vacancies} />
+            <Route path="/vacancies/:type/:id" component={Vacancies} />
             <Route path="/auth" component={AuthPage} />
             <Route component={NotFound} />
         </Switch>
@@ -67,8 +66,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         location === "/" ||
         location === "/auth" ||
         location === "/projects" ||
+        location === "/vacancies" ||
         location.startsWith("/projects/") ||
-        location === "/vacancies";
+        location.startsWith("/vacancies/");
 
     const hideHeader = location === "/auth"; // Добавляем условие для скрытия header
 

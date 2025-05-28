@@ -548,7 +548,7 @@ export function registerPositionEndpoints(app: Express) {
   app.post('/api/pd', async (req: Request, res: Response) => {
     try {
       // Проверяем наличие необходимых полей
-      const { position_id, department_id, vacancies, sort } = req.body;
+      const { position_id, department_id, vacancies = 1, sort = 0 } = req.body;
 
       if (position_id === undefined) {
         return res.status(400).json({
@@ -588,9 +588,15 @@ export function registerPositionEndpoints(app: Express) {
         vacancies: vacancies || 1, // По умолчанию 1 вакансия
         sort: sort || 0 // По умолчанию сортировка 0
       };
+      const pd = await storage.createPositionDepartment({
+        position_id,
+        department_id,
+        vacancies,
+        sort
+      });
 
-      const positionDepartment = await storage.createPositionDepartment(positionDepartmentData);
-      res.status(201).json({ status: 'success', data: positionDepartment });
+      //const positionDepartment = await storage.createPositionDepartment(positionDepartmentData);
+      res.status(201).json({ status: 'success', data: pd });
     } catch (error) {
       console.error('Ошибка при создании связи position_department:', error);
       res.status(500).json({

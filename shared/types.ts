@@ -16,7 +16,6 @@ export type Position = {
   parent_position_id?: number | null;
   department_id?: number | null;
   is_category?: boolean;
-  sort?: number | null;
   deleted?: boolean;
   sort?: number | null;
   deleted_at?: string | null;
@@ -31,6 +30,7 @@ export type Employee = {
   category_parent_id: number | null; // Поле category_parent_id для связи с родительской должностью категории
   deleted?: boolean;
   deleted_at?: string | null;
+  photo_url?: string;
 };
 
 // Тип для построения позиций с сотрудниками

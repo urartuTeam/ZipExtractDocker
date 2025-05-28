@@ -457,6 +457,7 @@ export default function Leaves() {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="Ежегодный">Ежегодный</SelectItem>
+                              <SelectItem value="Декретный отпуск">Декретный отпуск</SelectItem>
                               <SelectItem value="По болезни">По болезни</SelectItem>
                               <SelectItem value="По уходу за ребенком">По уходу за ребенком</SelectItem>
                               <SelectItem value="Без сохранения оплаты">Без сохранения оплаты</SelectItem>
@@ -621,6 +622,7 @@ export default function Leaves() {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="Ежегодный">Ежегодный</SelectItem>
+                              <SelectItem value="Декретный отпуск">Декретный отпуск</SelectItem>
                               <SelectItem value="По болезни">По болезни</SelectItem>
                               <SelectItem value="По уходу за ребенком">По уходу за ребенком</SelectItem>
                               <SelectItem value="Без сохранения оплаты">Без сохранения оплаты</SelectItem>

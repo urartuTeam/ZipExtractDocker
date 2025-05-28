@@ -904,26 +904,26 @@ export default function Positions() {
                     )}
                 />
 
-                <FormField
-                    control={form.control}
-                    name="is_category"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                          <FormControl>
-                            <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>Это категория должности</FormLabel>
-                            <FormDescription>
-                              Отметьте, если это должность-категория (например, "I категория", "II категория")
-                            </FormDescription>
-                          </div>
-                        </FormItem>
-                    )}
-                />
+                {/*<FormField*/}
+                {/*    control={form.control}*/}
+                {/*    name="is_category"*/}
+                {/*    render={({ field }) => (*/}
+                {/*        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">*/}
+                {/*          <FormControl>*/}
+                {/*            <Checkbox*/}
+                {/*                checked={field.value}*/}
+                {/*                onCheckedChange={field.onChange}*/}
+                {/*            />*/}
+                {/*          </FormControl>*/}
+                {/*          <div className="space-y-1 leading-none">*/}
+                {/*            <FormLabel>Это категория должности</FormLabel>*/}
+                {/*            <FormDescription>*/}
+                {/*              Отметьте, если это должность-категория (например, "I категория", "II категория")*/}
+                {/*            </FormDescription>*/}
+                {/*          </div>*/}
+                {/*        </FormItem>*/}
+                {/*    )}*/}
+                {/*/>*/}
 
                 {/* Родительская должность удалена: теперь связи между должностями создаются только внутри отделов */}
 
@@ -975,26 +975,26 @@ export default function Positions() {
                     )}
                 />
 
-                <FormField
-                    control={editForm.control}
-                    name="is_category"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
-                          <FormControl>
-                            <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>Это категория должности</FormLabel>
-                            <FormDescription>
-                              Отметьте, если это должность-категория (например, "I категория", "II категория")
-                            </FormDescription>
-                          </div>
-                        </FormItem>
-                    )}
-                />
+                {/*<FormField*/}
+                {/*    control={editForm.control}*/}
+                {/*    name="is_category"*/}
+                {/*    render={({ field }) => (*/}
+                {/*        <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">*/}
+                {/*          <FormControl>*/}
+                {/*            <Checkbox*/}
+                {/*                checked={field.value}*/}
+                {/*                onCheckedChange={field.onChange}*/}
+                {/*            />*/}
+                {/*          </FormControl>*/}
+                {/*          <div className="space-y-1 leading-none">*/}
+                {/*            <FormLabel>Это категория должности</FormLabel>*/}
+                {/*            <FormDescription>*/}
+                {/*              Отметьте, если это должность-категория (например, "I категория", "II категория")*/}
+                {/*            </FormDescription>*/}
+                {/*          </div>*/}
+                {/*        </FormItem>*/}
+                {/*    )}*/}
+                {/*/>*/}
 
                 {/* Родительская должность удалена: теперь связи между должностями создаются только внутри отделов */}
 

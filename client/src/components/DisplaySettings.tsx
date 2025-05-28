@@ -36,7 +36,6 @@ const DisplaySettings: React.FC<DisplaySettingsProps> = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="p-3">
           <div className="flex items-center space-x-2">
             <Checkbox 

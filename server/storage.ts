@@ -1,16 +1,40 @@
 import {
-  users, departments, positions, employees, projects, employeeprojects, leaves, position_department, position_position, settings, sort_tree,
-  type User, type InsertUser,
-  type Department, type InsertDepartment,
-  type Position, type InsertPosition,
-  type PositionDepartment, type InsertPositionDepartment,
-  type PositionPosition, type InsertPositionPosition,
-  type Employee, type InsertEmployee,
-  type Project, type InsertProject,
-  type EmployeeProject, type InsertEmployeeProject,
-  type Leave, type InsertLeave,
-  type Setting, type InsertSetting,
-  type SortTree, type InsertSortTree
+  users,
+  departments,
+  positions,
+  employees,
+  projects,
+  employeeprojects,
+  leaves,
+  position_department,
+  position_position,
+  settings,
+  sort_tree,
+  project_roles,
+  type User,
+  type InsertUser,
+  type Department,
+  type InsertDepartment,
+  type Position,
+  type InsertPosition,
+  type PositionDepartment,
+  type InsertPositionDepartment,
+  type PositionPosition,
+  type InsertPositionPosition,
+  type Employee,
+  type InsertEmployee,
+  type Project,
+  type InsertProject,
+  type EmployeeProject,
+  type InsertEmployeeProject,
+  type Leave,
+  type InsertLeave,
+  type Setting,
+  type InsertSetting,
+  type SortTree,
+  type InsertSortTree,
+  type ProjectRole,
+  type InsertProjectRole,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, or, inArray } from "drizzle-orm";
@@ -28,18 +52,31 @@ export interface IStorage {
   getDepartment(id: number): Promise<Department | undefined>;
   getAllDepartments(): Promise<Department[]>;
   createDepartment(department: InsertDepartment): Promise<Department>;
-  updateDepartment(id: number, department: Partial<InsertDepartment>): Promise<Department | undefined>;
+  updateDepartment(
+      id: number,
+      department: Partial<InsertDepartment>,
+  ): Promise<Department | undefined>;
   deleteDepartment(id: number): Promise<boolean>;
 
   // Организации (отделы, помеченные как организации)
   getAllOrganizations(): Promise<Department[]>;
-  setOrganizationStatus(departmentId: number, isOrganization: boolean): Promise<Department | undefined>;
+  setOrganizationStatus(
+      departmentId: number,
+      isOrganization: boolean,
+  ): Promise<Department | undefined>;
 
   // Сортировка элементов иерархии
   getSortTree(): Promise<SortTree[]>;
-  getSortTreeItem(type: string, type_id: number, parent_id: number | null): Promise<SortTree | undefined>;
+  getSortTreeItem(
+      type: string,
+      type_id: number,
+      parent_id: number | null,
+  ): Promise<SortTree | undefined>;
   createSortTreeItem(item: InsertSortTree): Promise<SortTree>;
-  updateSortTreeItem(id: number, item: Partial<InsertSortTree>): Promise<SortTree | undefined>;
+  updateSortTreeItem(
+      id: number,
+      item: Partial<InsertSortTree>,
+  ): Promise<SortTree | undefined>;
   deleteSortTreeItem(id: number): Promise<boolean>;
 
   // Должности
@@ -47,61 +84,115 @@ export interface IStorage {
   getAllPositions(): Promise<Position[]>;
   getPositionCategories(): Promise<Position[]>;
   createPosition(position: InsertPosition): Promise<Position>;
-  updatePosition(id: number, position: Partial<InsertPosition>): Promise<Position | undefined>;
+  updatePosition(
+      id: number,
+      position: Partial<InsertPosition>,
+  ): Promise<Position | undefined>;
   deletePosition(id: number): Promise<boolean>;
 
   // Иерархия должностей
   getPositionPosition(id: number): Promise<PositionPosition | undefined>;
-  getPositionPositionsByPosition(positionId: number): Promise<PositionPosition[]>;
-  getPositionPositionsByParent(parentPositionId: number): Promise<PositionPosition[]>;
-  getPositionPositionsByDepartment(departmentId: number): Promise<PositionPosition[]>;
+  getPositionPositionsByPosition(
+      positionId: number,
+  ): Promise<PositionPosition[]>;
+  getPositionPositionsByParent(
+      parentPositionId: number,
+  ): Promise<PositionPosition[]>;
+  getPositionPositionsByDepartment(
+      departmentId: number,
+  ): Promise<PositionPosition[]>;
   getAllPositionPositions(): Promise<PositionPosition[]>;
-  createPositionPosition(positionPosition: InsertPositionPosition): Promise<PositionPosition>;
-  updatePositionPosition(id: number, positionPosition: Partial<InsertPositionPosition>): Promise<PositionPosition | undefined>;
+  createPositionPosition(
+      positionPosition: InsertPositionPosition,
+  ): Promise<PositionPosition>;
+  updatePositionPosition(
+      id: number,
+      positionPosition: Partial<InsertPositionPosition>,
+  ): Promise<PositionPosition | undefined>;
   deletePositionPosition(id: number): Promise<boolean>;
 
   // Связь должностей и отделов
   getPositionDepartment(id: number): Promise<PositionDepartment | undefined>;
   getAllPositionDepartments(): Promise<PositionDepartment[]>;
-  createPositionDepartment(positionDepartment: InsertPositionDepartment): Promise<PositionDepartment>;
-  updatePositionDepartment(id: number, positionDepartment: Partial<InsertPositionDepartment>): Promise<PositionDepartment | undefined>;
+  createPositionDepartment(
+      positionDepartment: InsertPositionDepartment,
+  ): Promise<PositionDepartment>;
+  updatePositionDepartment(
+      id: number,
+      positionDepartment: Partial<InsertPositionDepartment>,
+  ): Promise<PositionDepartment | undefined>;
   deletePositionDepartment(id: number): Promise<boolean>;
 
   // Сотрудники
   getEmployee(id: number): Promise<Employee | undefined>;
   getAllEmployees(): Promise<Employee[]>;
   createEmployee(employee: InsertEmployee): Promise<Employee>;
-  updateEmployee(id: number, employee: Partial<InsertEmployee>): Promise<Employee | undefined>;
+  updateEmployee(
+      id: number,
+      employee: Partial<InsertEmployee>,
+  ): Promise<Employee | undefined>;
   deleteEmployee(id: number): Promise<boolean>;
 
   // Проекты
   getProject(id: number): Promise<Project | undefined>;
   getAllProjects(): Promise<Project[]>;
   createProject(project: InsertProject): Promise<Project>;
-  updateProject(id: number, project: Partial<InsertProject>): Promise<Project | undefined>;
+  updateProject(
+      id: number,
+      project: Partial<InsertProject>,
+  ): Promise<Project | undefined>;
   deleteProject(id: number): Promise<boolean>;
 
+  // Роли
+  getProjectsRoles(): Promise<Role[]>;
+  createProjectsRole(role: InsertRole): Promise<Role>;
+
   // Связь сотрудников и проектов
-  getEmployeeProject(employeeId: number, projectId: number): Promise<EmployeeProject | undefined>;
+  getEmployeeProject(
+      employeeId: number,
+      projectId: number,
+  ): Promise<EmployeeProject | undefined>;
   getAllEmployeeProjects(): Promise<EmployeeProject[]>;
   getEmployeeProjectsByEmployee(employeeId: number): Promise<EmployeeProject[]>;
   getEmployeeProjectsByProject(projectId: number): Promise<EmployeeProject[]>;
-  createEmployeeProject(employeeProject: InsertEmployeeProject): Promise<EmployeeProject>;
-  updateEmployeeProject(employeeId: number, projectId: number, employeeProject: Partial<InsertEmployeeProject>): Promise<EmployeeProject | undefined>;
-  deleteEmployeeProject(employeeId: number, projectId: number): Promise<boolean>;
+  createEmployeeProject(
+      employeeProject: InsertEmployeeProject,
+  ): Promise<EmployeeProject>;
+  updateEmployeeProject(
+      employeeId: number,
+      projectId: number,
+      employeeProject: Partial<InsertEmployeeProject>,
+  ): Promise<EmployeeProject | undefined>;
+  deleteEmployeeProject(
+      employeeId: number,
+      projectId: number,
+  ): Promise<boolean>;
 
   // Отпуска
   getLeave(id: number): Promise<Leave | undefined>;
   getAllLeaves(): Promise<Leave[]>;
   getLeavesByEmployee(employeeId: number): Promise<Leave[]>;
   createLeave(leave: InsertLeave): Promise<Leave>;
-  updateLeave(id: number, leave: Partial<InsertLeave>): Promise<Leave | undefined>;
+  updateLeave(
+      id: number,
+      leave: Partial<InsertLeave>,
+  ): Promise<Leave | undefined>;
   deleteLeave(id: number): Promise<boolean>;
 
   // Настройки
   getSetting(key: string): Promise<Setting | undefined>;
   getAllSettings(): Promise<Setting[]>;
   createOrUpdateSetting(key: string, value: string): Promise<Setting>;
+
+  // Роли проектов
+  getAllProjectRoles(): Promise<ProjectRole[]>;
+  getProjectRole(id: number): Promise<ProjectRole | undefined>;
+  createProjectRole(insertRole: InsertProjectRole): Promise<ProjectRole>;
+  updateProjectRole(
+      id: number,
+      roleData: Partial<InsertProjectRole>,
+  ): Promise<ProjectRole | undefined>;
+  deleteProjectRole(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -112,15 +203,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
+    const [user] = await db
+        .select()
+        .from(users)
+        .where(eq(users.username, username));
     return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-        .insert(users)
-        .values(insertUser)
-        .returning();
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
@@ -128,7 +219,10 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users);
   }
 
-  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined> {
+  async updateUser(
+      id: number,
+      userData: Partial<InsertUser>,
+  ): Promise<User | undefined> {
     const [user] = await db
         .update(users)
         .set(userData)
@@ -147,25 +241,43 @@ export class DatabaseStorage implements IStorage {
 
   // Методы для работы с отделами
   async getDepartment(id: number): Promise<Department | undefined> {
-    const [department] = await db.select().from(departments).where(
-        and(
-            eq(departments.department_id, id),
-            eq(departments.deleted, false)
-        )
-    );
+    const [department] = await db
+        .select()
+        .from(departments)
+        .where(
+            and(eq(departments.department_id, id), eq(departments.deleted, false)),
+        );
     return department || undefined;
   }
 
-  async getAllDepartments(): Promise<Department[]> {
-    const results = await db.select()
-      .from(departments)
-      .where(eq(departments.deleted, false));
-    
+  async getAllDepartments(): Promise<any[]> {
+    const results = await db
+        .select({
+          department_id: departments.department_id,
+          name: departments.name,
+          parent_department_id: departments.parent_department_id,
+          parent_position_id: departments.parent_position_id,
+          leadership_position_id: departments.leadership_position_id,
+          manager_id: departments.manager_id,
+          is_organization: departments.is_organization,
+          logo_path: departments.logo_path,
+          sort: departments.sort,
+          deleted: departments.deleted,
+          deleted_at: departments.deleted_at,
+          leadership_position_name: positions.name,
+          manager_name: employees.full_name,
+          manager_photo: employees.photo_url,
+        })
+        .from(departments)
+        .leftJoin(positions, eq(departments.leadership_position_id, positions.position_id))
+        .leftJoin(employees, eq(departments.manager_id, employees.employee_id))
+        .where(eq(departments.deleted, false));
+
     // Sort by sort field first, then by department_id
     return results.sort((a, b) => {
       const aSort = a.sort ?? 0;
       const bSort = b.sort ?? 0;
-      
+
       // If sort values are different, sort by sort
       if (aSort !== bSort) {
         return aSort - bSort;
@@ -175,7 +287,9 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async createDepartment(insertDepartment: InsertDepartment): Promise<Department> {
+  async createDepartment(
+      insertDepartment: InsertDepartment,
+  ): Promise<Department> {
     const [department] = await db
         .insert(departments)
         .values(insertDepartment)
@@ -183,13 +297,17 @@ export class DatabaseStorage implements IStorage {
     return department;
   }
 
-  async updateDepartment(id: number, departmentData: Partial<InsertDepartment>): Promise<Department | undefined> {
+  async updateDepartment(
+      id: number,
+      departmentData: Partial<InsertDepartment>,
+  ): Promise<Department | undefined> {
+
     const [department] = await db
         .update(departments)
         .set(departmentData)
         .where(eq(departments.department_id, id))
         .returning();
-    return department || undefined;
+    return departmentData || undefined;
   }
 
   async deleteDepartment(id: number): Promise<boolean> {
@@ -197,7 +315,7 @@ export class DatabaseStorage implements IStorage {
         .update(departments)
         .set({
           deleted: true,
-          deleted_at: new Date()
+          deleted_at: new Date(),
         })
         .where(eq(departments.department_id, id))
         .returning({ id: departments.department_id });
@@ -206,25 +324,24 @@ export class DatabaseStorage implements IStorage {
 
   // Методы для работы с должностями
   async getPosition(id: number): Promise<Position | undefined> {
-    const [position] = await db.select().from(positions).where(
-        and(
-            eq(positions.position_id, id),
-            eq(positions.deleted, false)
-        )
-    );
+    const [position] = await db
+        .select()
+        .from(positions)
+        .where(and(eq(positions.position_id, id), eq(positions.deleted, false)));
     return position || undefined;
   }
 
   async getAllPositions(): Promise<Position[]> {
-    const results = await db.select()
-      .from(positions)
-      .where(eq(positions.deleted, false));
-    
+    const results = await db
+        .select()
+        .from(positions)
+        .where(eq(positions.deleted, false));
+
     // Sort by sort field first, then by position_id
     return results.sort((a, b) => {
       const aSort = a.sort ?? 0;
       const bSort = b.sort ?? 0;
-      
+
       // If sort values are different, sort by sort
       if (aSort !== bSort) {
         return aSort - bSort;
@@ -235,44 +352,44 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPositionCategories(): Promise<Position[]> {
-    return await db.select().from(positions).where(
-        and(
-            eq(positions.deleted, false),
-            eq(positions.is_category, true)
-        )
-    );
+    return await db
+        .select()
+        .from(positions)
+        .where(
+            and(eq(positions.deleted, false), eq(positions.is_category, true)),
+        );
   }
 
   async createPosition(insertPosition: InsertPosition): Promise<Position> {
-    // Сначала проверяем, существует ли должность с таким именем, которая помечена как удаленная
-    const existingPositions = await db
-      .select()
-      .from(positions)
-      .where(
-        and(
-          eq(positions.name, insertPosition.name),
-          eq(positions.deleted, true)
-        )
-      );
+    const existing = await db
+        .select()
+        .from(positions)
+        .where(
+            and(
+                eq(positions.name, insertPosition.name),
+                eq(positions.deleted, true),
+            ),
+        );
 
-    if (existingPositions.length > 0) {
-      // Для избежания конфликтов primary key, физически удаляем старую запись
-      console.log(`Обнаружена удаленная должность "${insertPosition.name}". Удаляем её физически перед созданием новой.`);
+    if (existing.length) {
       await db
-        .delete(positions)
-        .where(eq(positions.position_id, existingPositions[0].position_id));
+          .delete(positions)
+          .where(eq(positions.position_id, existing[0].position_id));
     }
 
-    // Теперь создаем новую должность
-    const [position] = await db
-      .insert(positions)
-      .values(insertPosition)
-      .returning();
-      
-    return position;
+    // Ни одного ALTER SEQUENCE здесь!
+    const [newPos] = await db
+        .insert(positions)
+        .values(insertPosition)
+        .returning();
+
+    return newPos;
   }
 
-  async updatePosition(id: number, positionData: Partial<InsertPosition>): Promise<Position | undefined> {
+  async updatePosition(
+      id: number,
+      positionData: Partial<InsertPosition>,
+  ): Promise<Position | undefined> {
     const [position] = await db
         .update(positions)
         .set(positionData)
@@ -286,7 +403,7 @@ export class DatabaseStorage implements IStorage {
         .update(positions)
         .set({
           deleted: true,
-          deleted_at: new Date()
+          deleted_at: new Date(),
         })
         .where(eq(positions.position_id, id))
         .returning({ id: positions.position_id });
@@ -295,47 +412,70 @@ export class DatabaseStorage implements IStorage {
 
   // Методы для работы с иерархией должностей
   async getPositionPosition(id: number): Promise<PositionPosition | undefined> {
-    const [positionPosition] = await db.select().from(position_position).where(
-        and(
-            eq(position_position.position_relation_id, id),
-            eq(position_position.deleted, false)
-        )
-    );
+    const [positionPosition] = await db
+        .select()
+        .from(position_position)
+        .where(
+            and(
+                eq(position_position.position_relation_id, id),
+                eq(position_position.deleted, false),
+            ),
+        );
     return positionPosition || undefined;
   }
 
-  async getPositionPositionsByPosition(positionId: number): Promise<PositionPosition[]> {
-    return await db.select().from(position_position).where(
-        and(
-            eq(position_position.position_id, positionId),
-            eq(position_position.deleted, false)
-        )
-    );
+  async getPositionPositionsByPosition(
+      positionId: number,
+  ): Promise<PositionPosition[]> {
+    return await db
+        .select()
+        .from(position_position)
+        .where(
+            and(
+                eq(position_position.position_id, positionId),
+                eq(position_position.deleted, false),
+            ),
+        );
   }
 
-  async getPositionPositionsByParent(parentPositionId: number): Promise<PositionPosition[]> {
-    return await db.select().from(position_position).where(
-        and(
-            eq(position_position.parent_position_id, parentPositionId),
-            eq(position_position.deleted, false)
-        )
-    );
+  async getPositionPositionsByParent(
+      parentPositionId: number,
+  ): Promise<PositionPosition[]> {
+    return await db
+        .select()
+        .from(position_position)
+        .where(
+            and(
+                eq(position_position.parent_position_id, parentPositionId),
+                eq(position_position.deleted, false),
+            ),
+        );
   }
 
-  async getPositionPositionsByDepartment(departmentId: number): Promise<PositionPosition[]> {
-    return await db.select().from(position_position).where(
-        and(
-            eq(position_position.department_id, departmentId),
-            eq(position_position.deleted, false)
-        )
-    );
+  async getPositionPositionsByDepartment(
+      departmentId: number,
+  ): Promise<PositionPosition[]> {
+    return await db
+        .select()
+        .from(position_position)
+        .where(
+            and(
+                eq(position_position.department_id, departmentId),
+                eq(position_position.deleted, false),
+            ),
+        );
   }
 
   async getAllPositionPositions(): Promise<PositionPosition[]> {
-    return await db.select().from(position_position).where(eq(position_position.deleted, false));
+    return await db
+        .select()
+        .from(position_position)
+        .where(eq(position_position.deleted, false));
   }
 
-  async createPositionPosition(insertPositionPosition: InsertPositionPosition): Promise<PositionPosition> {
+  async createPositionPosition(
+      insertPositionPosition: InsertPositionPosition,
+  ): Promise<PositionPosition> {
     const [positionPosition] = await db
         .insert(position_position)
         .values(insertPositionPosition)
@@ -343,7 +483,10 @@ export class DatabaseStorage implements IStorage {
     return positionPosition;
   }
 
-  async updatePositionPosition(id: number, positionPositionData: Partial<InsertPositionPosition>): Promise<PositionPosition | undefined> {
+  async updatePositionPosition(
+      id: number,
+      positionPositionData: Partial<InsertPositionPosition>,
+  ): Promise<PositionPosition | undefined> {
     const [positionPosition] = await db
         .update(position_position)
         .set(positionPositionData)
@@ -364,10 +507,11 @@ export class DatabaseStorage implements IStorage {
   // Совместимость с предыдущими версиями - теперь используется position_position
   async getPositionSubordinates(positionId: number): Promise<Position[]> {
     // Получаем все записи связей position_position, где текущая должность - родительская
-    const positionPositions = await this.getPositionPositionsByParent(positionId);
+    const positionPositions =
+        await this.getPositionPositionsByParent(positionId);
 
     // Извлекаем ID подчиненных должностей
-    const subordinateIds = positionPositions.map(pp => pp.position_id);
+    const subordinateIds = positionPositions.map((pp) => pp.position_id);
 
     // Если нет подчиненных, возвращаем пустой массив
     if (subordinateIds.length === 0) {
@@ -386,42 +530,56 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Получаем все должности, которые не удалены
-    const allPositions = await db.select()
+    const allPositions = await db
+        .select()
         .from(positions)
         .where(eq(positions.deleted, false));
 
     // Фильтруем только те должности, ID которых есть в списке подчиненных
-    subordinatePositions = allPositions.filter(pos =>
-        subordinateIds.includes(pos.position_id)
+    subordinatePositions = allPositions.filter((pos) =>
+        subordinateIds.includes(pos.position_id),
     );
 
     return subordinatePositions;
   }
 
   // Методы для работы со связью должностей и отделов
-  async getPositionDepartment(id: number): Promise<PositionDepartment | undefined> {
-    const [positionDepartment] = await db.select().from(position_department).where(
-        and(
-            eq(position_department.position_link_id, id),
-            eq(position_department.deleted, false)
-        )
-    );
+  async getPositionDepartment(
+      id: number,
+  ): Promise<PositionDepartment | undefined> {
+    const [positionDepartment] = await db
+        .select()
+        .from(position_department)
+        .where(
+            and(
+                eq(position_department.position_link_id, id),
+                eq(position_department.deleted, false),
+            ),
+        );
     return positionDepartment || undefined;
   }
 
   async getAllPositionDepartments(): Promise<PositionDepartment[]> {
-    return await db.select().from(position_department).where(eq(position_department.deleted, false));
+    return await db
+        .select()
+        .from(position_department)
+        .where(eq(position_department.deleted, false));
   }
 
-  async createPositionDepartment(insertPositionDepartment: InsertPositionDepartment): Promise<PositionDepartment> {
-    const [positionDepartment] = await db
+  async createPositionDepartment(
+      insertPositionDepartment: InsertPositionDepartment,
+  ): Promise<PositionDepartment> {
+    const [pd] = await db
         .insert(position_department)
         .values(insertPositionDepartment)
         .returning();
-    return positionDepartment;
+    return pd;
   }
 
-  async updatePositionDepartment(id: number, positionDepartmentData: Partial<InsertPositionDepartment>): Promise<PositionDepartment | undefined> {
+  async updatePositionDepartment(
+      id: number,
+      positionDepartmentData: Partial<InsertPositionDepartment>,
+  ): Promise<PositionDepartment | undefined> {
     const [positionDepartment] = await db
         .update(position_department)
         .set(positionDepartmentData)
@@ -441,12 +599,10 @@ export class DatabaseStorage implements IStorage {
 
   // Методы для работы с сотрудниками
   async getEmployee(id: number): Promise<Employee | undefined> {
-    const [employee] = await db.select().from(employees).where(
-        and(
-            eq(employees.employee_id, id),
-            eq(employees.deleted, false)
-        )
-    );
+    const [employee] = await db
+        .select()
+        .from(employees)
+        .where(and(eq(employees.employee_id, id), eq(employees.deleted, false)));
     return employee || undefined;
   }
 
@@ -466,7 +622,10 @@ export class DatabaseStorage implements IStorage {
     return employee;
   }
 
-  async updateEmployee(id: number, employeeData: Partial<InsertEmployee>): Promise<Employee | undefined> {
+  async updateEmployee(
+      id: number,
+      employeeData: Partial<InsertEmployee>,
+  ): Promise<Employee | undefined> {
     const [employee] = await db
         .update(employees)
         .set(employeeData)
@@ -480,7 +639,7 @@ export class DatabaseStorage implements IStorage {
         .update(employees)
         .set({
           deleted: true,
-          deleted_at: new Date()
+          deleted_at: new Date(),
         })
         .where(eq(employees.employee_id, id))
         .returning({ id: employees.employee_id });
@@ -489,12 +648,10 @@ export class DatabaseStorage implements IStorage {
 
   // Методы для работы с проектами
   async getProject(id: number): Promise<Project | undefined> {
-    const [project] = await db.select().from(projects).where(
-        and(
-            eq(projects.project_id, id),
-            eq(projects.deleted, false)
-        )
-    );
+    const [project] = await db
+        .select()
+        .from(projects)
+        .where(and(eq(projects.project_id, id), eq(projects.deleted, false)));
     return project || undefined;
   }
 
@@ -510,7 +667,10 @@ export class DatabaseStorage implements IStorage {
     return project;
   }
 
-  async updateProject(id: number, projectData: Partial<InsertProject>): Promise<Project | undefined> {
+  async updateProject(
+      id: number,
+      projectData: Partial<InsertProject>,
+  ): Promise<Project | undefined> {
     const [project] = await db
         .update(projects)
         .set(projectData)
@@ -524,7 +684,7 @@ export class DatabaseStorage implements IStorage {
         .update(projects)
         .set({
           deleted: true,
-          deleted_at: new Date()
+          deleted_at: new Date(),
         })
         .where(eq(projects.project_id, id))
         .returning({ id: projects.project_id });
@@ -532,40 +692,56 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Методы для работы со связью сотрудников и проектов
-  async getEmployeeProject(employeeId: number, projectId: number): Promise<EmployeeProject | undefined> {
-    const [employeeProject] = await db.select().from(employeeprojects).where(
-        and(
-            eq(employeeprojects.employee_id, employeeId),
-            eq(employeeprojects.project_id, projectId),
-            eq(employeeprojects.deleted, false)
-        )
-    );
+  async getEmployeeProject(
+      employeeId: number,
+      projectId: number,
+  ): Promise<EmployeeProject | undefined> {
+    const [employeeProject] = await db
+        .select()
+        .from(employeeprojects)
+        .where(
+            and(
+                eq(employeeprojects.employee_id, employeeId),
+                eq(employeeprojects.project_id, projectId),
+            ),
+        );
     return employeeProject || undefined;
   }
 
   async getAllEmployeeProjects(): Promise<EmployeeProject[]> {
-    return await db.select().from(employeeprojects).where(eq(employeeprojects.deleted, false));
+    return await db.select().from(employeeprojects);
   }
 
-  async getEmployeeProjectsByEmployee(employeeId: number): Promise<EmployeeProject[]> {
-    return await db.select().from(employeeprojects).where(
-        and(
-            eq(employeeprojects.employee_id, employeeId),
-            eq(employeeprojects.deleted, false)
+  async getEmployeeProjectsByEmployee(
+      employeeId: number,
+  ): Promise<EmployeeProject[]> {
+    return await db
+        .select()
+        .from(employeeprojects)
+        .where(and(eq(employeeprojects.employee_id, employeeId)));
+  }
+
+  async getEmployeeProjectsByProject(
+      projectId: number,
+  ): Promise<EmployeeProject[]> {
+    return await db
+        .select({
+          employee_id: employeeprojects.employee_id,
+          project_id: employeeprojects.project_id,
+          role_id: employeeprojects.role_id,
+        })
+        .from(employeeprojects)
+        .leftJoin(
+            employees,
+            eq(employeeprojects.employee_id, employees.employee_id),
         )
-    );
+        .where(and(eq(employeeprojects.project_id, projectId)))
+        .orderBy(employees.full_name);
   }
 
-  async getEmployeeProjectsByProject(projectId: number): Promise<EmployeeProject[]> {
-    return await db.select().from(employeeprojects).where(
-        and(
-            eq(employeeprojects.project_id, projectId),
-            eq(employeeprojects.deleted, false)
-        )
-    );
-  }
-
-  async createEmployeeProject(insertEmployeeProject: InsertEmployeeProject): Promise<EmployeeProject> {
+  async createEmployeeProject(
+      insertEmployeeProject: InsertEmployeeProject,
+  ): Promise<EmployeeProject> {
     const [employeeProject] = await db
         .insert(employeeprojects)
         .values(insertEmployeeProject)
@@ -573,46 +749,56 @@ export class DatabaseStorage implements IStorage {
     return employeeProject;
   }
 
-  async updateEmployeeProject(employeeId: number, projectId: number, employeeProjectData: Partial<InsertEmployeeProject>): Promise<EmployeeProject | undefined> {
+  async updateEmployeeProject(
+      employeeId: number,
+      projectId: number,
+      employeeProjectData: Partial<InsertEmployeeProject>,
+      currentRoleId?: number,
+  ): Promise<EmployeeProject | undefined> {
+    let whereCondition = and(
+        eq(employeeprojects.employee_id, employeeId),
+        eq(employeeprojects.project_id, projectId),
+    );
+
+    // Если передана текущая роль, добавляем ее в условие WHERE
+    if (currentRoleId !== undefined && currentRoleId !== null) {
+      whereCondition = and(
+          whereCondition,
+          eq(employeeprojects.role_id, currentRoleId),
+      );
+    }
+
     const [employeeProject] = await db
         .update(employeeprojects)
         .set(employeeProjectData)
-        .where(
-            and(
-                eq(employeeprojects.employee_id, employeeId),
-                eq(employeeprojects.project_id, projectId)
-            )
-        )
+        .where(whereCondition)
         .returning();
     return employeeProject || undefined;
   }
 
-  async deleteEmployeeProject(employeeId: number, projectId: number): Promise<boolean> {
-    // Для таблицы связи нужно добавить колонки deleted и deleted_at в БД
-    const [updated] = await db
-        .update(employeeprojects)
-        .set({
-          deleted: true,
-          deleted_at: new Date()
-        })
+  async deleteEmployeeProject(
+      employeeId: number,
+      projectId: number,
+  ): Promise<boolean> {
+    const deleted = await db
+        .delete(employeeprojects)
         .where(
             and(
                 eq(employeeprojects.employee_id, employeeId),
-                eq(employeeprojects.project_id, projectId)
-            )
+                eq(employeeprojects.project_id, projectId),
+            ),
         )
         .returning();
-    return !!updated;
+
+    return deleted.length > 0;
   }
 
   // Методы для работы с отпусками
   async getLeave(id: number): Promise<Leave | undefined> {
-    const [leave] = await db.select().from(leaves).where(
-        and(
-            eq(leaves.leave_id, id),
-            eq(leaves.deleted, false)
-        )
-    );
+    const [leave] = await db
+        .select()
+        .from(leaves)
+        .where(and(eq(leaves.leave_id, id), eq(leaves.deleted, false)));
     return leave || undefined;
   }
 
@@ -621,23 +807,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getLeavesByEmployee(employeeId: number): Promise<Leave[]> {
-    return await db.select().from(leaves).where(
-        and(
-            eq(leaves.employee_id, employeeId),
-            eq(leaves.deleted, false)
-        )
-    );
+    return await db
+        .select()
+        .from(leaves)
+        .where(
+            and(eq(leaves.employee_id, employeeId), eq(leaves.deleted, false)),
+        );
   }
 
   async createLeave(insertLeave: InsertLeave): Promise<Leave> {
-    const [leave] = await db
-        .insert(leaves)
-        .values(insertLeave)
-        .returning();
+    const [leave] = await db.insert(leaves).values(insertLeave).returning();
     return leave;
   }
 
-  async updateLeave(id: number, leaveData: Partial<InsertLeave>): Promise<Leave | undefined> {
+  async updateLeave(
+      id: number,
+      leaveData: Partial<InsertLeave>,
+  ): Promise<Leave | undefined> {
     const [leave] = await db
         .update(leaves)
         .set(leaveData)
@@ -651,7 +837,7 @@ export class DatabaseStorage implements IStorage {
         .update(leaves)
         .set({
           deleted: true,
-          deleted_at: new Date()
+          deleted_at: new Date(),
         })
         .where(eq(leaves.leave_id, id))
         .returning({ id: leaves.leave_id });
@@ -660,7 +846,10 @@ export class DatabaseStorage implements IStorage {
 
   // Методы для работы с настройками
   async getSetting(key: string): Promise<Setting | undefined> {
-    const [setting] = await db.select().from(settings).where(eq(settings.data_key, key));
+    const [setting] = await db
+        .select()
+        .from(settings)
+        .where(eq(settings.data_key, key));
     return setting || undefined;
   }
 
@@ -678,7 +867,7 @@ export class DatabaseStorage implements IStorage {
           .update(settings)
           .set({
             data_value: value,
-            updated_at: new Date()
+            updated_at: new Date(),
           })
           .where(eq(settings.data_key, key))
           .returning();
@@ -689,19 +878,66 @@ export class DatabaseStorage implements IStorage {
           .insert(settings)
           .values({
             data_key: key,
-            data_value: value
+            data_value: value,
           })
           .returning();
       return setting;
     }
   }
 
-  // Методы для работы с сортировкой дерева
-  async getSortTree(): Promise<SortTree[]> {
-    return await db.select().from(sort_tree).orderBy(sort_tree.type, sort_tree.type_id, sort_tree.sort);
+  // Методы для работы с ролями проектов
+  async getAllProjectRoles(): Promise<ProjectRole[]> {
+    return await db.select().from(project_roles).orderBy(project_roles.id);
   }
 
-  async getSortTreeItem(type: string, type_id: number, parent_id: number | null): Promise<SortTree | undefined> {
+  async getProjectRole(id: number): Promise<ProjectRole | undefined> {
+    const [role] = await db
+        .select()
+        .from(project_roles)
+        .where(eq(project_roles.id, id));
+    return role || undefined;
+  }
+
+  async createProjectRole(insertRole: InsertProjectRole): Promise<ProjectRole> {
+    const [role] = await db
+        .insert(project_roles)
+        .values(insertRole)
+        .returning();
+    return role;
+  }
+
+  async updateProjectRole(
+      id: number,
+      roleData: Partial<InsertProjectRole>,
+  ): Promise<ProjectRole | undefined> {
+    const [role] = await db
+        .update(project_roles)
+        .set(roleData)
+        .where(eq(project_roles.id, id))
+        .returning();
+    return role || undefined;
+  }
+
+  async deleteProjectRole(id: number): Promise<boolean> {
+    const result = await db
+        .delete(project_roles)
+        .where(eq(project_roles.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Методы для работы с сортировкой дерева
+  async getSortTree(): Promise<SortTree[]> {
+    return await db
+        .select()
+        .from(sort_tree)
+        .orderBy(sort_tree.type, sort_tree.type_id, sort_tree.sort);
+  }
+
+  async getSortTreeItem(
+      type: string,
+      type_id: number,
+      parent_id: number | null,
+  ): Promise<SortTree | undefined> {
     let query;
 
     if (parent_id === null) {
@@ -709,13 +945,13 @@ export class DatabaseStorage implements IStorage {
           eq(sort_tree.type, type),
           eq(sort_tree.type_id, type_id),
           // eq(sort_tree.parent_id, null) - this is causing issues
-          eq(sort_tree.parent_id, undefined as any) // workaround
+          eq(sort_tree.parent_id, undefined as any), // workaround
       );
     } else {
       query = and(
           eq(sort_tree.type, type),
           eq(sort_tree.type_id, type_id),
-          eq(sort_tree.parent_id, parent_id)
+          eq(sort_tree.parent_id, parent_id),
       );
     }
 
@@ -724,14 +960,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createSortTreeItem(item: InsertSortTree): Promise<SortTree> {
-    const [sortItem] = await db
-        .insert(sort_tree)
-        .values(item)
-        .returning();
+    const [sortItem] = await db.insert(sort_tree).values(item).returning();
     return sortItem;
   }
 
-  async updateSortTreeItem(id: number, item: Partial<InsertSortTree>): Promise<SortTree | undefined> {
+  async updateSortTreeItem(
+      id: number,
+      item: Partial<InsertSortTree>,
+  ): Promise<SortTree | undefined> {
     const [sortItem] = await db
         .update(sort_tree)
         .set(item)
@@ -750,21 +986,41 @@ export class DatabaseStorage implements IStorage {
 
   // Методы для работы с организациями
   async getAllOrganizations(): Promise<Department[]> {
-    return await db.select().from(departments).where(
-      and(
-        eq(departments.deleted, false),
-        eq(departments.is_organization, true)
-      )
-    ).orderBy(departments.name);
+    return await db
+        .select()
+        .from(departments)
+        .where(
+            and(
+                eq(departments.deleted, false),
+                eq(departments.is_organization, true),
+            ),
+        )
+        .orderBy(departments.name);
   }
 
-  async setOrganizationStatus(departmentId: number, isOrganization: boolean): Promise<Department | undefined> {
+  async setOrganizationStatus(
+      departmentId: number,
+      isOrganization: boolean,
+  ): Promise<Department | undefined> {
     const [department] = await db
-      .update(departments)
-      .set({ is_organization: isOrganization })
-      .where(eq(departments.department_id, departmentId))
-      .returning();
+        .update(departments)
+        .set({ is_organization: isOrganization })
+        .where(eq(departments.department_id, departmentId))
+        .returning();
     return department || undefined;
+  }
+
+  async getProjectsRoles(): Promise<Role[]> {
+    return await db.select().from(roles);
+  }
+
+  async createProjectsRole(insertRole: InsertRole): Promise<Role> {
+    const [role] = await db
+        .insert(roles)
+        .values(insertRole)
+        .returning();
+
+    return role;
   }
 }
 

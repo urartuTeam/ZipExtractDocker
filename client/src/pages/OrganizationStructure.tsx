@@ -1146,11 +1146,7 @@ export default function OrganizationStructure() {
           ) : (
             sortedDeptPositions.map((p) => renderPos(p, d.department_id, lvl, d.department_id))
           )
-        ) : (
-          <div className="italic text-neutral-500 pl-4 mt-1">
-            Нет должностей в этом отделе
-          </div>
-        )}
+        ) : null }
         
         {/* Если есть дочерние отделы, рендерим их через Droppable */}
         {childDepts.length > 0 ? (
@@ -1270,14 +1266,14 @@ export default function OrganizationStructure() {
             <CardDescription>Иерархия</CardDescription>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              className="flex items-center gap-1 border border-blue-500 hover:bg-blue-50" 
-              onClick={toggleDragMode}
-            >
-              <MoveVertical className="h-4 w-4" />
-              <span>{dragEnabled ? 'Выключить режим перемещения' : 'Включить режим перемещения'}</span>
-            </Button>
+            {/*<Button */}
+            {/*  variant="outline" */}
+            {/*  className="flex items-center gap-1 border border-blue-500 hover:bg-blue-50" */}
+            {/*  onClick={toggleDragMode}*/}
+            {/*>*/}
+            {/*  <MoveVertical className="h-4 w-4" />*/}
+            {/*  <span>{dragEnabled ? 'Выключить режим перемещения' : 'Включить режим перемещения'}</span>*/}
+            {/*</Button>*/}
             <Button 
               variant="outline" 
               className="flex items-center gap-1 border border-primary hover:bg-primary/10" 

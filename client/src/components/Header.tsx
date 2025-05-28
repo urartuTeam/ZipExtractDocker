@@ -43,7 +43,7 @@ export default function Header({ toggleSidebar }: HeaderProps) {
                     <Button
                         asChild
                         variant="outline"
-                        className="bg-transparent border-white text-white hover:bg-white/20"
+                        className=" bg-[#828282] border-white text-white hover:bg-white/20"
                     >
                         <Link href="/auth">
                             <LogInIcon className="w-5 h-5 mr-2"/>
@@ -54,7 +54,7 @@ export default function Header({ toggleSidebar }: HeaderProps) {
                     <Button
                         asChild
                         variant="outline"
-                        className="bg-transparent border-white text-white hover:bg-white/20"
+                        className=" bg-[#828282] border-white text-white hover:bg-white/20"
                     >
                         <Link href="/departments">
                             <svg
@@ -78,7 +78,7 @@ export default function Header({ toggleSidebar }: HeaderProps) {
                         variant="outline"
                         onClick={handleLogout}
                         disabled={logoutMutation.isPending}
-                        className="bg-transparent border-white text-white hover:bg-white/20"
+                        className="bg-[#828282] border-white text-white hover:bg-white/20"
                     >
                         <LogOut className="w-5 h-5 mr-2"/>
                         Выйти

@@ -1,4 +1,15 @@
-import { pgTable, text, serial, integer, boolean, timestamp, date, primaryKey, varchar, unique } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  timestamp,
+  date,
+  primaryKey,
+  varchar,
+  unique,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
@@ -24,18 +35,16 @@ export const positions = pgTable("positions", {
   deleted_at: timestamp("deleted_at"),
 });
 
-// Для создания self-reference на position.position_id
-export const positionReferences = pgTable("_dummy_position_references", {
-  id: serial("id").primaryKey(),
-  position_id: integer("position_id").references(() => positions.position_id),
-});
-
 // Связь между должностями (иерархия должностей)
 export const position_position = pgTable("position_position", {
   position_relation_id: serial("position_relation_id").primaryKey(),
   position_id: integer("position_id").references(() => positions.position_id),
-  parent_position_id: integer("parent_position_id").references(() => positions.position_id),
-  department_id: integer("department_id").references(() => departments.department_id),
+  parent_position_id: integer("parent_position_id").references(
+      () => positions.position_id,
+  ),
+  department_id: integer("department_id").references(
+      () => departments.department_id,
+  ),
   sort: integer("sort").default(0),
   deleted: boolean("deleted").default(false),
   deleted_at: timestamp("deleted_at"),
@@ -52,13 +61,17 @@ export const departments = pgTable("departments", {
   sort: integer("sort").default(0),
   deleted: boolean("deleted").default(false),
   deleted_at: timestamp("deleted_at"),
+  leadership_position_id: integer("leadership_position_id").references(() => positions.position_id),
+  manager_id: integer("manager_id").references(() => employees.employee_id),
 });
 
 // Связь между должностями и отделами
 export const position_department = pgTable("position_department", {
   position_link_id: serial("position_link_id").primaryKey(),
   position_id: integer("position_id").references(() => positions.position_id),
-  department_id: integer("department_id").references(() => departments.department_id),
+  department_id: integer("department_id").references(
+      () => departments.department_id,
+  ),
   staff_units: integer("staff_units").default(0),
   current_count: integer("current_count").default(0),
   vacancies: integer("vacancies").default(0),
@@ -75,8 +88,13 @@ export const employees = pgTable("employees", {
   phone: text("phone"),
   email: text("email"),
   manager_id: integer("manager_id"),
-  department_id: integer("department_id").references(() => departments.department_id),
-  category_parent_id: integer("category_parent_id").references(() => positions.position_id),
+  department_id: integer("department_id").references(
+      () => departments.department_id,
+  ),
+  category_parent_id: integer("category_parent_id").references(
+      () => positions.position_id,
+  ),
+  photo_url: text("photo_url"),
   deleted: boolean("deleted").default(false),
   deleted_at: timestamp("deleted_at"),
 });
@@ -86,23 +104,29 @@ export const projects = pgTable("projects", {
   project_id: serial("project_id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  department_id: integer("department_id").references(() => departments.department_id),
-  id_organization: integer("id_organization").references(() => departments.department_id),
+  department_id: integer("department_id").references(
+      () => departments.department_id,
+  ),
+  id_organization: integer("id_organization").references(
+      () => departments.department_id,
+  ),
   sort: integer("sort").default(0),
   deleted: boolean("deleted").default(false),
   deleted_at: timestamp("deleted_at"),
 });
 
 // Связь сотрудников и проектов
-export const employeeprojects = pgTable("employeeprojects", {
-  employee_id: integer("employee_id").references(() => employees.employee_id),
-  project_id: integer("project_id").references(() => projects.project_id),
-  role: text("role").notNull(),
-  deleted: boolean("deleted").default(false),
-  deleted_at: timestamp("deleted_at"),
-}, (table) => ({
-  pk: primaryKey({ columns: [table.employee_id, table.project_id] }),
-}));
+export const employeeprojects = pgTable(
+    "employeeprojects",
+    {
+      employee_id: integer("employee_id").references(() => employees.employee_id),
+      project_id: integer("project_id").references(() => projects.project_id),
+      role_id: integer("role_id").references(() => project_roles.id),
+    },
+    (table) => ({
+      pk: primaryKey({ columns: [table.employee_id, table.project_id] }),
+    }),
+);
 
 // Отпуска
 export const leaves = pgTable("leaves", {
@@ -113,6 +137,12 @@ export const leaves = pgTable("leaves", {
   type: text("type").notNull(),
   deleted: boolean("deleted").default(false),
   deleted_at: timestamp("deleted_at"),
+});
+
+// Роли в проектах
+export const roles = pgTable("project_roles", {
+  role_id: integer("role_id").primaryKey(),
+  role_name: varchar("role_name"),
 });
 
 // Отношения
@@ -128,49 +158,67 @@ export const departmentsRelations = relations(departments, ({ one, many }) => ({
     references: [positions.position_id],
     relationName: "parent_position_department",
   }),
-  positions: many(position_department, { relationName: "department_positions" }),
+  positions: many(position_department, {
+    relationName: "department_positions",
+  }),
   employees: many(employees),
   projects: many(projects),
-  organizationProjects: many(projects, { relationName: "project_organization" }),
+  organizationProjects: many(projects, {
+    relationName: "project_organization",
+  }),
 }));
 
 export const positionsRelations = relations(positions, ({ many }) => ({
-  departments: many(position_department, { relationName: "position_departments" }),
-  employees: many(employees),
-  parentPositions: many(position_position, { relationName: "child_position_relation" }),
-  childPositions: many(position_position, { relationName: "parent_position_relation" }),
-  childDepartments: many(departments, { relationName: "parent_position_department" }),
-}));
-
-export const position_positionRelations = relations(position_position, ({ one }) => ({
-  position: one(positions, {
-    fields: [position_position.position_id],
-    references: [positions.position_id],
-    relationName: "child_position_relation",
-  }),
-  parentPosition: one(positions, {
-    fields: [position_position.parent_position_id],
-    references: [positions.position_id],
-    relationName: "parent_position_relation",
-  }),
-  department: one(departments, {
-    fields: [position_position.department_id],
-    references: [departments.department_id],
-  }),
-}));
-
-export const position_departmentRelations = relations(position_department, ({ one }) => ({
-  position: one(positions, {
-    fields: [position_department.position_id],
-    references: [positions.position_id],
+  departments: many(position_department, {
     relationName: "position_departments",
   }),
-  department: one(departments, {
-    fields: [position_department.department_id],
-    references: [departments.department_id],
-    relationName: "department_positions",
+  employees: many(employees),
+  parentPositions: many(position_position, {
+    relationName: "child_position_relation",
+  }),
+  childPositions: many(position_position, {
+    relationName: "parent_position_relation",
+  }),
+  childDepartments: many(departments, {
+    relationName: "parent_position_department",
   }),
 }));
+
+export const position_positionRelations = relations(
+    position_position,
+    ({ one }) => ({
+      position: one(positions, {
+        fields: [position_position.position_id],
+        references: [positions.position_id],
+        relationName: "child_position_relation",
+      }),
+      parentPosition: one(positions, {
+        fields: [position_position.parent_position_id],
+        references: [positions.position_id],
+        relationName: "parent_position_relation",
+      }),
+      department: one(departments, {
+        fields: [position_position.department_id],
+        references: [departments.department_id],
+      }),
+    }),
+);
+
+export const position_departmentRelations = relations(
+    position_department,
+    ({ one }) => ({
+      position: one(positions, {
+        fields: [position_department.position_id],
+        references: [positions.position_id],
+        relationName: "position_departments",
+      }),
+      department: one(departments, {
+        fields: [position_department.department_id],
+        references: [departments.department_id],
+        relationName: "department_positions",
+      }),
+    }),
+);
 
 export const employeesRelations = relations(employees, ({ one, many }) => ({
   position: one(positions, {
@@ -209,16 +257,23 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   employees: many(employeeprojects),
 }));
 
-export const employeeprojectsRelations = relations(employeeprojects, ({ one }) => ({
-  employee: one(employees, {
-    fields: [employeeprojects.employee_id],
-    references: [employees.employee_id],
-  }),
-  project: one(projects, {
-    fields: [employeeprojects.project_id],
-    references: [projects.project_id],
-  }),
-}));
+export const employeeprojectsRelations = relations(
+    employeeprojects,
+    ({ one }) => ({
+      employee: one(employees, {
+        fields: [employeeprojects.employee_id],
+        references: [employees.employee_id],
+      }),
+      project: one(projects, {
+        fields: [employeeprojects.project_id],
+        references: [projects.project_id],
+      }),
+      role: one(project_roles, {
+        fields: [employeeprojects.role_id],
+        references: [project_roles.id],
+      }),
+    }),
+);
 
 export const leavesRelations = relations(leaves, ({ one }) => ({
   employee: one(employees, {
@@ -241,11 +296,15 @@ export const insertPositionSchema = createInsertSchema(positions).omit({
   position_id: true,
 });
 
-export const insertPositionDepartmentSchema = createInsertSchema(position_department).omit({
+export const insertPositionDepartmentSchema = createInsertSchema(
+    position_department,
+).omit({
   position_link_id: true,
 });
 
-export const insertPositionPositionSchema = createInsertSchema(position_position)
+export const insertPositionPositionSchema = createInsertSchema(
+    position_position,
+)
     .omit({
       position_relation_id: true,
     })
@@ -253,7 +312,7 @@ export const insertPositionPositionSchema = createInsertSchema(position_position
       // Добавляем расширение схемы для корректной обработки категорийных должностей
       position_id: z.number(),
       parent_position_id: z.number(),
-      department_id: z.number()
+      department_id: z.number(),
     });
 
 export const insertEmployeeSchema = createInsertSchema(employees).omit({
@@ -270,6 +329,10 @@ export const insertLeaveSchema = createInsertSchema(leaves).omit({
   leave_id: true,
 });
 
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  role_id: true,
+});
+
 // Типы
 export type User = typeof users.$inferSelect;
 export type Department = typeof departments.$inferSelect;
@@ -280,13 +343,18 @@ export type Employee = typeof employees.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type EmployeeProject = typeof employeeprojects.$inferSelect;
 export type Leave = typeof leaves.$inferSelect;
+export type Role = typeof roles.$inferSelect;
 
 // Типы для вставки
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
 export type InsertPosition = z.infer<typeof insertPositionSchema>;
-export type InsertPositionDepartment = z.infer<typeof insertPositionDepartmentSchema>;
-export type InsertPositionPosition = z.infer<typeof insertPositionPositionSchema>;
+export type InsertPositionDepartment = z.infer<
+    typeof insertPositionDepartmentSchema
+>;
+export type InsertPositionPosition = z.infer<
+    typeof insertPositionPositionSchema
+>;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 // Настройки
 export const settings = pgTable("settings", {
@@ -298,25 +366,34 @@ export const settings = pgTable("settings", {
 });
 
 // Схема Zod для настроек
-export const insertSettingSchema = createInsertSchema(settings).omit({ id: true, created_at: true, updated_at: true });
+export const insertSettingSchema = createInsertSchema(settings).omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+});
 
 export type InsertProject = z.infer<typeof insertProjectSchema>;
 export type InsertEmployeeProject = z.infer<typeof insertEmployeeProjectSchema>;
 export type InsertLeave = z.infer<typeof insertLeaveSchema>;
+export type InsertRole = z.infer<typeof insertRoleSchema>;
 export type Setting = typeof settings.$inferSelect;
 export type InsertSetting = z.infer<typeof insertSettingSchema>;
 
 // Таблица для хранения порядка сортировки элементов иерархии
-export const sort_tree = pgTable("sort_tree", {
-  id: serial("id").primaryKey(),
-  sort: integer("sort").notNull(),
-  type: text("type").notNull(),
-  type_id: integer("type_id").notNull(),
-  parent_id: integer("parent_id"),
-}, (table) => ({
-  // Уникальное ограничение на тип, id элемента и parent_id
-  unique_type_entity: unique().on(table.type, table.type_id, table.parent_id)
-}));
+export const sort_tree = pgTable(
+    "sort_tree",
+    {
+      id: serial("id").primaryKey(),
+      sort: integer("sort").notNull(),
+      type: text("type").notNull(),
+      type_id: integer("type_id").notNull(),
+      parent_id: integer("parent_id"),
+    },
+    (table) => ({
+      // Уникальное ограничение на тип, id элемента и parent_id
+      unique_type_entity: unique().on(table.type, table.type_id, table.parent_id),
+    }),
+);
 
 // Схема Zod для sort_tree
 export const insertSortTreeSchema = createInsertSchema(sort_tree).omit({
@@ -326,3 +403,30 @@ export const insertSortTreeSchema = createInsertSchema(sort_tree).omit({
 // Типы для sort_tree
 export type SortTree = typeof sort_tree.$inferSelect;
 export type InsertSortTree = z.infer<typeof insertSortTreeSchema>;
+
+// Роли проектов
+export const project_roles = pgTable("project_roles", {
+  id: serial("id").primaryKey(),
+  parent_id: integer("parent_id").references(() => project_roles.id),
+  name: text("name").notNull(),
+  is_rp: boolean("is_rp").default(false),
+});
+
+// Отношения для ролей проектов
+export const projectRolesRelations = relations(project_roles, ({ one, many }) => ({
+  parent: one(project_roles, {
+    fields: [project_roles.parent_id],
+    references: [project_roles.id],
+    relationName: "parent_role",
+  }),
+  children: many(project_roles, { relationName: "parent_role" }),
+}));
+
+// Схема для вставки ролей проектов
+export const insertProjectRoleSchema = createInsertSchema(project_roles).omit({
+  id: true,
+});
+
+// Типы для ролей проектов
+export type ProjectRole = typeof project_roles.$inferSelect;
+export type InsertProjectRole = z.infer<typeof insertProjectRoleSchema>;
