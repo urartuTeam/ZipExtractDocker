@@ -215,8 +215,8 @@ const PositionTree = ({
                         hasSubordinates={subNode.subordinates.length == 0}
                       />
 
-                      {/* Рекурсивное отображение подчиненных подчиненного, показываем только если включено showThreeLevels */}
-                      {subNode.subordinates.length > 0 && showThreeLevels && (
+                      {/* Рекурсивное отображение подчиненных подчиненного, показываем всегда при навигации к конкретной должности */}
+                      {subNode.subordinates.length > 0 && (showThreeLevels || selectedPositionId) && (
                         <div
                           className={`subordinates-container${
                             isLastLevelForCurrentNode ? " last-level" : ""
@@ -277,10 +277,10 @@ const PositionTree = ({
                         </div>
                       )}
 
-                      {/* Дочерние отделы подузла, отображаются как элементы дерева только если включен третий уровень */}
+                      {/* Дочерние отделы подузла, отображаются всегда при навигации к конкретной должности */}
                       {subNode.childDepartments &&
                         subNode.childDepartments.length > 0 &&
-                        showThreeLevels && (
+                        (showThreeLevels || selectedPositionId) && (
                           <div className="subordinates-container">
                             <div className="tree-branch-connections">
                               <div
