@@ -238,7 +238,16 @@ export default function OrgFlowTree() {
     // Загрузка данных организационных единиц
     const { data: orgUnitsData, isLoading } = useQuery({
         queryKey: ["/api/org-units"],
-        enabled: false, // Пока отключим, создадим API позже
+    });
+
+    // Мутация для создания организационной единицы
+    const createOrgUnitMutation = useMutation({
+        mutationFn: async (data: { type: string; parent_id?: string; type_id: number; position_x: number; position_y: number }) => {
+            return apiRequest('/api/org-units', data);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['/api/org-units'] });
+        },
     });
 
     const onConnect = useCallback(
@@ -248,36 +257,55 @@ export default function OrgFlowTree() {
 
     // Обработчики для добавления дочерних узлов
     const handleAddChild = useCallback((parentId: string, childType: string) => {
-        const newNodeId = `${nodeCounter.current++}`;
         const parentNode = nodes.find(n => n.id === parentId);
-        
         if (!parentNode) return;
 
-        const newNode: Node = {
-            id: newNodeId,
-            type: "orgUnit",
-            position: {
-                x: parentNode.position.x + (Math.random() - 0.5) * 200,
-                y: parentNode.position.y + 150,
-            },
-            data: {
-                label: `Новый ${childType}`,
-                type: childType,
-                onAddChild: handleAddChild,
-                onEdit: handleEdit,
-                onManageEmployees: handleManageEmployees,
-            },
+        // Определяем type_id в зависимости от типа
+        let type_id = 1; // Базовое значение
+        
+        // Создаем новую организационную единицу
+        const orgUnitData = {
+            type: childType,
+            parent_id: parentId === "1" ? undefined : parentId, // Если это корневой узел, parent_id не указываем
+            type_id: type_id,
+            position_x: parentNode.position.x + (Math.random() - 0.5) * 200,
+            position_y: parentNode.position.y + 150,
         };
 
-        const newEdge: Edge = {
-            id: `${parentId}-${newNodeId}`,
-            source: parentId,
-            target: newNodeId,
-        };
+        createOrgUnitMutation.mutate(orgUnitData, {
+            onSuccess: (response) => {
+                const newNodeId = `${nodeCounter.current++}`;
+                
+                const newNode: Node = {
+                    id: newNodeId,
+                    type: "orgUnit",
+                    position: {
+                        x: orgUnitData.position_x,
+                        y: orgUnitData.position_y,
+                    },
+                    data: {
+                        label: `Новый ${childType}`,
+                        type: childType,
+                        onAddChild: handleAddChild,
+                        onEdit: handleEdit,
+                        onManageEmployees: handleManageEmployees,
+                    },
+                };
 
-        setNodes((nds) => [...nds, newNode]);
-        setEdges((eds) => [...eds, newEdge]);
-    }, [nodes, setNodes, setEdges]);
+                const newEdge: Edge = {
+                    id: `${parentId}-${newNodeId}`,
+                    source: parentId,
+                    target: newNodeId,
+                };
+
+                setNodes((nds) => [...nds, newNode]);
+                setEdges((eds) => [...eds, newEdge]);
+            },
+            onError: (error) => {
+                console.error('Ошибка при создании организационной единицы:', error);
+            }
+        });
+    }, [nodes, setNodes, setEdges, createOrgUnitMutation]);
 
     // Обработчик редактирования узла
     const handleEdit = useCallback((nodeId: string, nodeType: string, typeId: number) => {

@@ -46,20 +46,7 @@ export default function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const isAdmin = user?.role === "admin";
 
   const navItems = [
-    {
-      path: "/organization",
-      label: "Структура",
-      icon: (
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h14a2 2 0 012 2v14a2 2 0 01-2 2zM9 7h6m-6 4h6m-6 4h6"
-          />
-        </svg>
-      ),
-    },
+
     {
       path: "/organizations",
       label: "Организации",
