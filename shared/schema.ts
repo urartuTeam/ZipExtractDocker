@@ -448,3 +448,68 @@ export const insertProjectRoleSchema = createInsertSchema(project_roles).omit({
 // Типы для ролей проектов
 export type ProjectRole = typeof project_roles.$inferSelect;
 export type InsertProjectRole = z.infer<typeof insertProjectRoleSchema>;
+
+// Типы организационных единиц
+export const entityTypes = {
+  ORGANIZATION: "organization",
+  DEPARTMENT: "department", 
+  MANAGEMENT: "management",
+  POSITION: "position",
+} as const;
+
+// Таблица организационных единиц (блоков)
+export const org_units = pgTable("org_units", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // 'organization', 'department', 'management', 'position'
+  type_id: integer("type_id").notNull(), // ID связанной записи из соответствующей таблицы
+  parent_id: integer("parent_id").references(() => org_units.id, {
+    onDelete: "cascade",
+  }),
+  staff_count: integer("staff_count").default(1), // Количество штатных единиц для должностей
+  head_employee_id: integer("head_employee_id"), // ID руководителя
+  head_position_id: integer("head_position_id"), // ID руководящей должности
+  position_x: real("position_x").default(0), // X координата для позиционирования
+  position_y: real("position_y").default(0), // Y координата для позиционирования
+  created_at: timestamp("created_at").defaultNow(),
+});
+
+// Таблица назначения сотрудников на организационные единицы
+export const employee_org_assignments = pgTable("employee_org_assignments", {
+  id: serial("id").primaryKey(),
+  employee_id: integer("employee_id")
+    .notNull()
+    .references(() => employees.employee_id, { onDelete: "cascade" }),
+  org_unit_id: integer("org_unit_id")
+    .notNull()
+    .references(() => org_units.id, { onDelete: "cascade" }),
+  position_id: integer("position_id")
+    .references(() => positions.position_id, { onDelete: "set null" }), // Должность в данной единице
+  is_head: boolean("is_head").default(false), // Является ли руководителем
+  assigned_at: timestamp("assigned_at").defaultNow(),
+});
+
+// Схемы для вставки
+export const insertOrgUnitSchema = createInsertSchema(org_units).omit({
+  id: true,
+  created_at: true,
+});
+
+export const insertEmployeeOrgAssignmentSchema = createInsertSchema(employee_org_assignments).omit({
+  id: true,
+  assigned_at: true,
+});
+
+// Типы
+export type OrgUnit = typeof org_units.$inferSelect;
+export type InsertOrgUnit = z.infer<typeof insertOrgUnitSchema>;
+
+export type EmployeeOrgAssignment = typeof employee_org_assignments.$inferSelect;
+export type InsertEmployeeOrgAssignment = z.infer<typeof insertEmployeeOrgAssignmentSchema>;
+
+// Расширенные типы для фронтенда
+export type OrgUnitWithChildren = OrgUnit & {
+  children: OrgUnitWithChildren[];
+  employees?: any[];
+  headEmployee?: any;
+  entity?: any; // Связанная запись из соответствующей таблицы
+};
