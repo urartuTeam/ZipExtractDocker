@@ -1,0 +1,615 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== Основные стили для организационной структуры ===== */
+
+/* Главный контейнер для организационной структуры */
+.org-tree {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 8rem);
+  overflow: auto;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.org-tree-canvas {
+  position: relative;
+  min-width: 3000px;
+  min-height: 2000px;
+  padding: 2rem;
+}
+
+/* Пустое состояние с большой кнопкой + */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.big-plus-button {
+  width: 5rem;
+  height: 5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  background-color: #f1f5f9;
+  color: #64748b;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px dashed #cbd5e1;
+}
+
+.big-plus-button:hover {
+  background-color: #e2e8f0;
+  transform: scale(1.05);
+}
+
+/* Ячейки организационной структуры */
+.tree-node {
+  position: absolute;
+  width: 280px;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  z-index: 10;
+  transition: box-shadow 0.2s;
+  overflow: hidden;
+}
+
+.tree-node.dragging {
+  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  z-index: 20;
+}
+
+.tree-node.drop-zone {
+  border: 2px dashed transparent;
+  transition: border-color 0.3s;
+}
+
+.tree-node.drop-zone.active {
+  border: 2px dashed #2563eb;
+}
+
+/* Заголовок ячейки */
+.node-header {
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  cursor: move;
+}
+
+.node-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.5rem;
+  background-color: #f1f5f9;
+}
+
+.node-title {
+  flex: 1;
+}
+
+.node-title h3 {
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.node-subtitle {
+  display: flex;
+  align-items: center;
+  margin-top: 0.25rem;
+  font-size: 0.7rem;
+}
+
+.node-type-badge {
+  padding: 0.125rem 0.5rem;
+  background-color: #f1f5f9;
+  border-radius: 0.25rem;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.node-content {
+  padding: 0.75rem;
+}
+
+/* Типы ячеек */
+.node-organization {
+  border-top: 4px solid #06b6d4;
+}
+
+.node-management {
+  border-top: 4px solid #f59e0b;
+}
+
+.node-department {
+  border-top: 4px solid #10b981;
+}
+
+.node-position {
+  border-top: 4px solid #6366f1;
+}
+
+/* Кнопки */
+.add-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 0.25rem;
+  background-color: #f8fafc;
+  color: #64748b;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-button:hover {
+  background-color: #f1f5f9;
+}
+
+/* Стили для сотрудников */
+.employee-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  max-height: 9rem;
+  overflow-y: auto;
+}
+
+.employee-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  background-color: #f8fafc;
+  cursor: grab;
+  transition: background-color 0.2s;
+}
+
+.employee-item:hover {
+  background-color: #f1f5f9;
+}
+
+.employee-item.dragging {
+  opacity: 0.5;
+}
+
+.employee-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background-color: #6366f1;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.employee-name {
+  font-size: 0.8rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+/* Всплывающие подсказки */
+.employee-tooltip {
+  position: absolute;
+  min-width: 240px;
+  max-width: 320px;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background-color: white;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  z-index: 30;
+  transform: translateY(-50%);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s, visibility 0.2s;
+}
+
+.employee-tooltip.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Material Icons */
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 20 14.3% 4.1%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 20 14.3% 4.1%;
+  --card: 0 0% 100%;
+  --card-foreground: 20 14.3% 4.1%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 207 90% 54%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 60 4.8% 95.9%;
+  --secondary-foreground: 24 9.8% 10%;
+  --accent: 60 4.8% 95.9%;
+  --accent-foreground: 24 9.8% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 20 14.3% 4.1%;
+  --radius: 0.5rem;
+  
+  /* Organization colors */
+  --organization-color: 207 90% 54%;
+  --management-color: 271 91% 65%;
+  --department-color: 25 95% 53%;
+  --position-color: 145 63% 42%;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 207 90% 54%;
+  --primary-foreground: 211 100% 99%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --ring: 240 4.9% 83.9%;
+  --radius: 0.5rem;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Организационное дерево */
+.org-tree {
+  width: 100%;
+  min-height: 100%;
+  position: relative;
+}
+
+.org-tree-canvas {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: auto;
+  background-image: radial-gradient(#e0e0e0 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Ячейки дерева */
+.tree-node {
+  position: absolute;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  width: 280px;
+  transition: box-shadow 0.2s, transform 0.1s;
+  cursor: grab;
+  user-select: none;
+  z-index: 1;
+}
+
+.tree-node:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.tree-node.dragging {
+  opacity: 0.8;
+  cursor: grabbing;
+  z-index: 100;
+}
+
+/* Типы ячеек */
+.node-organization {
+  border-top: 4px solid hsl(var(--organization-color));
+}
+
+.node-management {
+  border-top: 4px solid hsl(var(--management-color));
+}
+
+.node-department {
+  border-top: 4px solid hsl(var(--department-color));
+}
+
+.node-position {
+  border-top: 4px solid hsl(var(--position-color));
+}
+
+/* Заголовок ячейки */
+.node-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+}
+
+.node-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.node-organization .node-icon {
+  background-color: hsla(var(--organization-color), 0.1);
+  color: hsl(var(--organization-color));
+}
+
+.node-management .node-icon {
+  background-color: hsla(var(--management-color), 0.1);
+  color: hsl(var(--management-color));
+}
+
+.node-department .node-icon {
+  background-color: hsla(var(--department-color), 0.1);
+  color: hsl(var(--department-color));
+}
+
+.node-position .node-icon {
+  background-color: hsla(var(--position-color), 0.1);
+  color: hsl(var(--position-color));
+}
+
+.node-title {
+  flex-grow: 1;
+  overflow: hidden;
+}
+
+.node-title h3 {
+  font-weight: 500;
+  font-size: 16px;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.node-subtitle {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.node-type-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  display: inline-block;
+}
+
+.node-organization .node-type-badge {
+  background-color: hsla(var(--organization-color), 0.1);
+  color: hsl(var(--organization-color));
+}
+
+.node-management .node-type-badge {
+  background-color: hsla(var(--management-color), 0.1);
+  color: hsl(var(--management-color));
+}
+
+.node-department .node-type-badge {
+  background-color: hsla(var(--department-color), 0.1);
+  color: hsl(var(--department-color));
+}
+
+.node-position .node-type-badge {
+  background-color: hsla(var(--position-color), 0.1);
+  color: hsl(var(--position-color));
+}
+
+/* Контент ячейки */
+.node-content {
+  padding: 12px 16px;
+}
+
+/* Список сотрудников */
+.employee-list {
+  margin-top: 8px;
+}
+
+.employee-item {
+  background-color: #f9f9f9;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  transition: background-color 0.2s;
+}
+
+.employee-item:hover {
+  background-color: #f0f0f0;
+}
+
+.employee-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.employee-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  margin-right: 8px;
+  color: #555;
+}
+
+.employee-name {
+  font-size: 13px;
+  flex-grow: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Кнопка добавления */
+.add-button {
+  width: 100%;
+  padding: 8px;
+  border: 1px dashed #ccc;
+  background: transparent;
+  border-radius: 4px;
+  color: #666;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.add-button:hover {
+  border-color: hsl(var(--primary));
+  color: hsl(var(--primary));
+  background-color: hsla(var(--primary), 0.05);
+}
+
+.add-button i {
+  margin-right: 6px;
+}
+
+/* Соединительные линии */
+.node-connector {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Подсказки при наведении */
+.employee-tooltip {
+  position: absolute;
+  background: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  padding: 12px;
+  width: 280px;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.employee-tooltip.visible {
+  opacity: 1;
+}
+
+/* Плюсик для пустого экрана */
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+}
+
+.big-plus-button {
+  width: 80px;
+  height: 80px;
+  background-color: #f0f0f0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  color: hsl(var(--primary));
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.big-plus-button:hover {
+  background-color: #e0e0e0;
+  transform: scale(1.05);
+}
+
+/* Стили для проектов */
+.project-card {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 16px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.project-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Стили для дерева проектов */
+.project-tree {
+  width: 100%;
+  padding: 24px;
+}
+
+.project-role-node {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  width: 280px;
+  margin-bottom: 16px;
+}
+
+.drop-zone {
+  border: 2px dashed transparent;
+  transition: all 0.2s;
+}
+
+.drop-zone.active {
+  border-color: hsl(var(--primary));
+  background-color: hsla(var(--primary), 0.05);
+}

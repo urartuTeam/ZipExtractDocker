@@ -1,0 +1,40 @@
+<button
+                                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                                onClick={async () => {
+                                    if (
+                                        editNodeId &&
+                                        window.confirm(
+                                            "Вы уверены, что хотите удалить этот блок? Это действие нельзя отменить.",
+                                        )
+                                    ) {
+                                        try {
+                                            await apiRequest(
+                                                `/api/org-units/${editNodeId}`,
+                                                {
+                                                    method: "DELETE",
+                                                },
+                                            );
+
+                                            // Обновляем кэш
+                                            queryClient.invalidateQueries({
+                                                queryKey: ["/api/org-units"],
+                                            });
+
+                                            setShowEditModal(false);
+                                            setEditNodeId(null);
+                                            setEditNodeType("");
+                                            setSelectedEditItemId(null);
+                                        } catch (error) {
+                                            console.error(
+                                                "Ошибка при удалении блока:",
+                                                error,
+                                            );
+                                            alert(
+                                                "Ошибка при удалении блока. Возможно, у блока есть дочерние элементы.",
+                                            );
+                                        }
+                                    }
+                                }}
+                            >
+                                Удалить
+                            </button>

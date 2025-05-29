@@ -9,10 +9,28 @@ import {
   primaryKey,
   varchar,
   unique,
+  real,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
+
+// Base organizational unit for organizations, departments, management, and positions
+export const orgUnits = pgTable("org_units", {
+  id: serial("id").primaryKey(),
+  type: text("type").notNull(), // 'organization', 'department', 'management', 'position'
+  type_id: integer("type_id").notNull(), // 'organization', 'department', 'management', 'position'
+  parentId: integer("parent_id").references(() => orgUnits.id, {
+    onDelete: "cascade",
+  }),
+  staffCount: integer("staff_count").default(1), // Only relevant for positions
+  logo: text("logo"), // URL to logo, only for organizations
+  headEmployeeId: integer("head_employee_id"), // References employees table, for departments and management
+  headPositionId: integer("head_position_id"), // References id column in the same table
+  positionX: real("position_x").default(0), // X координата для позиционирования
+  positionY: real("position_y").default(0), // Y координата для позиционирования
+  createdAt: timestamp("created_at").defaultNow(),
+});
 
 // Пользователи
 export const users = pgTable("users", {
