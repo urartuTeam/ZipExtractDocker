@@ -11,8 +11,12 @@ import {
   settings,
   sort_tree,
   project_roles,
-    orgUnits,
-     type OrgUnit, 
+  org_units,
+  employee_org_assignments,
+  type OrgUnit,
+  type InsertOrgUnit,
+  type EmployeeOrgAssignment,
+  type InsertEmployeeOrgAssignment, 
   type User,
   type InsertUser,
   type Department,
@@ -42,24 +46,16 @@ import { db } from "./db";
 import { eq, and, or, inArray } from "drizzle-orm";
 
 export interface IStorage {
-      // Org Units
-      getOrgUnits(): Promise<OrgUnit[]>;
-      getOrgUnit(id: number): Promise<OrgUnit | undefined>;
-      getRootOrgUnits(): Promise<OrgUnit[]>;
-      getChildOrgUnits(parentId: number): Promise<OrgUnit[]>;
-      createOrgUnit(unit: InsertOrgUnit): Promise<OrgUnit>;
-      updateOrgUnit(
-        id: number,
-        unit: Partial<OrgUnit>,
-      ): Promise<OrgUnit | undefined>;
-      deleteOrgUnit(id: number): Promise<boolean>;
-      // Employee Positions (назначения сотрудников)
-      getAllEmployeePositions(): Promise<EmployeePosition[]>;
-      getEmployeePositions(orgUnitId: number): Promise<EmployeePosition[]>;
-      getEmployeesByOrgUnit(orgUnitId: number): Promise<Employee[]>;
-      assignEmployeeToOrgUnit(assignment: InsertEmployeePosition): Promise<EmployeePosition>;
-      removeEmployeeFromOrgUnit(employeeId: number, orgUnitId: number): Promise<boolean>;
-      updateEmployeeAssignment(id: number, assignment: Partial<EmployeePosition>): Promise<EmployeePosition | undefined>;
+  // Org Units
+  getOrgUnits(): Promise<OrgUnit[]>;
+  getOrgUnit(id: number): Promise<OrgUnit | undefined>;
+  createOrgUnit(unit: InsertOrgUnit): Promise<OrgUnit>;
+  updateOrgUnit(id: number, unit: Partial<OrgUnit>): Promise<OrgUnit | undefined>;
+  deleteOrgUnit(id: number): Promise<boolean>;
+  
+  // Employee Org Assignments
+  getEmployeeOrgAssignments(): Promise<EmployeeOrgAssignment[]>;
+  createEmployeeOrgAssignment(assignment: InsertEmployeeOrgAssignment): Promise<EmployeeOrgAssignment>;
 
   // Пользователи
   getUser(id: number): Promise<User | undefined>;
@@ -217,17 +213,54 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-    // Org Units
-      async getOrgUnits(): Promise<(OrgUnit & { typeName: string })[]> {
-        const units = await db.select().from(orgUnits);
+  // Org Units (временная заглушка)
+  async getOrgUnits(): Promise<OrgUnit[]> {
+    return [];
+  }
 
-        return await Promise.all(
-          units.map(async (unit) => ({
-            ...unit,
-            name: await this.getOrgUnitName(unit.type, unit.type_id),
-          })),
-        );
-      }
+  async getOrgUnit(id: number): Promise<OrgUnit | undefined> {
+    return undefined;
+  }
+
+  async createOrgUnit(unit: InsertOrgUnit): Promise<OrgUnit> {
+    // Временная заглушка
+    return {
+      id: 1,
+      type: unit.type,
+      type_id: unit.type_id,
+      parent_id: unit.parent_id || null,
+      staff_count: unit.staff_count || 1,
+      head_employee_id: unit.head_employee_id || null,
+      head_position_id: unit.head_position_id || null,
+      position_x: unit.position_x || 0,
+      position_y: unit.position_y || 0,
+      created_at: new Date(),
+    };
+  }
+
+  async updateOrgUnit(id: number, unit: Partial<OrgUnit>): Promise<OrgUnit | undefined> {
+    return undefined;
+  }
+
+  async deleteOrgUnit(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async getEmployeeOrgAssignments(): Promise<EmployeeOrgAssignment[]> {
+    return [];
+  }
+
+  async createEmployeeOrgAssignment(assignment: InsertEmployeeOrgAssignment): Promise<EmployeeOrgAssignment> {
+    // Временная заглушка
+    return {
+      id: 1,
+      employee_id: assignment.employee_id,
+      org_unit_id: assignment.org_unit_id,
+      position_id: assignment.position_id || null,
+      is_head: assignment.is_head || false,
+      assigned_at: new Date(),
+    };
+  }
 
       async getOrgUnit(
         id: number,

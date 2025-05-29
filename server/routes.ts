@@ -1486,6 +1486,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API endpoints для организационных единиц
+  app.get('/api/org-units', async (req: Request, res: Response) => {
+    try {
+      const orgUnits = await storage.getOrgUnits();
+      res.json({ status: 'success', data: orgUnits });
+    } catch (error) {
+      console.error('Error fetching org units:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch org units' });
+    }
+  });
+
+  app.get('/api/org-units/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid org unit ID' });
+      }
+
+      const orgUnit = await storage.getOrgUnit(id);
+      if (!orgUnit) {
+        return res.status(404).json({ status: 'error', message: 'Org unit not found' });
+      }
+
+      res.json({ status: 'success', data: orgUnit });
+    } catch (error) {
+      console.error('Error fetching org unit:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch org unit' });
+    }
+  });
+
+  app.post('/api/org-units', async (req: Request, res: Response) => {
+    try {
+      const orgUnitData = req.body;
+      const orgUnit = await storage.createOrgUnit(orgUnitData);
+      res.status(201).json({ status: 'success', data: orgUnit });
+    } catch (error) {
+      console.error('Error creating org unit:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to create org unit' });
+    }
+  });
+
+  app.put('/api/org-units/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid org unit ID' });
+      }
+
+      const orgUnitData = req.body;
+      const orgUnit = await storage.updateOrgUnit(id, orgUnitData);
+      if (!orgUnit) {
+        return res.status(404).json({ status: 'error', message: 'Org unit not found' });
+      }
+
+      res.json({ status: 'success', data: orgUnit });
+    } catch (error) {
+      console.error('Error updating org unit:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to update org unit' });
+    }
+  });
+
+  app.delete('/api/org-units/:id', async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid org unit ID' });
+      }
+
+      const success = await storage.deleteOrgUnit(id);
+      if (!success) {
+        return res.status(404).json({ status: 'error', message: 'Org unit not found' });
+      }
+
+      res.json({ status: 'success', message: 'Org unit deleted' });
+    } catch (error) {
+      console.error('Error deleting org unit:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to delete org unit' });
+    }
+  });
+
+  // API endpoints для назначений сотрудников
+  app.get('/api/employee-org-assignments', async (req: Request, res: Response) => {
+    try {
+      const assignments = await storage.getEmployeeOrgAssignments();
+      res.json({ status: 'success', data: assignments });
+    } catch (error) {
+      console.error('Error fetching assignments:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to fetch assignments' });
+    }
+  });
+
+  app.post('/api/employee-org-assignments', async (req: Request, res: Response) => {
+    try {
+      const assignmentData = req.body;
+      const assignment = await storage.createEmployeeOrgAssignment(assignmentData);
+      res.status(201).json({ status: 'success', data: assignment });
+    } catch (error) {
+      console.error('Error creating assignment:', error);
+      res.status(500).json({ status: 'error', message: 'Failed to create assignment' });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
