@@ -84,7 +84,10 @@ const OrgUnitNode = ({ data }: { data: any }) => {
     };
 
     const handleAddChild = (childType: string) => {
-        data.onAddChild?.(data.id, childType);
+        console.log('Добавляем дочерний блок:', childType, 'к родителю:', data.id);
+        if (data.onAddChild) {
+            data.onAddChild(data.id, childType);
+        }
         setShowMenu(false);
     };
 
@@ -167,28 +170,28 @@ const OrgUnitNode = ({ data }: { data: any }) => {
             {showMenu && (
                 <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 flex gap-2 p-2 bg-white rounded-lg shadow-lg border z-50">
                     <button
-                        onClick={() => handleAddChild(data.id, "organization")}
+                        onClick={() => handleAddChild("organization")}
                         className="w-10 h-10 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
                         title="Добавить организацию"
                     >
                         <Building className="w-4 h-4" />
                     </button>
                     <button
-                        onClick={() => handleAddChild(data.id, "department")}
+                        onClick={() => handleAddChild("department")}
                         className="w-10 h-10 bg-yellow-500 hover:bg-yellow-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
                         title="Добавить отдел"
                     >
                         <Users className="w-4 h-4" />
                     </button>
                     <button
-                        onClick={() => handleAddChild(data.id, "management")}
+                        onClick={() => handleAddChild("management")}
                         className="w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
                         title="Добавить управление"
                     >
                         <UserCircle className="w-4 h-4" />
                     </button>
                     <button
-                        onClick={() => handleAddChild(data.id, "position")}
+                        onClick={() => handleAddChild("position")}
                         className="w-10 h-10 bg-purple-500 hover:bg-purple-600 text-white rounded-full flex items-center justify-center shadow-md transition-colors"
                         title="Добавить должность"
                     >
